@@ -44,14 +44,20 @@ namespace Gcx
         public byte[] RawContents { get; set; }
     }
 
-    public class Statement : IProcedureElement
+    public class Command : IProcedureElement
     {
+        //0x6D/6E
         public ushort Size { get; set; }
+        public List<Parameter> Parameters { get; set; } = new List<Parameter>();
+    }
+
+    public class Statement : Command
+    {
     }
 
     public class IfBlock : Statement
     {
-        
+
     }
 
     public class ElseIfBlock : IfBlock
@@ -62,13 +68,6 @@ namespace Gcx
     public class ElseBlock : IfBlock
     {
 
-    }
-
-    public class Command : IProcedureElement
-    {
-        //0x6D/6E
-        public ushort Size { get; set; }
-        public List<Parameter> Parameters { get; set; } = new List<Parameter>();
     }
 
     public class SwitchBlock : Statement

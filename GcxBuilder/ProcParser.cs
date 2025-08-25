@@ -36,13 +36,18 @@ namespace GcxEditor
                     //going into nested command
                     nestedLevel++;
                     //int size = bytes[index] == 0x6D ? bytes[index + 1] : BitConverter.ToInt16(bytes, index + 1);
+                    //int size = ParseSize(bytes.Take(new Range(new Index(index), new Index(index + 3))).ToArray(), ref index); //TODO: verify
+                    //Gcx.Command parsedCommand = ParseCommand(bytes.Take(size).ToArray());
                     int size = ParseSize(bytes.Take(new Range(new Index(index), new Index(index + 3))).ToArray(), ref index); //TODO: verify
-                    Gcx.Command parsedCommand = ParseCommand(bytes.Take(size).ToArray());
+                    byte[] cmdContents = new byte[size];
+                    Array.Copy(bytes, index, cmdContents, 0, size);
+                    Gcx.Command command = ParseCommand(cmdContents);
                     index += size;
                 }
                 else
                 {
-                    if (bytes[index] == 0x0)
+                    return null;
+                    //if (bytes[index] == 0x0)
                         index++;
                 }
             } while (index < bytes.Length);
@@ -76,28 +81,43 @@ namespace GcxEditor
 
         private static Gcx.Command ParseCommand(byte[] bytes)
         {
-            byte[] knownCommandType = bytes.Take(new Range(new Index(2), new Index(5))).ToArray();
+            int startType = 0;
+            int endType = 3;
+            /*if(bytes.Length > 0xFF)
+            {
+                startType++;
+                endType++;
+            }*/
+            byte[] knownCommandType = bytes.Take(new Range(new Index(startType), new Index(endType))).ToArray();
             string commandTypeInHex = BitConverter.ToString(knownCommandType.Reverse().ToArray()).Replace("-", "");
 
             switch (commandTypeInHex)
             {
                 case "6592A7":
                     //chara
+                    //initial testing with w01a and w22a passed(in that "parsing" those files did not crash xdd)
                     Chara chara = new Chara();
                     chara.Size = (ushort) (bytes.Length - 2);
-                    int charaArgsLength = bytes[5]; //TODO: is this ALWAYS true? i think so, but idk for sure
-                    byte[] charaArgs = bytes.Take(new Range(new Index(bytes[6]), new Index(bytes[6 + charaArgsLength]))).ToArray();
-                    int position = 1;
+                    int charaArgsLength = bytes[3]; //TODO: is this ALWAYS true? i think so, but idk for sure
+                    byte[] charaArgs = bytes.Take(new Range(new Index(4), new Index(4 + charaArgsLength))).ToArray();
+                    int position = 0;
                     do
                     {
                         byte typeLength = charaArgs[position];
-                        Gcx.Gcx.DataType dataType = Gcx.Gcx.DataType.FromCode(typeLength);
-                        chara.Args.Add(charaArgs.Take(new Range(new Index(charaArgs[position + 1]), new Index(charaArgs[position + dataType.Length]))).ToArray());
-                        position += typeLength + 1; //TODO: confirm
+                        if((typeLength & 0xF0) != 0x40)
+                        {
+                            Gcx.Gcx.DataType dataType = Gcx.Gcx.DataType.FromCode(typeLength);
+                            chara.Args.Add(charaArgs.Take(new Range(new Index(position + 1), new Index(position + 1 + dataType.Length))).ToArray());
+                            position += dataType.Length + 1;
+                        }
+                        else //arg, single byte
+                        {
+                            chara.Args.Add(new byte[] { charaArgs[position] });
+                            position++;
+                        }
                     } while(position < charaArgsLength);
 
                     return chara;
-                    break;
                 case "3822C7":
                     //mesg
                     Msg msg = new Msg();
@@ -106,7 +126,7 @@ namespace GcxEditor
                     //trap
                     Trap trap = new Trap();
                     break;
-                case "82BC9":
+                case "082BC9":
                     //generic command
                     GameCommand gameCommand = new GameCommand();
                     break;
@@ -114,7 +134,7 @@ namespace GcxEditor
                     //load
                     Load load = new Load();
                     break;
-                case "1C090":
+                case "01C090":
                     //map
                     Map map = new Map();
                     break;
@@ -125,6 +145,24 @@ namespace GcxEditor
                 case "8B3DF5":
                     //unknown command
                     UnknownCommand unknownCommand = new UnknownCommand();
+                    break;
+                case "000D86":
+                    IfBlock ifblock = new IfBlock();
+                    break;
+                case "A65DB5":
+                    SwitchBlock switchBlock = new SwitchBlock();
+                    break;
+                case "34648C":
+                    Evaluate evaluateStatement = new Evaluate();
+                    break;
+                case "3311EC":
+                    Invoke invokeStatement = new Invoke();
+                    break;
+                case "8BE398":
+                    Return returnStatement = new Return();
+                    break;
+                case "3AB23B":
+                    Print printStatement = new Print();
                     break;
                 default:
                     throw new NotImplementedException("Unrecognized command type");

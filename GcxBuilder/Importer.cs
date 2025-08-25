@@ -36,9 +36,11 @@ namespace GcxEditor
                     List<Procedure> parsedProcedures = new List<Procedure>();
                     foreach (KeyValuePair<byte[],byte[]> procedureOffset in procedureTable)
                     {
+                        int startingIndex = BitConverter.ToInt32(procedureOffset.Value) + sizeof(uint);
                         ushort procedureSize = ParseProcedureSize(procedureData, BitConverter.ToInt32(procedureOffset.Value) + sizeof(uint));
-                        int startOffset = procedureSize > 0xFF ? 3 : 2; //if the function is less than 255 bytes, the data starts 2 bytes after the procedure offset in the table, otherwise it is 3.
-                        byte[] procedureBody = TakeRangeFromArray(procedureData, BitConverter.ToInt32(procedureOffset.Value) + sizeof(uint), procedureSize + startOffset + sizeof(uint));
+                        int startOffset = procedureSize > 0xFF ? 3 : procedureSize > 0xC ? 2 : 1; //if the function is less than 255 bytes, the data starts 2 bytes after the procedure offset in the table, otherwise it is 3.
+
+                        byte[] procedureBody = TakeRangeFromArray(procedureData, startingIndex + startOffset, startingIndex + procedureSize + startOffset);
                         Procedure parsedProcedure = ParseProcedure(procedureBody, procedureOffset.Key, procedureSize);
                         parsedProcedures.Add(parsedProcedure);
                     }
@@ -148,6 +150,10 @@ namespace GcxEditor
             if (procContents[offset] == 0x8D)
             {
                 return (ushort)procContents[offset+1];
+            }
+            else if (procContents[offset] < 0x8D)
+            {
+                return (ushort)(procContents[offset] & 0x0F);
             }
             else
             {
