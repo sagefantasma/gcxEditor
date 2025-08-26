@@ -46,9 +46,17 @@ namespace Gcx
 
     public class Command : IProcedureElement
     {
-        //0x6D/6E
+        //0x6D/6E ....? what?
         public ushort Size { get; set; }
         public List<Parameter> Parameters { get; set; } = new List<Parameter>();
+    }
+
+    public class Expression : IProcedureElement
+    {
+        public ushort Size { get; set; }
+        public ushort Term1 { get; set; }
+        public ushort Term2 { get; set; }
+        public Gcx.Operation Operator { get; set; }
     }
 
     public class Statement : Command

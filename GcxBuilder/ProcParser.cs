@@ -9,46 +9,96 @@ namespace GcxEditor
 {
     public static class ProcParser
     {
-        static byte[] SubprocDeclaration = [0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x8A, 0x8B, 0x8C, 0x8D, 0x8E]; 
-        static byte[] CommandDeclaration = [0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6A, 0x6B, 0x6C, 0x6D, 0x6E]; 
         public static Gcx.Procedure ParseProc(byte[] bytes)
         {
             int index = 0;
             int nestedLevel = 0; //how important is this?
+            Gcx.Procedure procedure = new Procedure();
+            procedure.DecodedContents = new List<dynamic>();
             do
             {
                 byte highByte = (byte)(bytes[index] & 0xF0);
-                //if (SubprocDeclaration.Contains(bytes[index]))
-                if (highByte == 0x80)
+                
+                if(highByte == 0xC0)
+                {
+                    //this seems to not be a real case
+                    //going into num
+                }
+                else if (highByte == 0x90)
+                {
+                    //this seems to not be a real case
+                    //local
+                }
+                else if (highByte == 0x80)
                 {
                     //Going into nested subproc
                     nestedLevel++; //i think this is unimportant
-                    //int size = bytes[index] == 0x8D ? bytes[index + 1] : BitConverter.ToInt16(bytes, index + 1); 
                     int size = ParseSize(bytes.Take(new Range(new Index(index), new Index(index + 3))).ToArray(), ref index); //TODO: verify
                     byte[] procContents = new byte[size];
                     Array.Copy(bytes, index, procContents, 0, size);
                     Gcx.Procedure subProcedure = ParseProc(procContents);
+                    if(subProcedure != null)
+                        procedure.DecodedContents.Add(subProcedure);
+                    index += size;
+                }
+                else if (highByte == 0x70)
+                {
+                    //going into invoke
+                    int size = ParseSize(bytes.Take(new Range(new Index(index), new Index(index + 3))).ToArray(), ref index);
+                    byte[] invokeContents = new byte[size];
+                    Array.Copy(bytes, index, invokeContents, 0, size);
+                    //TODO: parse invoke
                     index += size;
                 }
                 //if (CommandDeclaration.Contains(bytes[index]))
                 else if (highByte == 0x60)
                 {
-                    //going into nested command
+                    //going into command
                     nestedLevel++;
-                    //int size = bytes[index] == 0x6D ? bytes[index + 1] : BitConverter.ToInt16(bytes, index + 1);
-                    //int size = ParseSize(bytes.Take(new Range(new Index(index), new Index(index + 3))).ToArray(), ref index); //TODO: verify
-                    //Gcx.Command parsedCommand = ParseCommand(bytes.Take(size).ToArray());
                     int size = ParseSize(bytes.Take(new Range(new Index(index), new Index(index + 3))).ToArray(), ref index); //TODO: verify
                     byte[] cmdContents = new byte[size];
                     Array.Copy(bytes, index, cmdContents, 0, size);
                     Gcx.Command command = ParseCommand(cmdContents);
+                    if(command != null)
+                        procedure.DecodedContents.Add(command);
                     index += size;
+                }
+                else if (highByte == 0x50)
+                {
+                    //this seems to not be a real case
+                    //param
+                }
+                else if (highByte == 0x40)
+                {
+                    //this seems to not be a real case
+                    //args
+                }
+                else if (highByte == 0x30)
+                {
+                    //expression
+                    int size = ParseSize(bytes.Take(new Range(new Index(index), new Index(index + 3))).ToArray(), ref index);
+                    byte[] expressionContents = new byte[size];
+                    Array.Copy(bytes, index, expressionContents, 0, size);
+                    Expression expression = ParseExpression(expressionContents);
+                    if (expression != null)
+                        procedure.DecodedContents.Add(expression);
+                    index += size;
+                }
+                else if (highByte == 0x20)
+                {
+                    //this seems to not be a real case
+                    //var array
+                }
+                else if (highByte == 0x10)
+                {
+                    //this seems to not be a real case
+                    //var
                 }
                 else
                 {
                     return null;
                     //if (bytes[index] == 0x0)
-                        index++;
+                    index++;
                 }
             } while (index < bytes.Length);
 
@@ -77,6 +127,14 @@ namespace GcxEditor
                     return BitConverter.ToInt16(bytes, 1);
                 }
             }
+        }
+
+        private static Gcx.Expression ParseExpression(byte[] bytes)
+        {
+            //TODO: finish implementation
+            Expression expression = new Expression();
+
+            return expression;
         }
 
         private static Gcx.Command ParseCommand(byte[] bytes)
