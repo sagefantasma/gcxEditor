@@ -47,7 +47,9 @@ namespace GcxEditor
                     int size = ParseSize(bytes.Take(new Range(new Index(index), new Index(index + 3))).ToArray(), ref index);
                     byte[] invokeContents = new byte[size];
                     Array.Copy(bytes, index, invokeContents, 0, size);
-                    //TODO: parse invoke
+                    Invoke invoke = ParseInvoke(invokeContents);
+                    if (invoke != null)
+                        procedure.DecodedContents.Add(invoke);
                     index += size;
                 }
                 //if (CommandDeclaration.Contains(bytes[index]))
@@ -137,6 +139,13 @@ namespace GcxEditor
             return expression;
         }
 
+        private static Invoke ParseInvoke(byte[] bytes)
+        {
+            Invoke invoke = new Invoke();
+            //TODO: implement
+            return invoke;
+        }
+
         private static Gcx.Command ParseCommand(byte[] bytes)
         {
             int startType = 0;
@@ -191,14 +200,17 @@ namespace GcxEditor
                 case "37C884":
                     //load
                     Load load = new Load();
+                    //def used
                     break;
                 case "01C090":
                     //map
                     Map map = new Map();
+                    //used anywhere?
                     break;
                 case "6BB005":
                     //restart
                     Restart restart = new Restart();
+                    //def used
                     break;
                 case "8B3DF5":
                     //unknown command
@@ -206,21 +218,27 @@ namespace GcxEditor
                     break;
                 case "000D86":
                     IfBlock ifblock = new IfBlock();
+                    //def used
                     break;
                 case "A65DB5":
                     SwitchBlock switchBlock = new SwitchBlock();
+                    //def used
                     break;
                 case "34648C":
                     Evaluate evaluateStatement = new Evaluate();
+                    //used anywhere?
                     break;
                 case "3311EC":
                     Invoke invokeStatement = new Invoke();
+                    //used anywhere?
                     break;
                 case "8BE398":
                     Return returnStatement = new Return();
+                    //def used
                     break;
                 case "3AB23B":
                     Print printStatement = new Print();
+                    //def used
                     break;
                 default:
                     throw new NotImplementedException("Unrecognized command type");
