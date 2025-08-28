@@ -90,7 +90,13 @@ namespace Gcx
 
     public class Invoke : Statement
     {
+        public Procedure ProcedureInvoked { get; set; } = new Procedure();
+        public List<Argument> Args { get; set; } = new List<Argument>();
+    }
 
+    public class Argument
+    {
+        public List<byte> Bytes { get; set; } = new List<byte>();
     }
 
     public class Return : Statement
@@ -116,7 +122,7 @@ namespace Gcx
     public class Chara : Command
     {
         //0x6592A7
-        public List<byte[]> Args = new List<byte[]>();
+        public List<Argument> Args = new List<Argument>();
     }
 
     public class Trap : Command
@@ -164,6 +170,14 @@ namespace Gcx
     public class Variable : IProcedureElement
     {
         public ushort Size { get; set; } = 3; //TODO: confirm
+    }
+
+    public class VariableArray : IProcedureElement
+    {
+        public ushort Size { get; set; } //byte instead?
+        public ushort Index { get; set; } //byte instead?
+        public ushort Id { get; set; }
+        public byte LowNibble { get; set; }
     }
 
     public class Linkvarbuf : Variable
