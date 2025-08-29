@@ -136,7 +136,33 @@ namespace GcxEditor
         {
             //TODO: finish implementation
             Expression expression = new Expression();
+            //19 00 0B E8 01 26 F7 B6 A0 == $var:varbuf_0xBE8 = 0xF726
+            //19 is ??
+            //00 is varbuf
+            //0B E8 is variable being modified
+            //01 is ?? (maybe denoting short?)
+            //26 F7 is value being set
+            //B6 is ?? (maybe set equal?) [22] (A0 as base?)
+            //A0 is end
 
+            //19 00 0C 88 19 00 0C 7C B6 A0 == $var:varbuf_0xC88 = $var:varbuf_0xC7C
+            //19 is ??
+            //00 is varbuf
+            //0C88 is variable being modified
+            //19 is ??
+            //00 is varbuf
+            //0C7C is variable being compared
+            //B6 is ?? (maybe set equal?) [2] (A0 as base?)
+            //A0 is end
+
+            //19 00 0C 88 01 5E 1A AF A0 == $var:varbuf_0xC88 > 0x1A5E
+            //19 is ??
+            //00 is varbuf
+            //0C88 is variable being modified
+            //01 is ?? (maybe denoting short?)
+            //5E 1A is value being set
+            //AF is ?? (maybe greater than?) [15] (A0 as base?)
+            //A0 is end
             return expression;
         }
 
