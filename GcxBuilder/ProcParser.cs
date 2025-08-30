@@ -136,33 +136,163 @@ namespace GcxEditor
         {
             //TODO: finish implementation
             Expression expression = new Expression();
-            //19 00 0B E8 01 26 F7 B6 A0 == $var:varbuf_0xBE8 = 0xF726
-            //19 is ??
+            /*3A 19 00 0B E8 01 26 F7 B6 A0 == $var:varbuf_0xBE8 = 0xF726
+            //3A is denoting expression, A bytes long
+            //19 is single variable, not sure what lowbyte signifies. maybe long?
             //00 is varbuf
             //0B E8 is variable being modified
-            //01 is ?? (maybe denoting short?)
+            //01 is denoting short (describing value set?)
             //26 F7 is value being set
-            //B6 is ?? (maybe set equal?) [22] (A0 as base?)
+            //B6 is set equal
             //A0 is end
+            */
 
-            //19 00 0C 88 19 00 0C 7C B6 A0 == $var:varbuf_0xC88 = $var:varbuf_0xC7C
-            //19 is ??
+            /*3A 19 00 0C 88 19 00 0C 7C B6 A0 == $var:varbuf_0xC88 = $var:varbuf_0xC7C
+            //3A is denoting expression, A bytes long
+            //19 is single variable, not sure what lowbyte signifies. maybe long?
             //00 is varbuf
-            //0C88 is variable being modified
-            //19 is ??
+            //0C 88 is variable being modified
+            //19 is single variable, not sure what lowbyte signifies. maybe long?
             //00 is varbuf
-            //0C7C is variable being compared
-            //B6 is ?? (maybe set equal?) [2] (A0 as base?)
+            //0C 7C is variable being compared
+            //B6 is set equal
             //A0 is end
+            */
 
-            //19 00 0C 88 01 5E 1A AF A0 == $var:varbuf_0xC88 > 0x1A5E
-            //19 is ??
+            /*39 19 00 0C 88 01 5E 1A AF A0 == $var:varbuf_0xC88 > 0x1A5E
+            //39 is expression, 9 bytes long
+            //19 is single variable, not sure what lowbyte signifies. maybe long?
             //00 is varbuf
             //0C88 is variable being modified
             //01 is ?? (maybe denoting short?)
             //5E 1A is value being set
-            //AF is ?? (maybe greater than?) [15] (A0 as base?)
+            //AF is greater than
             //A0 is end
+            */
+
+            /* 35 41 02 80 AD A0 == $arg1 < 0x80 
+            //35 is expression, 5 bytes long
+            //41 is arg1
+            //02 is ?? (maybe denoting byte?)
+            //80 is value being set
+            //AD is less than [13 - A0 as base]
+            //A0 is end
+            */
+
+            /* 37 14 06 0A 7D C2 B6 A0 == $varbuf:varbuf_0xA7D = 1
+            //37 is expression, 7 bytes long
+            //14 is single variable, not sure what lowbyte signifies. maybe byte? (is 4 saying C1 literal?)
+            //06 is designating a strcode?
+            //0A 7D is variable being modified
+            //C2 is 1 literal
+            //B6 is set equal 
+            //A0 is end
+            */
+
+            /* 37 19 00 0B 9C 42 B6 A0 == $var:varbuf_0xB9C = $arg2
+            //37 is expression, 7 bytes long
+            //19 is single variable, not sure what lowbyte signifies. maybe long?
+            //00 is varbuf
+            //0B 9C is variable being modified
+            //42 is arg2
+            //B6 is set equal
+            //A0 is end
+            */
+
+            /* 39 11 80 15 8A 01 00 04 B2 A0 == $var:linkvarbuf_0x158A & 0x400
+            //39 is expression, 9 bytes long
+            //11 is single variable, not sure what lowbyte signifies. maybe short?
+            //80 is linkvarbuf
+            //15 8A is variable being modified
+            //01 is denoting short (describing value being set?)
+            //00 04 is value being set
+            //B2 is & operator
+            //A0 is end
+            */
+
+            //im thinking maybe we send 0:-2 to parse args? since it should be the same format?
+            List<Argument> args = ParseArgs(bytes.Take(bytes.Length - 2).ToArray()); //seems to work well enough?
+            expression.Term1 = args[0];
+            expression.Term2 = args[1];
+            
+            switch(bytes[bytes.Length - 2])
+            {
+                default:
+                    throw new Exception("Invalid expression operator provided");
+                case 0xA0:
+                    expression.Operator = Gcx.Gcx.Operation.NoOp;
+                    break;
+                case 0xA1:
+                    expression.Operator = Gcx.Gcx.Operation.NegateValue2;
+                    break;
+                case 0xA2:
+                    expression.Operator = Gcx.Gcx.Operation.Value2Equals0;
+                    break;
+                case 0xA3:
+                    expression.Operator = Gcx.Gcx.Operation.BitwiseComplementOfValue2;
+                    break;
+                case 0xA4:
+                    expression.Operator = Gcx.Gcx.Operation.Value1PlusValue2;
+                    break;
+                case 0xA5:
+                    expression.Operator = Gcx.Gcx.Operation.Value1MinusValue2;
+                    break;
+                case 0xA6:
+                    expression.Operator = Gcx.Gcx.Operation.Value1MulitpliedByValue2;
+                    break;
+                case 0xA7:
+                    expression.Operator = Gcx.Gcx.Operation.Value1DividedByValue2;
+                    break;
+                case 0xA8:
+                    expression.Operator = Gcx.Gcx.Operation.Value1ModuloValue2;
+                    break;
+                case 0xA9:
+                    expression.Operator = Gcx.Gcx.Operation.Value1LeftShiftValue2;
+                    break;
+                case 0xAA:
+                    expression.Operator = Gcx.Gcx.Operation.Value1RightShiftValue2;
+                    break;
+                case 0xAB:
+                    expression.Operator = Gcx.Gcx.Operation.Value1IsEqualToValue2;
+                    break;
+                case 0xAC:
+                    expression.Operator = Gcx.Gcx.Operation.Value1NotEqualToValue2;
+                    break;
+                case 0xAD:
+                    expression.Operator = Gcx.Gcx.Operation.Value1LessThanValue2;
+                    break;
+                case 0xAE:
+                    expression.Operator = Gcx.Gcx.Operation.Value1LessThanOrEqualToValue2;
+                    break;
+                case 0xAF:
+                    expression.Operator = Gcx.Gcx.Operation.Value1GreaterThanValue2;
+                    break;
+                case 0xB0:
+                    expression.Operator = Gcx.Gcx.Operation.Value1GreaterThanOrEqualToValue2;
+                    break;
+                case 0xB1:
+                    expression.Operator = Gcx.Gcx.Operation.Value1BitwiseOrValue2;
+                    break;
+                case 0xB2:
+                    expression.Operator = Gcx.Gcx.Operation.Value1BitwiseAndValue2;
+                    break;
+                case 0xB3:
+                    expression.Operator = Gcx.Gcx.Operation.Value1BitwiseXorValue2;
+                    break;
+                case 0xB4:
+                    expression.Operator = Gcx.Gcx.Operation.Value1OrValue2;
+                    break;
+                case 0xB5:
+                    expression.Operator = Gcx.Gcx.Operation.Value1AndValue2;
+                    break;
+                case 0xB6:
+                    expression.Operator = Gcx.Gcx.Operation.Value1SetToValue2;
+                    break;
+                case 0xB7:
+                    expression.Operator = Gcx.Gcx.Operation.Value2;
+                    break;
+            }
+            
             return expression;
         }
 
@@ -185,9 +315,10 @@ namespace GcxEditor
                 do
                 {
                     byte typeLength = bytes[position];
+                    int highByte = typeLength & 0xF0;
                     //if second byte == 00, then just varbuf. if == 10, then localvarbuf. if == 80, then linkvarbuf
                     //20 means array, 10 means single?
-                    if ((bytes[position] & 0xF0) == 0x20)
+                    if (highByte == 0x20)
                     {
                         //var array, still needs work - is not accurate
                         VariableArray variableArray = new VariableArray();
@@ -213,29 +344,50 @@ namespace GcxEditor
                         //does 32 indicate the previous number was a real and A0 indicated the previous number was an arg?
                         //and if neither are present, then both are reals? not sure. need to study oct's decomp more to have a better understanding i think.
 
+                        //args.Add(new Argument { Value = bytes.Take(new Range(new Index(position), new Index(position + 8))).ToList() }); //TODO: figure out how to modify Argument to take this properly
+                        args.Add(new Argument { Value = variableArray });
                         position += 8; //TODO: confirm it is always this
                     }
-                    else if ((bytes[position] & 0xF0) == 0x10)
+                    else if (highByte == 0x10)
                     {
-                        //
+                        //single variable
+                        Variable variable = new Variable();
+                        variable.LowNibble = (byte)(bytes[position] & 0x0F);
+                        byte[] id = bytes.Take(new Range(new Index(2), new Index(4))).ToArray();
+                        variable.Id = BitConverter.ToUInt16(id.Reverse().ToArray());
+
+                        //args.Add(new Argument { Value = bytes.Take(new Range(new Index(position), new Index(position + 4))).ToList() }); //TODO: figure out how to modify Argument to take this properly
+                        args.Add(new Argument { Value = variable });
+                        position += 4;
                     }
-                    else if ((typeLength & 0xF0) >= 0xC0)
+                    else if (highByte >= 0xC0)
                     {
                         //basic number
-                        args.Add(new Argument { Bytes = new List<byte> { (byte)(bytes[position] - 0xC1) } });
+                        //args.Add(new Argument { Value = new List<byte> { (byte)(bytes[position] - 0xC1) } });
+                        args.Add(new Argument { Value = new Constant { Size = 1, Value = (byte)(bytes[position] - 0xC1) } });
                         position++;
                     }
-                    else if ((typeLength & 0xF0) != 0x40 && bytes[position] != 0)
+                    else if (highByte == 0x40) //given arg, single byte
+                    {
+                        //args.Add(new Argument { Value = new List<byte> { bytes[position] } });
+                        args.Add(new Argument { Value = new PassedArg { ArgNum = bytes[position] } });
+                        position++;
+                    }
+                    else if (highByte == 0xA0 || highByte == 0xB0)
+                    {
+                        //nested expression x_x;;
+                        //TODO: implement
+                    }
+                    else if (bytes[position] != 0)
                     {
                         Gcx.Gcx.DataType dataType = Gcx.Gcx.DataType.FromCode(typeLength);
                         //args.Add(bytes.Take(new Range(new Index(position + 1), new Index(position + 1 + dataType.Length))).ToArray());
-                        args.Add(new Argument { Bytes = bytes.Take(new Range(new Index(position + 1), new Index(position + 1 + dataType.Length))).ToList() });
+                        //args.Add(new Argument { Value = bytes.Take(new Range(new Index(position + 1), new Index(position + 1 + dataType.Length))).ToList() });
+                        //byte[] dataValue = new byte[dataType.Length];
+                        byte[] dataValue = new byte[4];
+                        Array.Copy(bytes, position + 1, dataValue, 0, dataType.Length);
+                        args.Add(new Argument { Value = new Literal { Size = (ushort)dataType.Length, Value = BitConverter.ToUInt32(dataValue) } });
                         position += dataType.Length + 1;
-                    }
-                    else if (bytes[position] != 0) //given arg, single byte
-                    {
-                        args.Add(new Argument { Bytes = new List<byte> { bytes[position] } });
-                        position++;
                     }
                     else
                     {
@@ -310,6 +462,7 @@ namespace GcxEditor
                     break;
                 case "000D86":
                     IfBlock ifblock = new IfBlock();
+                    //byte after is length of if block?
                     //def used
                     break;
                 case "A65DB5":

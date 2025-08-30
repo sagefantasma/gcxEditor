@@ -54,8 +54,8 @@ namespace Gcx
     public class Expression : IProcedureElement
     {
         public ushort Size { get; set; }
-        public ushort Term1 { get; set; }
-        public ushort Term2 { get; set; }
+        public Argument Term1 { get; set; }
+        public Argument Term2 { get; set; }
         public Gcx.Operation Operator { get; set; }
     }
 
@@ -96,7 +96,7 @@ namespace Gcx
 
     public class Argument
     {
-        public List<byte> Bytes { get; set; } = new List<byte>();
+        public Value Value { get; set; } = new Value();
     }
 
     public class Return : Statement
@@ -162,17 +162,34 @@ namespace Gcx
         public byte[] Contents { get; set; }
     }
 
-    public class Constant : IProcedureElement
+    public class Value : IProcedureElement 
     {
         public ushort Size { get; set; }
     }
 
-    public class Variable : IProcedureElement
+    public class Constant : Value
     {
-        public ushort Size { get; set; } = 3; //TODO: confirm
+        public byte Value { get; set; }
     }
 
-    public class VariableArray : IProcedureElement
+    public class Literal : Value
+    {
+        public uint Value { get; set; }
+    }
+
+    public class PassedArg : Value
+    {
+        public byte ArgNum { get; set; }
+    }
+
+    public class Variable : Value
+    {
+        public ushort Size { get; set; } = 3; //TODO: confirm
+        public ushort Id { get; set; }
+        public byte LowNibble { get; set; }
+    }
+
+    public class VariableArray : Value
     {
         public ushort Size { get; set; } //byte instead?
         public ushort Index { get; set; } //byte instead?

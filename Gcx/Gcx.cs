@@ -4,7 +4,7 @@
     {
         public enum Operation
         {
-            NoOp = 0,
+            NoOp = 0xA0,
             NegateValue2,
             Value2Equals0,
             BitwiseComplementOfValue2,
