@@ -94,8 +94,9 @@ namespace Gcx
         public List<Argument> Args { get; set; } = new List<Argument>();
     }
 
-    public class Argument
+    public class Argument : IProcedureElement
     {
+        public ushort Size { get; set; }
         public Value Value { get; set; } = new Value();
     }
 
@@ -179,12 +180,12 @@ namespace Gcx
 
     public class PassedArg : Value
     {
+        public ushort Size { get; set; } = 1;
         public byte ArgNum { get; set; }
     }
 
     public class Variable : Value
     {
-        public ushort Size { get; set; } = 3; //TODO: confirm
         public ushort Id { get; set; }
         public byte LowNibble { get; set; }
     }
@@ -210,5 +211,13 @@ namespace Gcx
     public class LocalVar : Variable
     {
 
+    }
+
+    public class NestedExpression : Value
+    {
+        public ushort Size { get; set; }
+        public Argument Term1 { get; set; }
+        public Argument Term2 { get; set; }
+        public Gcx.Operation Operator { get; set; }
     }
 }

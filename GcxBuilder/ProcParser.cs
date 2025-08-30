@@ -132,7 +132,7 @@ namespace GcxEditor
             }
         }
 
-        private static Gcx.Expression ParseExpression(byte[] bytes)
+        private static Gcx.Expression ParseExpression(byte[] bytes, int end = 2)
         {
             //TODO: finish implementation
             Expression expression = new Expression();
@@ -211,11 +211,11 @@ namespace GcxEditor
             */
 
             //im thinking maybe we send 0:-2 to parse args? since it should be the same format?
-            List<Argument> args = ParseArgs(bytes.Take(bytes.Length - 2).ToArray()); //seems to work well enough?
+            List<Argument> args = ParseArgs(bytes.Take(bytes.Length - end).ToArray()); //seems to work well enough?
             expression.Term1 = args[0];
             expression.Term2 = args[1];
             
-            switch(bytes[bytes.Length - 2])
+            switch(bytes[bytes.Length - end])
             {
                 default:
                     throw new Exception("Invalid expression operator provided");
@@ -292,7 +292,7 @@ namespace GcxEditor
                     expression.Operator = Gcx.Gcx.Operation.Value2;
                     break;
             }
-            
+            expression.Size = (ushort)bytes.Length;
             return expression;
         }
 
@@ -357,7 +357,7 @@ namespace GcxEditor
                         variable.Id = BitConverter.ToUInt16(id.Reverse().ToArray());
 
                         //args.Add(new Argument { Value = bytes.Take(new Range(new Index(position), new Index(position + 4))).ToList() }); //TODO: figure out how to modify Argument to take this properly
-                        args.Add(new Argument { Value = variable });
+                        args.Add(new Argument { Value = variable, Size = 3 }); //TODO: confirm always 3
                         position += 4;
                     }
                     else if (highByte >= 0xC0)
@@ -377,6 +377,25 @@ namespace GcxEditor
                     {
                         //nested expression x_x;;
                         //TODO: implement
+                        //this means the last two previous arguments were an expression
+                        NestedExpression nestedExpression = new NestedExpression();
+                        int i = 0;
+                        int bytesToBacktrack = 0;
+                        do
+                        {
+                            int sizeOfLastArg = args.Last().Size;
+                            bytesToBacktrack += sizeOfLastArg + 1;
+                            args.RemoveAt(args.Count - 1);
+                            i++;
+                        } while (i < 2);
+                        byte[] nestedExpressionData = bytes.Take(new Range(new Index(position - bytesToBacktrack), new Index(position+1))).ToArray();
+                        Expression expression = ParseExpression(nestedExpressionData, 1); //this seems to be breaking after one nested expression? sadge
+                        nestedExpression.Size = expression.Size;
+                        nestedExpression.Term1 = expression.Term1;
+                        nestedExpression.Term2 = expression.Term2;
+                        nestedExpression.Operator = expression.Operator;
+                        args.Add(new Argument { Value = nestedExpression, Size = nestedExpression.Size });
+                        position++;
                     }
                     else if (bytes[position] != 0)
                     {
@@ -386,7 +405,7 @@ namespace GcxEditor
                         //byte[] dataValue = new byte[dataType.Length];
                         byte[] dataValue = new byte[4];
                         Array.Copy(bytes, position + 1, dataValue, 0, dataType.Length);
-                        args.Add(new Argument { Value = new Literal { Size = (ushort)dataType.Length, Value = BitConverter.ToUInt32(dataValue) } });
+                        args.Add(new Argument { Value = new Literal { Value = BitConverter.ToUInt32(dataValue) }, Size = (ushort)dataType.Length, });
                         position += dataType.Length + 1;
                     }
                     else
