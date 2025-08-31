@@ -9,6 +9,7 @@ namespace Gcx
     public partial interface IProcedureElement
     {
         public ushort Size { get; set; }
+        public string Type { get; set; }
     }
 
     public class Procedure : IProcedureElement
@@ -29,11 +30,15 @@ namespace Gcx
                 Order = uint.Parse(value);
             }
         }
-
         public uint Order { get; private set; }
         public ushort Size { get; set; }
+        public string Type { get; set; }
         public byte[] RawContents { get; set; } //TODO: to be implemented for editing
         public List<dynamic> DecodedContents { get; set; }
+        public Procedure()
+        {
+            Type = GetType().Name;
+        }
     }
 
     public class Main : Procedure
@@ -44,6 +49,7 @@ namespace Gcx
         {
             Name = "main";
             Order = 0;
+            Type = GetType().Name;
         }
     }
 
@@ -51,7 +57,12 @@ namespace Gcx
     {
         //0x6D/6E ....? what?
         public ushort Size { get; set; }
+        public string Type { get; set; }
         public List<Parameter> Parameters { get; set; } = new List<Parameter>();
+        public Command()
+        {
+            Type = GetType().Name;
+        }
     }
 
     public class Expression : Term
@@ -59,102 +70,170 @@ namespace Gcx
         public Term Term1 { get; set; }
         public Term Term2 { get; set; }
         public Gcx.Operation Operator { get; set; }
+        public Expression()
+        {
+            Type = GetType().Name;
+        }
     }
 
     public class Statement : Command
     {
+        public Statement()
+        {
+            Type = GetType().Name;
+        }
     }
 
     public class IfBlock : Statement
     {
-
+        public IfBlock()
+        {
+            Type = GetType().Name;
+        }
     }
 
     public class ElseIfBlock : IfBlock
     {
-
+        public ElseIfBlock()
+        {
+            Type = GetType().Name;
+        }
     }
 
     public class ElseBlock : IfBlock
     {
-
+        public ElseBlock()
+        {
+            Type = GetType().Name;
+        }
     }
 
     public class SwitchBlock : Statement
     {
-
+        public SwitchBlock()
+        {
+            Type = GetType().Name;
+        }
     }
 
     public class Evaluate : Statement
     {
-
+        public Evaluate()
+        {
+            Type = GetType().Name;
+        }
     }
 
     public class Invoke : Statement
     {
         public Procedure ProcedureInvoked { get; set; } = new Procedure();
         public List<Argument> Args { get; set; } = new List<Argument>();
+        public Invoke()
+        {
+            Type = GetType().Name;
+        }
     }
 
     public class Term : IProcedureElement
     {
         public ushort Size { get; set; }
+        public string Type { get; set; }
+        public Term()
+        {
+            Type = GetType().Name;
+        }
     }
 
     public class Argument : Term
     {
         public Term Value { get; set; } = new Term();
+        public Argument()
+        {
+            Type = GetType().Name;
+        }
     }
 
     public class Return : Statement
     {
-
+        public Return()
+        {
+            Type = GetType().Name;
+        }
     }
 
     public class Print : Statement
     {
-
+        public Print()
+        {
+            Type = GetType().Name;
+        }
     }
 
     public class Msg : Command
     {
-
+        public Msg()
+        {
+            Type = GetType().Name;
+        }
     }
 
     public class GameCommand : Command
     {
-
+        public GameCommand()
+        {
+            Type = GetType().Name;
+        }
     }
 
     public class Chara : Command
     {
         //0x6592A7
         public List<Argument> Args = new List<Argument>();
+        public Chara()
+        {
+            Type = GetType().Name;
+        }
     }
 
     public class Trap : Command
     {
-
+        public Trap()
+        {
+            Type = GetType().Name;
+        }
     }
 
     public class Load : Command
     {
-
+        public Load()
+        {
+            Type = GetType().Name;
+        }
     }
 
     public class UnknownCommand : Command
     {
         //0x8B3DF5 -- from gcx analysis, this looks like a warping function? maybe related to the notification that pops up when you transition screens?
+        public UnknownCommand()
+        {
+            Type = this.GetType().Name;
+        }
     }
 
     public class Map : Command
     {
-
+        public Map()
+        {
+            Type = GetType().Name;
+        }
     }
 
     public class Restart : Command
     {
-
+        public Restart()
+        {
+            Type = GetType().Name;
+        }
     }
 
     public enum ParameterType
@@ -165,8 +244,9 @@ namespace Gcx
     public class Parameter : IProcedureElement
     {
         public ushort Size { get; set; }
-        public ParameterType Type { get; set; }
+        public ParameterType ParamType { get; set; }
         public byte[] Contents { get; set; }
+        public string Type { get; set; } = "Parameter";
     }
 
     /*public class Value : IProcedureElement 
@@ -177,22 +257,38 @@ namespace Gcx
     public class Constant : Term
     {
         public byte Value { get; set; }
+        public Constant()
+        {
+            Type = GetType().Name;
+        }
     }
 
     public class Literal : Term
     {
         public uint Value { get; set; }
+        public Literal()
+        {
+            Type = GetType().Name;
+        }
     }
 
     public class PassedArg : Term
     {
         public byte ArgNum { get; set; }
+        public PassedArg()
+        {
+            Type = GetType().Name;
+        }
     }
 
     public class Variable : Term
     {
         public ushort Id { get; set; }
         public byte LowNibble { get; set; }
+        public Variable()
+        {
+            Type = GetType().Name;
+        }
     }
 
     public class VariableArray : Term
@@ -201,20 +297,33 @@ namespace Gcx
         public ushort Index { get; set; } //byte instead?
         public ushort Id { get; set; }
         public byte LowNibble { get; set; }
+        public VariableArray()
+        {
+            Type = GetType().Name;
+        }
     }
 
     public class Linkvarbuf : Variable
     {
-
+        public Linkvarbuf()
+        {
+            Type = GetType().Name;
+        }
     }
 
     public class Varbuf : Variable
     {
-
+        public Varbuf()
+        {
+            Type = GetType().Name;
+        }
     }
 
     public class LocalVar : Variable
     {
-
+        public LocalVar()
+        {
+            Type = GetType().Name;
+        }
     }
 }
