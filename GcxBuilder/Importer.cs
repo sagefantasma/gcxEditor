@@ -63,7 +63,8 @@ namespace GcxEditor
 
                     foreach(Procedure procedure in parsedProcedures)
                     {
-                        ProcParser.ParseProc(procedure.RawContents); //raw contents arent getting filled properly?
+                        Procedure parsedProc = ProcParser.ParseProc(procedure.RawContents); //raw contents arent getting filled properly?
+                        procedure.DecodedContents = parsedProc.DecodedContents;
                     }
                     return gcx;
                 }

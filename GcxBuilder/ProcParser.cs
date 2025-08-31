@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -61,7 +62,7 @@ namespace GcxEditor
                     int size = ParseSize(bytes.Take(new Range(new Index(index), new Index(index + 3))).ToArray(), ref index); //TODO: verify
                     byte[] cmdContents = new byte[size];
                     Array.Copy(bytes, index, cmdContents, 0, size);
-                    Gcx.Command command = ParseCommand(cmdContents);
+                    IProcedureElement command = ParseCommand(cmdContents);
                     if(command != null)
                         procedure.DecodedContents.Add(command);
                     index += size;
@@ -82,7 +83,7 @@ namespace GcxEditor
                     int size = ParseSize(bytes.Take(new Range(new Index(index), new Index(index + 3))).ToArray(), ref index);
                     byte[] expressionContents = new byte[size];
                     Array.Copy(bytes, index, expressionContents, 0, size);
-                    Expression expression = ParseExpression(expressionContents);
+                    Gcx.Expression expression = ParseExpression(expressionContents);
                     if (expression != null)
                         procedure.DecodedContents.Add(expression);
                     index += size;
@@ -99,13 +100,13 @@ namespace GcxEditor
                 }
                 else
                 {
-                    return null;
+                    //return null;
                     //if (bytes[index] == 0x0)
                     index++;
                 }
             } while (index < bytes.Length);
 
-            return null;
+            return procedure;
         }
 
         private static int ParseSize(byte[] bytes, ref int index)
@@ -132,10 +133,20 @@ namespace GcxEditor
             }
         }
 
+        private static Gcx.Expression ParseNestedExpression(Argument term1, Argument term2, Gcx.Gcx.Operation operation)
+        {
+            Gcx.Expression expression = new Gcx.Expression();
+            expression.Term1 = term1;
+            expression.Term2 = term2;
+            expression.Operator = operation;
+            expression.Size = (ushort)(term1.Size + term2.Size + 1);
+
+            return expression;
+        }
+
         private static Gcx.Expression ParseExpression(byte[] bytes, int end = 2)
         {
-            //TODO: finish implementation
-            Expression expression = new Expression();
+            Gcx.Expression expression = new Gcx.Expression();
             /*3A 19 00 0B E8 01 26 F7 B6 A0 == $var:varbuf_0xBE8 = 0xF726
             //3A is denoting expression, A bytes long
             //19 is single variable, not sure what lowbyte signifies. maybe long?
@@ -214,86 +225,67 @@ namespace GcxEditor
             List<Argument> args = ParseArgs(bytes.Take(bytes.Length - end).ToArray()); //seems to work well enough?
             expression.Term1 = args[0];
             expression.Term2 = args[1];
-            
-            switch(bytes[bytes.Length - end])
+
+            expression.Operator = ParseOperator(bytes[bytes.Length - end]);
+            expression.Size = (ushort)bytes.Length;
+            return expression;
+        }
+
+        private static Gcx.Gcx.Operation ParseOperator(byte operatorByte)
+        {
+            switch (operatorByte)
             {
                 default:
                     throw new Exception("Invalid expression operator provided");
                 case 0xA0:
-                    expression.Operator = Gcx.Gcx.Operation.NoOp;
-                    break;
+                    return Gcx.Gcx.Operation.NoOp;
                 case 0xA1:
-                    expression.Operator = Gcx.Gcx.Operation.NegateValue2;
-                    break;
+                    return Gcx.Gcx.Operation.NegateValue2;
                 case 0xA2:
-                    expression.Operator = Gcx.Gcx.Operation.Value2Equals0;
-                    break;
+                    return Gcx.Gcx.Operation.Value2Equals0;
                 case 0xA3:
-                    expression.Operator = Gcx.Gcx.Operation.BitwiseComplementOfValue2;
-                    break;
+                    return Gcx.Gcx.Operation.BitwiseComplementOfValue2;
                 case 0xA4:
-                    expression.Operator = Gcx.Gcx.Operation.Value1PlusValue2;
-                    break;
+                    return Gcx.Gcx.Operation.Value1PlusValue2;
                 case 0xA5:
-                    expression.Operator = Gcx.Gcx.Operation.Value1MinusValue2;
-                    break;
+                    return Gcx.Gcx.Operation.Value1MinusValue2;
                 case 0xA6:
-                    expression.Operator = Gcx.Gcx.Operation.Value1MulitpliedByValue2;
-                    break;
+                    return Gcx.Gcx.Operation.Value1MulitpliedByValue2;
                 case 0xA7:
-                    expression.Operator = Gcx.Gcx.Operation.Value1DividedByValue2;
-                    break;
+                    return Gcx.Gcx.Operation.Value1DividedByValue2;
                 case 0xA8:
-                    expression.Operator = Gcx.Gcx.Operation.Value1ModuloValue2;
-                    break;
+                    return Gcx.Gcx.Operation.Value1ModuloValue2;
                 case 0xA9:
-                    expression.Operator = Gcx.Gcx.Operation.Value1LeftShiftValue2;
-                    break;
+                    return Gcx.Gcx.Operation.Value1LeftShiftValue2;
                 case 0xAA:
-                    expression.Operator = Gcx.Gcx.Operation.Value1RightShiftValue2;
-                    break;
+                    return Gcx.Gcx.Operation.Value1RightShiftValue2;
                 case 0xAB:
-                    expression.Operator = Gcx.Gcx.Operation.Value1IsEqualToValue2;
-                    break;
+                    return Gcx.Gcx.Operation.Value1IsEqualToValue2;
                 case 0xAC:
-                    expression.Operator = Gcx.Gcx.Operation.Value1NotEqualToValue2;
-                    break;
+                    return Gcx.Gcx.Operation.Value1NotEqualToValue2;
                 case 0xAD:
-                    expression.Operator = Gcx.Gcx.Operation.Value1LessThanValue2;
-                    break;
+                    return Gcx.Gcx.Operation.Value1LessThanValue2;
                 case 0xAE:
-                    expression.Operator = Gcx.Gcx.Operation.Value1LessThanOrEqualToValue2;
-                    break;
+                    return Gcx.Gcx.Operation.Value1LessThanOrEqualToValue2;
                 case 0xAF:
-                    expression.Operator = Gcx.Gcx.Operation.Value1GreaterThanValue2;
-                    break;
+                    return Gcx.Gcx.Operation.Value1GreaterThanValue2;
                 case 0xB0:
-                    expression.Operator = Gcx.Gcx.Operation.Value1GreaterThanOrEqualToValue2;
-                    break;
+                    return Gcx.Gcx.Operation.Value1GreaterThanOrEqualToValue2;
                 case 0xB1:
-                    expression.Operator = Gcx.Gcx.Operation.Value1BitwiseOrValue2;
-                    break;
+                    return Gcx.Gcx.Operation.Value1BitwiseOrValue2;
                 case 0xB2:
-                    expression.Operator = Gcx.Gcx.Operation.Value1BitwiseAndValue2;
-                    break;
+                    return Gcx.Gcx.Operation.Value1BitwiseAndValue2;
                 case 0xB3:
-                    expression.Operator = Gcx.Gcx.Operation.Value1BitwiseXorValue2;
-                    break;
+                    return Gcx.Gcx.Operation.Value1BitwiseXorValue2;
                 case 0xB4:
-                    expression.Operator = Gcx.Gcx.Operation.Value1OrValue2;
-                    break;
+                    return Gcx.Gcx.Operation.Value1OrValue2;
                 case 0xB5:
-                    expression.Operator = Gcx.Gcx.Operation.Value1AndValue2;
-                    break;
+                    return Gcx.Gcx.Operation.Value1AndValue2;
                 case 0xB6:
-                    expression.Operator = Gcx.Gcx.Operation.Value1SetToValue2;
-                    break;
+                    return Gcx.Gcx.Operation.Value1SetToValue2;
                 case 0xB7:
-                    expression.Operator = Gcx.Gcx.Operation.Value2;
-                    break;
+                    return Gcx.Gcx.Operation.Value2;
             }
-            expression.Size = (ushort)bytes.Length;
-            return expression;
         }
 
         private static Invoke ParseInvoke(byte[] bytes)
@@ -314,11 +306,11 @@ namespace GcxEditor
             {
                 do
                 {
-                    byte typeLength = bytes[position];
-                    int highByte = typeLength & 0xF0;
+                    byte currentByte = bytes[position];
+                    int highNibble = currentByte & 0xF0;
                     //if second byte == 00, then just varbuf. if == 10, then localvarbuf. if == 80, then linkvarbuf
                     //20 means array, 10 means single?
-                    if (highByte == 0x20)
+                    if (highNibble == 0x20)
                     {
                         //var array, still needs work - is not accurate
                         VariableArray variableArray = new VariableArray();
@@ -348,7 +340,7 @@ namespace GcxEditor
                         args.Add(new Argument { Value = variableArray });
                         position += 8; //TODO: confirm it is always this
                     }
-                    else if (highByte == 0x10)
+                    else if (highNibble == 0x10)
                     {
                         //single variable
                         Variable variable = new Variable();
@@ -360,46 +352,33 @@ namespace GcxEditor
                         args.Add(new Argument { Value = variable, Size = 3 }); //TODO: confirm always 3
                         position += 4;
                     }
-                    else if (highByte >= 0xC0)
+                    else if (highNibble >= 0xC0)
                     {
                         //basic number
                         //args.Add(new Argument { Value = new List<byte> { (byte)(bytes[position] - 0xC1) } });
                         args.Add(new Argument { Value = new Constant { Size = 1, Value = (byte)(bytes[position] - 0xC1) } });
                         position++;
                     }
-                    else if (highByte == 0x40) //given arg, single byte
+                    else if (highNibble == 0x40) //given arg, single byte
                     {
                         //args.Add(new Argument { Value = new List<byte> { bytes[position] } });
-                        args.Add(new Argument { Value = new PassedArg { ArgNum = bytes[position] } });
+                        args.Add(new Argument { Value = new PassedArg { ArgNum = bytes[position] }, Size = 1 });
                         position++;
                     }
-                    else if (highByte == 0xA0 || highByte == 0xB0)
+                    else if (highNibble == 0xA0 || highNibble == 0xB0)
                     {
                         //nested expression x_x;;
-                        //TODO: implement
-                        //this means the last two previous arguments were an expression
-                        NestedExpression nestedExpression = new NestedExpression();
-                        int i = 0;
-                        int bytesToBacktrack = 0;
-                        do
-                        {
-                            int sizeOfLastArg = args.Last().Size;
-                            bytesToBacktrack += sizeOfLastArg + 1;
-                            args.RemoveAt(args.Count - 1);
-                            i++;
-                        } while (i < 2);
-                        byte[] nestedExpressionData = bytes.Take(new Range(new Index(position - bytesToBacktrack), new Index(position+1))).ToArray();
-                        Expression expression = ParseExpression(nestedExpressionData, 1); //this seems to be breaking after one nested expression? sadge
-                        nestedExpression.Size = expression.Size;
-                        nestedExpression.Term1 = expression.Term1;
-                        nestedExpression.Term2 = expression.Term2;
-                        nestedExpression.Operator = expression.Operator;
-                        args.Add(new Argument { Value = nestedExpression, Size = nestedExpression.Size });
+
+                        Gcx.Expression expression = ParseNestedExpression(args[args.Count - 2], args[args.Count - 1], ParseOperator(currentByte));
+                        args.RemoveAt(args.Count - 1);
+                        args.RemoveAt(args.Count - 1);
+                        args.Add(new Argument { Value = expression, Size = expression.Size });
+                        
                         position++;
                     }
                     else if (bytes[position] != 0)
                     {
-                        Gcx.Gcx.DataType dataType = Gcx.Gcx.DataType.FromCode(typeLength);
+                        Gcx.Gcx.DataType dataType = Gcx.Gcx.DataType.FromCode(currentByte);
                         //args.Add(bytes.Take(new Range(new Index(position + 1), new Index(position + 1 + dataType.Length))).ToArray());
                         //args.Add(new Argument { Value = bytes.Take(new Range(new Index(position + 1), new Index(position + 1 + dataType.Length))).ToList() });
                         //byte[] dataValue = new byte[dataType.Length];
@@ -419,12 +398,16 @@ namespace GcxEditor
             }
             catch(Exception e)
             {
-                //throw e;
-                return null;
+                throw e;
             }
         }
 
-        private static Gcx.Command ParseCommand(byte[] bytes)
+        private static List<Parameter> ParseParams(byte[] bytes)
+        {
+            return null;
+        }
+
+        private static IProcedureElement ParseCommand(byte[] bytes)
         {
             int startType = 0;
             int endType = 3;
@@ -446,69 +429,70 @@ namespace GcxEditor
                     int charaArgsLength = bytes[3]; //TODO: is this ALWAYS true? i think so, but idk for sure
                     byte[] charaArgs = bytes.Take(new Range(new Index(4), new Index(4 + charaArgsLength))).ToArray();
                     chara.Args = ParseArgs(charaArgs);
+                    
+                    byte[] charaParams = bytes.Take(new Range(new Index(4 + charaArgsLength), new Index(bytes.Length))).ToArray();
+                    chara.Parameters = ParseParams(charaParams);
 
                     return chara;
                 case "3822C7":
                     //mesg
                     Msg msg = new Msg();
-                    break;
+                    return msg;
                 case "3BD490":
                     //trap
                     Trap trap = new Trap();
-                    break;
+                    return trap;
                 case "082BC9":
                     //generic command
                     GameCommand gameCommand = new GameCommand();
-                    break;
+                    return gameCommand;
                 case "37C884":
                     //load
                     Load load = new Load();
                     //def used
-                    break;
+                    return load;
                 case "01C090":
                     //map
                     Map map = new Map();
                     //used anywhere?
-                    break;
+                    return map;
                 case "6BB005":
                     //restart
                     Restart restart = new Restart();
                     //def used
-                    break;
+                    return restart;
                 case "8B3DF5":
                     //unknown command
                     UnknownCommand unknownCommand = new UnknownCommand();
-                    break;
+                    return unknownCommand;
                 case "000D86":
                     IfBlock ifblock = new IfBlock();
                     //byte after is length of if block?
                     //def used
-                    break;
+                    return ifblock;
                 case "A65DB5":
                     SwitchBlock switchBlock = new SwitchBlock();
                     //def used
-                    break;
+                    return switchBlock;
                 case "34648C":
                     Evaluate evaluateStatement = new Evaluate();
                     //used anywhere?
-                    break;
+                    return evaluateStatement;
                 case "3311EC":
                     Invoke invokeStatement = new Invoke();
                     //used anywhere?
-                    break;
+                    return invokeStatement;
                 case "8BE398":
                     Return returnStatement = new Return();
                     //def used
-                    break;
+                    return returnStatement;
                 case "3AB23B":
                     Print printStatement = new Print();
                     //def used
-                    break;
+                    return printStatement;
                 default:
                     throw new NotImplementedException("Unrecognized command type");
             }
-
-            return null;
         }
 
         private static Gcx.Statement ParseStatement(byte[] bytes)

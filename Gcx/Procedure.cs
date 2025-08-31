@@ -38,10 +38,13 @@ namespace Gcx
 
     public class Main : Procedure
     {
-        public string Name = "main";
-        public uint Order = 0;
-        public ushort Size { get; set; }
-        public byte[] RawContents { get; set; }
+        public new uint Order { get; set; }
+        public new string Name { get; set; }
+        public Main()
+        {
+            Name = "main";
+            Order = 0;
+        }
     }
 
     public class Command : IProcedureElement
@@ -51,11 +54,10 @@ namespace Gcx
         public List<Parameter> Parameters { get; set; } = new List<Parameter>();
     }
 
-    public class Expression : IProcedureElement
+    public class Expression : Term
     {
-        public ushort Size { get; set; }
-        public Argument Term1 { get; set; }
-        public Argument Term2 { get; set; }
+        public Term Term1 { get; set; }
+        public Term Term2 { get; set; }
         public Gcx.Operation Operator { get; set; }
     }
 
@@ -94,10 +96,14 @@ namespace Gcx
         public List<Argument> Args { get; set; } = new List<Argument>();
     }
 
-    public class Argument : IProcedureElement
+    public class Term : IProcedureElement
     {
         public ushort Size { get; set; }
-        public Value Value { get; set; } = new Value();
+    }
+
+    public class Argument : Term
+    {
+        public Term Value { get; set; } = new Term();
     }
 
     public class Return : Statement
@@ -163,36 +169,35 @@ namespace Gcx
         public byte[] Contents { get; set; }
     }
 
-    public class Value : IProcedureElement 
+    /*public class Value : IProcedureElement 
     {
         public ushort Size { get; set; }
-    }
+    }*/
 
-    public class Constant : Value
+    public class Constant : Term
     {
         public byte Value { get; set; }
     }
 
-    public class Literal : Value
+    public class Literal : Term
     {
         public uint Value { get; set; }
     }
 
-    public class PassedArg : Value
+    public class PassedArg : Term
     {
-        public ushort Size { get; set; } = 1;
         public byte ArgNum { get; set; }
     }
 
-    public class Variable : Value
+    public class Variable : Term
     {
         public ushort Id { get; set; }
         public byte LowNibble { get; set; }
     }
 
-    public class VariableArray : Value
+    public class VariableArray : Term
     {
-        public ushort Size { get; set; } //byte instead?
+        //public ushort Size { get; set; } //byte instead?
         public ushort Index { get; set; } //byte instead?
         public ushort Id { get; set; }
         public byte LowNibble { get; set; }
@@ -211,13 +216,5 @@ namespace Gcx
     public class LocalVar : Variable
     {
 
-    }
-
-    public class NestedExpression : Value
-    {
-        public ushort Size { get; set; }
-        public Argument Term1 { get; set; }
-        public Argument Term2 { get; set; }
-        public Gcx.Operation Operator { get; set; }
     }
 }
