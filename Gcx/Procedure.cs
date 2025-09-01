@@ -246,6 +246,7 @@ namespace Gcx
         public ushort Size { get; set; }
         public ParameterType ParamType { get; set; }
         public byte[] Contents { get; set; }
+        public List<Argument> Args { get; set; }
         public string Type { get; set; } = "Parameter";
     }
 

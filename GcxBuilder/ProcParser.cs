@@ -6,6 +6,7 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using Parameter = Gcx.Parameter;
 
 namespace GcxEditor
 {
@@ -36,6 +37,8 @@ namespace GcxEditor
                     //Going into nested subproc
                     nestedLevel++; //i think this is unimportant
                     int size = ParseSize(bytes.Take(new Range(new Index(index), new Index(index + 3))).ToArray(), ref index); //TODO: verify
+                    if (size < 0xD)
+                        size--;
                     byte[] procContents = new byte[size];
                     Array.Copy(bytes, index, procContents, 0, size);
                     Gcx.Procedure subProcedure = ParseProc(procContents);
@@ -111,16 +114,16 @@ namespace GcxEditor
 
         private static int ParseSize(byte[] bytes, ref int index)
         {
-            byte lowByte = (byte)(bytes[0] & 0x0F);
+            byte lowNibble = (byte)(bytes[0] & 0x0F);
 
-            if(lowByte < 0xD)
+            if(lowNibble < 0xD)
             {
                 index++;
-                return lowByte;
+                return lowNibble;
             }
             else
             {
-                if(lowByte == 0xD)
+                if(lowNibble == 0xD)
                 {
                     index += 2;
                     return bytes[1];
@@ -376,6 +379,15 @@ namespace GcxEditor
                         
                         position++;
                     }
+                    else if (highNibble == 0x80)
+                    {
+                        //nested proc
+                        byte[] nestedProcBytes = bytes.Take(new Range(new Index(position), new Index(bytes.Length - 1))).ToArray();
+                        int size = ParseSize(nestedProcBytes, ref position);
+                        //TODO: i'm *pretty sure* this will cause issues if the nested proc is not the final parameter.
+                        Gcx.Procedure procedure = ParseProc(nestedProcBytes);
+                        position += size;
+                    }
                     else if (bytes[position] != 0)
                     {
                         Gcx.Gcx.DataType dataType = Gcx.Gcx.DataType.FromCode(currentByte);
@@ -404,7 +416,30 @@ namespace GcxEditor
 
         private static List<Parameter> ParseParams(byte[] bytes)
         {
-            return null;
+            List<Parameter> parameters = new List<Parameter>(); //TODO: verify
+
+            int position = 0;
+            while (position < bytes.Length)
+            {
+                int startOfParameterDeclaration = bytes[position];
+                if(startOfParameterDeclaration == 0)
+                {
+                    position++;
+                    continue;
+                }
+                byte lowNibble = (byte)(startOfParameterDeclaration & 0x0F);
+                int size = ParseSize(bytes.Take(new Range(new Index(position), new Index(bytes.Length - 1))).ToArray(), ref position);
+
+                Parameter parameter = new Parameter();
+                parameter.ParamType = (ParameterType)bytes[position];
+                position++;
+                parameter.Contents = bytes.Take(new Range(new Index(position), new Index(position + size - 1))).ToArray();
+                parameter.Args = ParseArgs(parameter.Contents);
+                position += parameter.Contents.Length;
+                parameters.Add(parameter);
+            }
+
+            return parameters;
         }
 
         private static IProcedureElement ParseCommand(byte[] bytes)
