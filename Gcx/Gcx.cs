@@ -111,7 +111,7 @@
             public static DataType StrCode = new DataType("StrCode", [0x06, 0x08], GetNumericValue, 3); //TODO: confirm 8 also results in 3 bytes
             public static DataType String = new DataType("String", [0x07], GetString, 0); //TODO: get real value
             public static DataType Long = new DataType("Long", [0x09, 0x0A, 0x0D], GetNumericValue, 4); //TODO: confirm
-            public static DataType StringResource = new DataType("StringResource", [0x0E], GetStringResource, 0); //TODO: get real value
+            public static DataType StringResource = new DataType("StringResource", [0x0E], GetStringResource, 2); //TODO: get real value
             public static DataType Var = new DataType("Var", [0x10], BuildVariable, 0); //TODO: get real value
             public static DataType VarArray = new DataType("VarArray", [0x20], BuildVariable, 0); //TODO: get real value
             public static DataType Expr = new DataType("Expr", [0x30], BuildExpression, 0); //TODO: get real value

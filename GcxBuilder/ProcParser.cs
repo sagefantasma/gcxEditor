@@ -305,6 +305,10 @@ namespace GcxEditor
         {
             int position = 0;
             List<Argument> args = new List<Argument>();
+            if(bytes.Length == 0)
+            {
+                return args;
+            }
             try
             {
                 do
@@ -319,7 +323,7 @@ namespace GcxEditor
                         VariableArray variableArray = new VariableArray();
                         variableArray.Size = (ushort)bytes[4];
                         variableArray.LowNibble = (byte)(bytes[position] & 0x0F);
-                        variableArray.Index = (ushort)bytes[6];
+                        variableArray.Index = (ushort)bytes[5];
                         byte[] id = bytes.Take(new Range(new Index(2), new Index(4))).ToArray();
                         variableArray.Id = BitConverter.ToUInt16(id.Reverse().ToArray());
                         //22 00 04 B4 C9 32 41 A0 == $var:varbuf_0x4B4[$arg1,8]
@@ -379,13 +383,32 @@ namespace GcxEditor
                         
                         position++;
                     }
+                    else if (highNibble == 0x30)
+                    {
+                        byte[] expressionSizeBytes = bytes.Take(new Range(new Index(position), new Index(position + 4))).ToArray();
+                        int size = ParseSize(expressionSizeBytes, ref position);
+                        if(size < 0xD)
+                        {
+                            size--;
+                        }
+                        byte[] expressionBytes = bytes.Take(new Range(new Index(position), new Index(size + position + 1))).ToArray();
+                        Gcx.Expression expression = ParseExpression(expressionBytes);
+                        args.Add(new Argument { Value = expression, Size = expression.Size });
+                        position += size;
+                    }
                     else if (highNibble == 0x80)
                     {
                         //nested proc
                         byte[] nestedProcBytes = bytes.Take(new Range(new Index(position), new Index(bytes.Length - 1))).ToArray();
                         int size = ParseSize(nestedProcBytes, ref position);
+                        if (size < 0xD)
+                        {
+                            size--;
+                        }
+                        nestedProcBytes = bytes.Take(new Range(new Index(position), new Index(size + position))).ToArray();
                         //TODO: i'm *pretty sure* this will cause issues if the nested proc is not the final parameter.
                         Gcx.Procedure procedure = ParseProc(nestedProcBytes);
+                        args.Add(new Argument { Value = procedure, Size = procedure.Size });
                         position += size;
                     }
                     else if (bytes[position] != 0)
@@ -431,9 +454,13 @@ namespace GcxEditor
                 int size = ParseSize(bytes.Take(new Range(new Index(position), new Index(bytes.Length - 1))).ToArray(), ref position);
 
                 Parameter parameter = new Parameter();
-                parameter.ParamType = (ParameterType)bytes[position];
+                parameter.ParamType = (char)bytes[position];
                 position++;
                 parameter.Contents = bytes.Take(new Range(new Index(position), new Index(position + size - 1))).ToArray();
+                if((int)parameter.ParamType == 0x41)
+                {
+
+                }
                 parameter.Args = ParseArgs(parameter.Contents);
                 position += parameter.Contents.Length;
                 parameters.Add(parameter);

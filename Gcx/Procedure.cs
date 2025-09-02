@@ -12,7 +12,7 @@ namespace Gcx
         public string Type { get; set; }
     }
 
-    public class Procedure : IProcedureElement
+    public class Procedure : Term
     {
         public string Name
         {
@@ -244,7 +244,7 @@ namespace Gcx
     public class Parameter : IProcedureElement
     {
         public ushort Size { get; set; }
-        public ParameterType ParamType { get; set; }
+        public char ParamType { get; set; }
         public byte[] Contents { get; set; }
         public List<Argument> Args { get; set; }
         public string Type { get; set; } = "Parameter";

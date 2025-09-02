@@ -63,7 +63,11 @@ namespace GcxEditor
 
                     foreach(Procedure procedure in parsedProcedures)
                     {
-                        //FC3D5 borken right now, on the "NewDelay" chara.
+                        //no procs causing errors in w01a at the moment
+                        if(procedure.Name == "A2527B")
+                        {
+
+                        }
                         Procedure parsedProc = ProcParser.ParseProc(procedure.RawContents); //raw contents arent getting filled properly?
                         procedure.DecodedContents = parsedProc.DecodedContents;
                     }
