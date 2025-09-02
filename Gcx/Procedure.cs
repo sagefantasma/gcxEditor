@@ -8,7 +8,7 @@ namespace Gcx
 {
     public partial interface IProcedureElement
     {
-        public ushort Size { get; set; }
+        public uint Size { get; set; }
         public string Type { get; set; }
     }
 
@@ -56,7 +56,7 @@ namespace Gcx
     public class Command : IProcedureElement
     {
         //0x6D/6E ....? what?
-        public ushort Size { get; set; }
+        public uint Size { get; set; }
         public string Type { get; set; }
         public List<Parameter> Parameters { get; set; } = new List<Parameter>();
         public List<Argument> Args = new List<Argument>();
@@ -137,7 +137,7 @@ namespace Gcx
 
     public class Term : IProcedureElement
     {
-        public ushort Size { get; set; }
+        public uint Size { get; set; }
         public string Type { get; set; }
         public Term()
         {
@@ -243,7 +243,7 @@ namespace Gcx
 
     public class Parameter : IProcedureElement
     {
-        public ushort Size { get; set; }
+        public uint Size { get; set; }
         public char ParamType { get; set; }
         public byte[] Contents { get; set; }
         public List<Argument> Args { get; set; }
@@ -295,9 +295,11 @@ namespace Gcx
     public class VariableArray : Term
     {
         //public ushort Size { get; set; } //byte instead?
-        public ushort Index { get; set; } //byte instead?
+        //public ushort Index { get; set; } //byte instead?
+        public List<Argument> SizeAndIndex { get; set; }
         public ushort Id { get; set; }
         public byte LowNibble { get; set; }
+        public byte ArrayType { get; set; }
         public VariableArray()
         {
             Type = GetType().Name;

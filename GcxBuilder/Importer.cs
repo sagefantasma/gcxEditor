@@ -63,13 +63,30 @@ namespace GcxEditor
 
                     foreach(Procedure procedure in parsedProcedures)
                     {
-                        //no procs causing errors in w01a at the moment
-                        if(procedure.Name == "A2527B")
+                        if(procedure.Name == "085B23")
                         {
 
                         }
-                        Procedure parsedProc = ProcParser.ParseProc(procedure.RawContents); //raw contents arent getting filled properly?
-                        procedure.DecodedContents = parsedProc.DecodedContents;
+                        if(procedure.Name == "025E89")
+                        {
+
+                        }
+                        if(procedure.Name == "0DD51D")
+                        {
+
+                        }
+                        if(procedure.Name == "0FC3D5")
+                        {
+                            //these ifblocks are gonna be the death of me. right now we're breaking on the second if's base args
+                        }
+                        try
+                        {
+                            Procedure parsedProc = ProcParser.ParseProc(procedure.RawContents); //raw contents arent getting filled properly?
+                            procedure.DecodedContents = parsedProc.DecodedContents;
+                        }
+                        catch (Exception ex)
+                        {
+                        }
                     }
                     return gcx;
                 }

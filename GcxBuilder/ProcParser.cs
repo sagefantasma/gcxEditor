@@ -6,6 +6,7 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using Expression = Gcx.Expression;
 using Parameter = Gcx.Parameter;
 
 namespace GcxEditor
@@ -18,6 +19,10 @@ namespace GcxEditor
             int nestedLevel = 0; //how important is this?
             Gcx.Procedure procedure = new Procedure();
             procedure.DecodedContents = new List<dynamic>();
+            if (bytes.Length == 0)
+            {
+                return procedure;
+            }
             do
             {
                 byte highByte = (byte)(bytes[index] & 0xF0);
@@ -301,6 +306,44 @@ namespace GcxEditor
             return invoke;
         }
 
+        private static List<Argument> ParseVarArrayArgs(byte[] bytes, out int varArraySize)
+        {
+            //Okay, so i think the max size of the array is always a literal... but theoretically there's nothing stopping it from being a varbuf reference.
+            //I think the best way to do it will be this:
+            //If byte >= 0xC0: literal
+            //If byte & 0xF0 == 0x40: arg
+            //else, expression?
+            int position = 0;
+            List<Argument> args = new List<Argument>();
+            while(position < bytes.Length)
+            {
+                if(args.Count == 2)
+                {
+                    varArraySize = position;
+                    break;
+                }
+                int highNibble = bytes[position] & 0xF0;
+
+                if(highNibble >= 0xC0)
+                {
+                    args.Add(new Argument { Value = new Constant { Size = 1, Value = (byte)(bytes[position++] - 0xC1) } });
+                }
+                else if(highNibble == 0x40)
+                {
+                    args.Add(new Argument { Value = new PassedArg { ArgNum = bytes[position++] } });
+                }
+                else
+                {
+                    Expression expression = ParseExpression(bytes);
+                    args.Add(new Argument { Value = expression });
+                    position += (int)expression.Size;
+                }
+            }
+
+            varArraySize = position;
+            return args;
+        }
+
         private static List<Argument> ParseArgs(byte[] bytes)
         {
             int position = 0;
@@ -321,11 +364,33 @@ namespace GcxEditor
                     {
                         //var array, still needs work - is not accurate
                         VariableArray variableArray = new VariableArray();
-                        variableArray.Size = (ushort)bytes[4];
-                        variableArray.LowNibble = (byte)(bytes[position] & 0x0F);
-                        variableArray.Index = (ushort)bytes[5];
-                        byte[] id = bytes.Take(new Range(new Index(2), new Index(4))).ToArray();
+                        variableArray.LowNibble = (byte)(bytes[position++] & 0x0F);
+                        //position++;
+                        variableArray.ArrayType = bytes[position++];
+                        //position++;
+                        byte[] id = bytes.Take(new Range(new Index(position), new Index(position+=2))).ToArray();
                         variableArray.Id = BitConverter.ToUInt16(id.Reverse().ToArray());
+                        //I *think* lownibble may be indicating var size? maybe?
+                        variableArray.SizeAndIndex = ParseVarArrayArgs(bytes.Take(new Range(new Index(position), new Index(bytes.Length - 1))).ToArray(), out int varArraySize);
+                        /*if (bytes[position] > 0xC0)
+                        {
+                            //literal
+                            variableArray.Size = (ushort)bytes[position++];
+                        }
+                        else
+                        {
+                            Gcx.Gcx.DataType dataType = Gcx.Gcx.DataType.FromCode(bytes[position++]);
+                            byte[] dataValue = new byte[4];
+                            Array.Copy(bytes.Take(new Range(new Index(position), new Index(position += dataType.Length))).ToArray(), dataValue, dataType.Length);
+                            variableArray.Size = BitConverter.ToUInt32(dataValue.Reverse().ToArray()); //TODO: confirm this should be reversed or not
+                        }
+                            variableArray.Size = (ushort)bytes[4];
+                        variableArray.Index = (ushort)bytes[5];*/
+                        //21 80 03 3C F1 DE C1 AB
+
+                            
+
+
                         //22 00 04 B4 C9 32 41 A0 == $var:varbuf_0x4B4[$arg1,8]
                         //my thinking: 22 is array, 00 is varbuf, 04 B4 is ID, C9 is 8, 32 is ??, 41 is arg1, A0 is ??
                         //i have no idea what the significance is of the lower nibble in 22. i tried messing with different values
@@ -345,14 +410,14 @@ namespace GcxEditor
 
                         //args.Add(new Argument { Value = bytes.Take(new Range(new Index(position), new Index(position + 8))).ToList() }); //TODO: figure out how to modify Argument to take this properly
                         args.Add(new Argument { Value = variableArray });
-                        position += 8; //TODO: confirm it is always this
+                        position += varArraySize; //TODO: confirm it is always this
                     }
                     else if (highNibble == 0x10)
                     {
                         //single variable
                         Variable variable = new Variable();
                         variable.LowNibble = (byte)(bytes[position] & 0x0F);
-                        byte[] id = bytes.Take(new Range(new Index(2), new Index(4))).ToArray();
+                        byte[] id = bytes.Take(new Range(new Index(2), new Index(4))).ToArray(); //this is fucked
                         variable.Id = BitConverter.ToUInt16(id.Reverse().ToArray());
 
                         //args.Add(new Argument { Value = bytes.Take(new Range(new Index(position), new Index(position + 4))).ToList() }); //TODO: figure out how to modify Argument to take this properly
@@ -389,11 +454,15 @@ namespace GcxEditor
                         int size = ParseSize(expressionSizeBytes, ref position);
                         if(size < 0xD)
                         {
-                            size--;
+                            //size--;
                         }
-                        byte[] expressionBytes = bytes.Take(new Range(new Index(position), new Index(size + position + 1))).ToArray();
+                        byte[] expressionBytes = bytes.Take(new Range(new Index(position), new Index(size + position))).ToArray();
                         Gcx.Expression expression = ParseExpression(expressionBytes);
                         args.Add(new Argument { Value = expression, Size = expression.Size });
+                        if(size < 0xC)
+                        {
+                            //size++;
+                        }
                         position += size;
                     }
                     else if (highNibble == 0x80)
@@ -409,6 +478,10 @@ namespace GcxEditor
                         //TODO: i'm *pretty sure* this will cause issues if the nested proc is not the final parameter.
                         Gcx.Procedure procedure = ParseProc(nestedProcBytes);
                         args.Add(new Argument { Value = procedure, Size = procedure.Size });
+                        if (size < 0xC)
+                        {
+                            size++;
+                        }
                         position += size;
                     }
                     else if (bytes[position] != 0)
@@ -541,8 +614,8 @@ namespace GcxEditor
                 case "37C884": //passed w01a
                     //load
                     Load load = new Load();
-                    load.Size = bytes[3];
-                    byte[] loadArgs = bytes.Take(new Range(new Index(4), new Index(4 + load.Size))).ToArray();
+                    load.Size = bytes[3]; //TODO: fix these size declarations, these are wrong. this is depicting the size of the args, not the whole command
+                    byte[] loadArgs = bytes.Take(new Range(new Index(4), new Index((int)(4 + load.Size)))).ToArray();
                     load.Args = ParseArgs(loadArgs);
                     
                     return load;
@@ -555,7 +628,7 @@ namespace GcxEditor
                     //restart
                     Restart restart = new Restart();
                     restart.Size = bytes[3];
-                    byte[] restartArgs = bytes.Take(new Range(new Index(4), new Index(4 + restart.Size))).ToArray();
+                    byte[] restartArgs = bytes.Take(new Range(new Index(4), new Index((int)(4 + restart.Size)))).ToArray();
                     restart.Args = ParseArgs(restartArgs);
                     //def used
                     return restart;
@@ -563,12 +636,20 @@ namespace GcxEditor
                     //unknown command
                     UnknownCommand unknownCommand = new UnknownCommand();
                     unknownCommand.Size = bytes[3];
-                    byte[] unknownCommandArgs = bytes.Take(new Range(new Index(4), new Index(4 + unknownCommand.Size))).ToArray();
+                    byte[] unknownCommandArgs = bytes.Take(new Range(new Index(4), new Index((int)(4 + unknownCommand.Size)))).ToArray();
                     unknownCommand.Args = ParseArgs(unknownCommandArgs);
                     return unknownCommand;
                 case "000D86":
                     IfBlock ifblock = new IfBlock();
                     //byte after is length of if block?
+                    ifblock.Size = bytes[3]; //TODO: these feel pretty flimsy - surely at least for if there has to be some that are larger than 255 bytes
+                    byte[] ifBlockArgs = bytes.Take(new Range(new Index(4), new Index((int)(4 + ifblock.Size)))).ToArray();
+                    ifblock.Args = ParseArgs(ifBlockArgs); 
+                    //args are the main if
+
+                    byte[] ifParams = bytes.Take(new Range(new Index((int)(4 + ifblock.Size)), new Index(bytes.Length))).ToArray();
+                    //i param is elif, e param is else?
+                    ifblock.Parameters = ParseParams(ifParams);
                     //def used
                     return ifblock;
                 case "A65DB5":
@@ -586,14 +667,14 @@ namespace GcxEditor
                 case "8BE398": //passed w01a
                     Return returnStatement = new Return();
                     returnStatement.Size = bytes[3];
-                    byte[] returnArgs = bytes.Take(new Range(new Index(4), new Index(4 + returnStatement.Size))).ToArray();
+                    byte[] returnArgs = bytes.Take(new Range(new Index(4), new Index((int)(4 + returnStatement.Size)))).ToArray();
                     returnStatement.Args = ParseArgs(returnArgs);
                     
                     return returnStatement;
                 case "3AB23B": //passed w01a
                     Print printStatement = new Print();
                     printStatement.Size = bytes[3];
-                    byte[] printArgs = bytes.Take(new Range(new Index(4), new Index(4 + printStatement.Size))).ToArray();
+                    byte[] printArgs = bytes.Take(new Range(new Index(4), new Index((int)(4 + printStatement.Size)))).ToArray();
                     printStatement.Args = ParseArgs(printArgs);
                     
                     return printStatement;
