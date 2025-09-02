@@ -59,6 +59,7 @@ namespace Gcx
         public ushort Size { get; set; }
         public string Type { get; set; }
         public List<Parameter> Parameters { get; set; } = new List<Parameter>();
+        public List<Argument> Args = new List<Argument>();
         public Command()
         {
             Type = GetType().Name;
@@ -188,7 +189,6 @@ namespace Gcx
     public class Chara : Command
     {
         //0x6592A7
-        public List<Argument> Args = new List<Argument>();
         public Chara()
         {
             Type = GetType().Name;
@@ -266,7 +266,7 @@ namespace Gcx
 
     public class Literal : Term
     {
-        public uint Value { get; set; }
+        public dynamic Value { get; set; }
         public Literal()
         {
             Type = GetType().Name;

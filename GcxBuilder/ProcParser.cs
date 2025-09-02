@@ -418,8 +418,18 @@ namespace GcxEditor
                         //args.Add(new Argument { Value = bytes.Take(new Range(new Index(position + 1), new Index(position + 1 + dataType.Length))).ToList() });
                         //byte[] dataValue = new byte[dataType.Length];
                         byte[] dataValue = new byte[4];
-                        Array.Copy(bytes, position + 1, dataValue, 0, dataType.Length);
-                        args.Add(new Argument { Value = new Literal { Value = BitConverter.ToUInt32(dataValue) }, Size = (ushort)dataType.Length, });
+                        if (dataType == Gcx.Gcx.DataType.String)
+                        {
+                            dataType.Length = bytes[1];
+                            dataValue = new byte[dataType.Length];
+                            Array.Copy(bytes, position + 2, dataValue, 0, dataType.Length);
+                            args.Add(new Argument { Value = new Literal { Value = dataValue }, Size = (ushort)dataType.Length });
+                        }
+                        else
+                        {
+                            Array.Copy(bytes, position + 1, dataValue, 0, dataType.Length);
+                            args.Add(new Argument { Value = new Literal { Value = BitConverter.ToUInt32(dataValue) }, Size = (ushort)dataType.Length, });
+                        }
                         position += dataType.Length + 1;
                     }
                     else
@@ -496,22 +506,45 @@ namespace GcxEditor
                     chara.Parameters = ParseParams(charaParams);
 
                     return chara;
-                case "3822C7":
+                case "3822C7": //passed w01a
                     //mesg
                     Msg msg = new Msg();
+                    msg.Size = (ushort)(bytes.Length - 2); //TODO: where did i get this from? this doesn't make sense
+                    int messageArgsLength = bytes[3];
+                    byte[] mesgArgs = bytes.Take(new Range(new Index(4), new Index(4 + messageArgsLength))).ToArray();
+                    msg.Args = ParseArgs(mesgArgs);
+
                     return msg;
-                case "3BD490":
+                case "3BD490": //passed w01a
                     //trap
                     Trap trap = new Trap();
+                    trap.Size = (ushort) (bytes.Length - 2);
+                    int trapArgsLength = bytes[3];
+                    byte[] trapArgs = bytes.Take(new Range(new Index(4), new Index(4 + trapArgsLength))).ToArray();
+                    trap.Args = ParseArgs(trapArgs);
+
+                    byte[] trapParams = bytes.Take(new Range(new Index(4 + trapArgsLength), new Index(bytes.Length))).ToArray();
+                    trap.Parameters = ParseParams(trapParams);
+
                     return trap;
-                case "082BC9":
+                case "082BC9": //passed w01a
                     //generic command
                     GameCommand gameCommand = new GameCommand();
+                    gameCommand.Size = (ushort)(bytes.Length - 2);
+                    int gameCommandArgsLength = bytes[3];
+                    byte[] gameCommandArgs = bytes.Take(new Range(new Index(4), new Index(4+gameCommandArgsLength))).ToArray();
+                    gameCommand.Args = ParseArgs(gameCommandArgs);
+
+                    byte[] gameCommandParams = bytes.Take(new Range(new Index(4 + gameCommandArgsLength), new Index(bytes.Length))).ToArray();
+                    gameCommand.Parameters = ParseParams(gameCommandParams);
                     return gameCommand;
-                case "37C884":
+                case "37C884": //passed w01a
                     //load
                     Load load = new Load();
-                    //def used
+                    load.Size = bytes[3];
+                    byte[] loadArgs = bytes.Take(new Range(new Index(4), new Index(4 + load.Size))).ToArray();
+                    load.Args = ParseArgs(loadArgs);
+                    
                     return load;
                 case "01C090":
                     //map
@@ -521,11 +554,17 @@ namespace GcxEditor
                 case "6BB005":
                     //restart
                     Restart restart = new Restart();
+                    restart.Size = bytes[3];
+                    byte[] restartArgs = bytes.Take(new Range(new Index(4), new Index(4 + restart.Size))).ToArray();
+                    restart.Args = ParseArgs(restartArgs);
                     //def used
                     return restart;
                 case "8B3DF5":
                     //unknown command
                     UnknownCommand unknownCommand = new UnknownCommand();
+                    unknownCommand.Size = bytes[3];
+                    byte[] unknownCommandArgs = bytes.Take(new Range(new Index(4), new Index(4 + unknownCommand.Size))).ToArray();
+                    unknownCommand.Args = ParseArgs(unknownCommandArgs);
                     return unknownCommand;
                 case "000D86":
                     IfBlock ifblock = new IfBlock();
@@ -544,13 +583,19 @@ namespace GcxEditor
                     Invoke invokeStatement = new Invoke();
                     //used anywhere?
                     return invokeStatement;
-                case "8BE398":
+                case "8BE398": //passed w01a
                     Return returnStatement = new Return();
-                    //def used
+                    returnStatement.Size = bytes[3];
+                    byte[] returnArgs = bytes.Take(new Range(new Index(4), new Index(4 + returnStatement.Size))).ToArray();
+                    returnStatement.Args = ParseArgs(returnArgs);
+                    
                     return returnStatement;
-                case "3AB23B":
+                case "3AB23B": //passed w01a
                     Print printStatement = new Print();
-                    //def used
+                    printStatement.Size = bytes[3];
+                    byte[] printArgs = bytes.Take(new Range(new Index(4), new Index(4 + printStatement.Size))).ToArray();
+                    printStatement.Args = ParseArgs(printArgs);
+                    
                     return printStatement;
                 default:
                     throw new NotImplementedException("Unrecognized command type");
