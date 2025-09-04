@@ -15,228 +15,269 @@ namespace GcxEditor
     {
         public static Gcx.Procedure ParseProc(byte[] bytes)
         {
-            int index = 0;
-            int nestedLevel = 0; //how important is this?
-            Gcx.Procedure procedure = new Procedure();
-            procedure.DecodedContents = new List<dynamic>();
-            if (bytes.Length == 0)
+            try
             {
+                int index = 0;
+                int nestedLevel = 0; //how important is this?
+                Gcx.Procedure procedure = new Procedure();
+                procedure.DecodedContents = new List<dynamic>();
+                if (bytes.Length == 0)
+                {
+                    return procedure;
+                }
+                do
+                {
+                    byte highByte = (byte)(bytes[index] & 0xF0);
+
+                    if (highByte == 0xC0)
+                    {
+                        //this seems to not be a real case
+                        //going into num
+                    }
+                    else if (highByte == 0x90)
+                    {
+                        //this seems to not be a real case
+                        //local
+                    }
+                    else if (highByte == 0x80)
+                    {
+                        //Going into nested subproc
+                        nestedLevel++; //i think this is unimportant
+                        int size = ParseSize(bytes.Take(new Range(new Index(index), new Index(index + 3))).ToArray(), ref index); //TODO: verify
+                        if (size < 0xD)
+                            size--;
+                        byte[] procContents = new byte[size];
+                        //Array.Copy(bytes, index, procContents, 0, size);
+                        procContents = bytes.Take(new Range(new Index(index), new Index(index + size))).ToArray();
+                        Gcx.Procedure subProcedure = ParseProc(procContents);
+                        if (subProcedure != null)
+                            procedure.DecodedContents.Add(subProcedure);
+                        index += size;
+                    }
+                    else if (highByte == 0x70)
+                    {
+                        //going into invoke
+                        int size = ParseSize(bytes.Take(new Range(new Index(index), new Index(index + 3))).ToArray(), ref index);
+                        byte[] invokeContents = new byte[size];
+                        //Array.Copy(bytes, index, invokeContents, 0, size);
+                        invokeContents = bytes.Take(new Range(new Index(index), new Index(index + size))).ToArray();
+                        Invoke invoke = ParseInvoke(invokeContents);
+                        if (invoke != null)
+                            procedure.DecodedContents.Add(invoke);
+                        index += size;
+                    }
+                    //if (CommandDeclaration.Contains(bytes[index]))
+                    else if (highByte == 0x60)
+                    {
+                        //going into command
+                        nestedLevel++;
+                        int size = ParseSize(bytes.Take(new Range(new Index(index), new Index(index + 3))).ToArray(), ref index); //TODO: verify
+                        byte[] cmdContents = new byte[size];
+                        //Array.Copy(bytes, index, cmdContents, 0, size);
+                        cmdContents = bytes.Take(new Range(new Index(index), new Index(index + size))).ToArray();
+                        IProcedureElement command = ParseCommand(cmdContents);
+                        if (command != null)
+                            procedure.DecodedContents.Add(command);
+                        index += size;
+                    }
+                    else if (highByte == 0x50)
+                    {
+                        //this seems to not be a real case
+                        //param
+                    }
+                    else if (highByte == 0x40)
+                    {
+                        //this seems to not be a real case
+                        //args
+                    }
+                    else if (highByte == 0x30)
+                    {
+                        //expression
+                        int size = ParseSize(bytes.Take(new Range(new Index(index), new Index(index + 3))).ToArray(), ref index);
+                        byte[] expressionContents = new byte[size];
+                        //Array.Copy(bytes, index, expressionContents, 0, size);
+                        expressionContents = bytes.Take(new Range(new Index(index), new Index(index + size))).ToArray();
+                        Gcx.Expression expression = ParseExpression(expressionContents);
+                        if (expression != null)
+                            procedure.DecodedContents.Add(expression);
+                        index += size;
+                    }
+                    else if (highByte == 0x20)
+                    {
+                        //this seems to not be a real case
+                        //var array
+                    }
+                    else if (highByte == 0x10)
+                    {
+                        //this seems to not be a real case
+                        //var
+                    }
+                    else
+                    {
+                        //return null;
+                        //if (bytes[index] == 0x0)
+                        index++;
+                    }
+                } while (index < bytes.Length);
+
                 return procedure;
             }
-            do
+            catch(Exception e)
             {
-                byte highByte = (byte)(bytes[index] & 0xF0);
-                
-                if(highByte == 0xC0)
-                {
-                    //this seems to not be a real case
-                    //going into num
-                }
-                else if (highByte == 0x90)
-                {
-                    //this seems to not be a real case
-                    //local
-                }
-                else if (highByte == 0x80)
-                {
-                    //Going into nested subproc
-                    nestedLevel++; //i think this is unimportant
-                    int size = ParseSize(bytes.Take(new Range(new Index(index), new Index(index + 3))).ToArray(), ref index); //TODO: verify
-                    if (size < 0xD)
-                        size--;
-                    byte[] procContents = new byte[size];
-                    Array.Copy(bytes, index, procContents, 0, size);
-                    Gcx.Procedure subProcedure = ParseProc(procContents);
-                    if(subProcedure != null)
-                        procedure.DecodedContents.Add(subProcedure);
-                    index += size;
-                }
-                else if (highByte == 0x70)
-                {
-                    //going into invoke
-                    int size = ParseSize(bytes.Take(new Range(new Index(index), new Index(index + 3))).ToArray(), ref index);
-                    byte[] invokeContents = new byte[size];
-                    Array.Copy(bytes, index, invokeContents, 0, size);
-                    Invoke invoke = ParseInvoke(invokeContents);
-                    if (invoke != null)
-                        procedure.DecodedContents.Add(invoke);
-                    index += size;
-                }
-                //if (CommandDeclaration.Contains(bytes[index]))
-                else if (highByte == 0x60)
-                {
-                    //going into command
-                    nestedLevel++;
-                    int size = ParseSize(bytes.Take(new Range(new Index(index), new Index(index + 3))).ToArray(), ref index); //TODO: verify
-                    byte[] cmdContents = new byte[size];
-                    Array.Copy(bytes, index, cmdContents, 0, size);
-                    IProcedureElement command = ParseCommand(cmdContents);
-                    if(command != null)
-                        procedure.DecodedContents.Add(command);
-                    index += size;
-                }
-                else if (highByte == 0x50)
-                {
-                    //this seems to not be a real case
-                    //param
-                }
-                else if (highByte == 0x40)
-                {
-                    //this seems to not be a real case
-                    //args
-                }
-                else if (highByte == 0x30)
-                {
-                    //expression
-                    int size = ParseSize(bytes.Take(new Range(new Index(index), new Index(index + 3))).ToArray(), ref index);
-                    byte[] expressionContents = new byte[size];
-                    Array.Copy(bytes, index, expressionContents, 0, size);
-                    Gcx.Expression expression = ParseExpression(expressionContents);
-                    if (expression != null)
-                        procedure.DecodedContents.Add(expression);
-                    index += size;
-                }
-                else if (highByte == 0x20)
-                {
-                    //this seems to not be a real case
-                    //var array
-                }
-                else if (highByte == 0x10)
-                {
-                    //this seems to not be a real case
-                    //var
-                }
-                else
-                {
-                    //return null;
-                    //if (bytes[index] == 0x0)
-                    index++;
-                }
-            } while (index < bytes.Length);
-
-            return procedure;
+                throw e;
+            }
         }
 
         private static int ParseSize(byte[] bytes, ref int index)
         {
-            byte lowNibble = (byte)(bytes[0] & 0x0F);
+            try
+            {
+                byte lowNibble = (byte)(bytes[0] & 0x0F);
 
-            if(lowNibble < 0xD)
-            {
-                index++;
-                return lowNibble;
-            }
-            else
-            {
-                if(lowNibble == 0xD)
+                if (lowNibble < 0xD)
                 {
-                    index += 2;
-                    return bytes[1];
+                    index++;
+                    return lowNibble;
                 }
                 else
                 {
-                    index += 3;
-                    return BitConverter.ToInt16(bytes, 1);
+                    if (lowNibble == 0xD)
+                    {
+                        index += 2;
+                        return bytes[1];
+                    }
+                    else
+                    {
+                        index += 3;
+                        return BitConverter.ToInt16(bytes, 1);
+                    }
+                    //TODO: technically, 0xE and 0xF are both possible. 0xE is u16, 0xF is u24. need to support that
                 }
+            }
+            catch(Exception e)
+            {
+                throw e;
             }
         }
 
         private static Gcx.Expression ParseNestedExpression(Argument term1, Argument term2, Gcx.Gcx.Operation operation)
         {
-            Gcx.Expression expression = new Gcx.Expression();
-            expression.Term1 = term1;
-            expression.Term2 = term2;
-            expression.Operator = operation;
-            expression.Size = (ushort)(term1.Size + term2.Size + 1);
+            try
+            {
+                Gcx.Expression expression = new Gcx.Expression();
+                expression.Term1 = term1;
+                expression.Term2 = term2;
+                expression.Operator = operation;
+                expression.Size = (ushort)(term1.Size + term2.Size + 1);
 
-            return expression;
+                return expression;
+            }
+            catch(Exception e)
+            {
+                throw e;
+            }
         }
 
         private static Gcx.Expression ParseExpression(byte[] bytes, int end = 2)
         {
-            Gcx.Expression expression = new Gcx.Expression();
-            /*3A 19 00 0B E8 01 26 F7 B6 A0 == $var:varbuf_0xBE8 = 0xF726
-            //3A is denoting expression, A bytes long
-            //19 is single variable, not sure what lowbyte signifies. maybe long?
-            //00 is varbuf
-            //0B E8 is variable being modified
-            //01 is denoting short (describing value set?)
-            //26 F7 is value being set
-            //B6 is set equal
-            //A0 is end
-            */
+            try
+            {
+                Gcx.Expression expression = new Gcx.Expression();
+                /*3A 19 00 0B E8 01 26 F7 B6 A0 == $var:varbuf_0xBE8 = 0xF726
+                //3A is denoting expression, A bytes long
+                //19 is single variable, not sure what lowbyte signifies. maybe long?
+                //00 is varbuf
+                //0B E8 is variable being modified
+                //01 is denoting short (describing value set?)
+                //26 F7 is value being set
+                //B6 is set equal
+                //A0 is end
+                */
 
-            /*3A 19 00 0C 88 19 00 0C 7C B6 A0 == $var:varbuf_0xC88 = $var:varbuf_0xC7C
-            //3A is denoting expression, A bytes long
-            //19 is single variable, not sure what lowbyte signifies. maybe long?
-            //00 is varbuf
-            //0C 88 is variable being modified
-            //19 is single variable, not sure what lowbyte signifies. maybe long?
-            //00 is varbuf
-            //0C 7C is variable being compared
-            //B6 is set equal
-            //A0 is end
-            */
+                /*3A 19 00 0C 88 19 00 0C 7C B6 A0 == $var:varbuf_0xC88 = $var:varbuf_0xC7C
+                //3A is denoting expression, A bytes long
+                //19 is single variable, not sure what lowbyte signifies. maybe long?
+                //00 is varbuf
+                //0C 88 is variable being modified
+                //19 is single variable, not sure what lowbyte signifies. maybe long?
+                //00 is varbuf
+                //0C 7C is variable being compared
+                //B6 is set equal
+                //A0 is end
+                */
 
-            /*39 19 00 0C 88 01 5E 1A AF A0 == $var:varbuf_0xC88 > 0x1A5E
-            //39 is expression, 9 bytes long
-            //19 is single variable, not sure what lowbyte signifies. maybe long?
-            //00 is varbuf
-            //0C88 is variable being modified
-            //01 is ?? (maybe denoting short?)
-            //5E 1A is value being set
-            //AF is greater than
-            //A0 is end
-            */
+                /*39 19 00 0C 88 01 5E 1A AF A0 == $var:varbuf_0xC88 > 0x1A5E
+                //39 is expression, 9 bytes long
+                //19 is single variable, not sure what lowbyte signifies. maybe long?
+                //00 is varbuf
+                //0C88 is variable being modified
+                //01 is ?? (maybe denoting short?)
+                //5E 1A is value being set
+                //AF is greater than
+                //A0 is end
+                */
 
-            /* 35 41 02 80 AD A0 == $arg1 < 0x80 
-            //35 is expression, 5 bytes long
-            //41 is arg1
-            //02 is ?? (maybe denoting byte?)
-            //80 is value being set
-            //AD is less than [13 - A0 as base]
-            //A0 is end
-            */
+                /* 35 41 02 80 AD A0 == $arg1 < 0x80 
+                //35 is expression, 5 bytes long
+                //41 is arg1
+                //02 is ?? (maybe denoting byte?)
+                //80 is value being set
+                //AD is less than [13 - A0 as base]
+                //A0 is end
+                */
 
-            /* 37 14 06 0A 7D C2 B6 A0 == $varbuf:varbuf_0xA7D = 1
-            //37 is expression, 7 bytes long
-            //14 is single variable, not sure what lowbyte signifies. maybe byte? (is 4 saying C1 literal?)
-            //06 is designating a strcode?
-            //0A 7D is variable being modified
-            //C2 is 1 literal
-            //B6 is set equal 
-            //A0 is end
-            */
+                /* 37 14 06 0A 7D C2 B6 A0 == $varbuf:varbuf_0xA7D = 1
+                //37 is expression, 7 bytes long
+                //14 is single variable, not sure what lowbyte signifies. maybe byte? (is 4 saying C1 literal?)
+                //06 is designating a strcode?
+                //0A 7D is variable being modified
+                //C2 is 1 literal
+                //B6 is set equal 
+                //A0 is end
+                */
 
-            /* 37 19 00 0B 9C 42 B6 A0 == $var:varbuf_0xB9C = $arg2
-            //37 is expression, 7 bytes long
-            //19 is single variable, not sure what lowbyte signifies. maybe long?
-            //00 is varbuf
-            //0B 9C is variable being modified
-            //42 is arg2
-            //B6 is set equal
-            //A0 is end
-            */
+                /* 37 19 00 0B 9C 42 B6 A0 == $var:varbuf_0xB9C = $arg2
+                //37 is expression, 7 bytes long
+                //19 is single variable, not sure what lowbyte signifies. maybe long?
+                //00 is varbuf
+                //0B 9C is variable being modified
+                //42 is arg2
+                //B6 is set equal
+                //A0 is end
+                */
 
-            /* 39 11 80 15 8A 01 00 04 B2 A0 == $var:linkvarbuf_0x158A & 0x400
-            //39 is expression, 9 bytes long
-            //11 is single variable, not sure what lowbyte signifies. maybe short?
-            //80 is linkvarbuf
-            //15 8A is variable being modified
-            //01 is denoting short (describing value being set?)
-            //00 04 is value being set
-            //B2 is & operator
-            //A0 is end
-            */
+                /* 39 11 80 15 8A 01 00 04 B2 A0 == $var:linkvarbuf_0x158A & 0x400
+                //39 is expression, 9 bytes long
+                //11 is single variable, not sure what lowbyte signifies. maybe short?
+                //80 is linkvarbuf
+                //15 8A is variable being modified
+                //01 is denoting short (describing value being set?)
+                //00 04 is value being set
+                //B2 is & operator
+                //A0 is end
+                */
 
-            //im thinking maybe we send 0:-2 to parse args? since it should be the same format?
-            List<Argument> args = ParseArgs(bytes.Take(bytes.Length - end).ToArray()); //seems to work well enough?
-            expression.Term1 = args[0];
-            expression.Term2 = args[1];
+                //im thinking maybe we send 0:-2 to parse args? since it should be the same format?
+                List<Argument> args = ParseArgs(bytes.Take(bytes.Length - end).ToArray()); //seems to work well enough?
+                if (args.Count > 1)
+                {
+                    expression.Term1 = args[0];
+                    expression.Term2 = args[1];
+                }
+                else
+                {
+                    expression.Term1 = null;
+                    expression.Term2 = args[0];
+                }
 
-            expression.Operator = ParseOperator(bytes[bytes.Length - end]);
-            expression.Size = (ushort)bytes.Length;
-            return expression;
+                expression.Operator = ParseOperator(bytes[bytes.Length - end]);
+                expression.Size = (ushort)bytes.Length;
+                return expression;
+            }
+            catch(Exception e)
+            {
+                throw e;
+            }
         }
 
         private static Gcx.Gcx.Operation ParseOperator(byte operatorByte)
@@ -298,12 +339,19 @@ namespace GcxEditor
 
         private static Invoke ParseInvoke(byte[] bytes)
         {
-            Invoke invoke = new Invoke();
-            byte[] procedureName = new byte[4]; //TODO: confirm if this is 100% always the case. i havent SEEN a 4byte proc name, but i won't say its impossible.
-            Array.Copy(bytes.Take(3).ToArray(), procedureName, 3);
-            invoke.ProcedureInvoked = new Procedure { Name = BitConverter.ToUInt32(procedureName).ToString() };
-            invoke.Args = ParseArgs(bytes.Take(new Range(new Index(3), new Index(bytes.Length))).ToArray());
-            return invoke;
+            try
+            {
+                Invoke invoke = new Invoke();
+                byte[] procedureName = new byte[4]; //TODO: confirm if this is 100% always the case. i havent SEEN a 4byte proc name, but i won't say its impossible.
+                Array.Copy(bytes.Take(3).ToArray(), procedureName, 3);
+                invoke.ProcedureInvoked = new Procedure { Name = BitConverter.ToUInt32(procedureName).ToString() };
+                invoke.Args = ParseArgs(bytes.Take(new Range(new Index(3), new Index(bytes.Length))).ToArray());
+                return invoke;
+            }
+            catch(Exception e)
+            {
+                throw e;
+            }
         }
 
         private static List<Argument> ParseVarArrayArgs(byte[] bytes, out int varArraySize)
@@ -313,35 +361,42 @@ namespace GcxEditor
             //If byte >= 0xC0: literal
             //If byte & 0xF0 == 0x40: arg
             //else, expression?
-            int position = 0;
-            List<Argument> args = new List<Argument>();
-            while(position < bytes.Length)
+            try
             {
-                if(args.Count == 2)
+                int position = 0;
+                List<Argument> args = new List<Argument>();
+                while (position < bytes.Length)
                 {
-                    varArraySize = position;
-                    break;
-                }
-                int highNibble = bytes[position] & 0xF0;
+                    if (args.Count == 2)
+                    {
+                        varArraySize = position;
+                        break;
+                    }
+                    int highNibble = bytes[position] & 0xF0;
 
-                if(highNibble >= 0xC0)
-                {
-                    args.Add(new Argument { Value = new Constant { Size = 1, Value = (byte)(bytes[position++] - 0xC1) } });
+                    if (highNibble >= 0xC0)
+                    {
+                        args.Add(new Argument { Value = new Constant { Size = 1, Value = (byte)(bytes[position++] - 0xC1) } });
+                    }
+                    else if (highNibble == 0x40)
+                    {
+                        args.Add(new Argument { Value = new PassedArg { ArgNum = bytes[position++] } });
+                    }
+                    else
+                    {
+                        Expression expression = ParseExpression(bytes);
+                        args.Add(new Argument { Value = expression });
+                        position += (int)expression.Size;
+                    }
                 }
-                else if(highNibble == 0x40)
-                {
-                    args.Add(new Argument { Value = new PassedArg { ArgNum = bytes[position++] } });
-                }
-                else
-                {
-                    Expression expression = ParseExpression(bytes);
-                    args.Add(new Argument { Value = expression });
-                    position += (int)expression.Size;
-                }
+
+                varArraySize = position;
+                return args;
             }
-
-            varArraySize = position;
-            return args;
+            catch(Exception e)
+            {
+                throw e;
+            }
         }
 
         private static List<Argument> ParseArgs(byte[] bytes)
@@ -480,6 +535,10 @@ namespace GcxEditor
                         args.Add(new Argument { Value = procedure, Size = procedure.Size });
                         if (size < 0xC)
                         {
+                            if(size == 0)
+                            {
+                                position--;
+                            }
                             size++;
                         }
                         position += size;
@@ -522,164 +581,178 @@ namespace GcxEditor
 
         private static List<Parameter> ParseParams(byte[] bytes)
         {
-            List<Parameter> parameters = new List<Parameter>(); //TODO: verify
-
-            int position = 0;
-            while (position < bytes.Length)
+            try
             {
-                int startOfParameterDeclaration = bytes[position];
-                if(startOfParameterDeclaration == 0)
+                List<Parameter> parameters = new List<Parameter>(); //TODO: verify
+
+                int position = 0;
+                while (position < bytes.Length)
                 {
+                    int startOfParameterDeclaration = bytes[position];
+                    if (startOfParameterDeclaration == 0)
+                    {
+                        position++;
+                        continue;
+                    }
+                    byte lowNibble = (byte)(startOfParameterDeclaration & 0x0F);
+                    int size = ParseSize(bytes.Take(new Range(new Index(position), new Index(bytes.Length - 1))).ToArray(), ref position);
+
+                    Parameter parameter = new Parameter();
+                    parameter.ParamType = (char)bytes[position];
                     position++;
-                    continue;
-                }
-                byte lowNibble = (byte)(startOfParameterDeclaration & 0x0F);
-                int size = ParseSize(bytes.Take(new Range(new Index(position), new Index(bytes.Length - 1))).ToArray(), ref position);
+                    parameter.Contents = bytes.Take(new Range(new Index(position), new Index(position + size - 1))).ToArray();
+                    if ((int)parameter.ParamType == 0x41)
+                    {
 
-                Parameter parameter = new Parameter();
-                parameter.ParamType = (char)bytes[position];
-                position++;
-                parameter.Contents = bytes.Take(new Range(new Index(position), new Index(position + size - 1))).ToArray();
-                if((int)parameter.ParamType == 0x41)
-                {
-
+                    }
+                    parameter.Args = ParseArgs(parameter.Contents);
+                    position += parameter.Contents.Length;
+                    parameters.Add(parameter);
                 }
-                parameter.Args = ParseArgs(parameter.Contents);
-                position += parameter.Contents.Length;
-                parameters.Add(parameter);
+
+                return parameters;
             }
-
-            return parameters;
+            catch(Exception e)
+            {
+                throw e;
+            }
         }
 
         private static IProcedureElement ParseCommand(byte[] bytes)
         {
-            int startType = 0;
-            int endType = 3;
-            /*if(bytes.Length > 0xFF)
+            try
             {
-                startType++;
-                endType++;
-            }*/
-            byte[] knownCommandType = bytes.Take(new Range(new Index(startType), new Index(endType))).ToArray();
-            string commandTypeInHex = BitConverter.ToString(knownCommandType.Reverse().ToArray()).Replace("-", "");
+                int startType = 0;
+                int endType = 3;
+                /*if(bytes.Length > 0xFF)
+                {
+                    startType++;
+                    endType++;
+                }*/
+                byte[] knownCommandType = bytes.Take(new Range(new Index(startType), new Index(endType))).ToArray();
+                string commandTypeInHex = BitConverter.ToString(knownCommandType.Reverse().ToArray()).Replace("-", "");
 
-            switch (commandTypeInHex)
+                switch (commandTypeInHex)
+                {
+                    case "6592A7":
+                        //chara
+                        //initial testing with w01a and w22a passed(in that "parsing" those files did not crash xdd)
+                        Chara chara = new Chara();
+                        chara.Size = (ushort)(bytes.Length - 2);
+                        int charaArgsLength = bytes[3]; //TODO: is this ALWAYS true? i think so, but idk for sure
+                        byte[] charaArgs = bytes.Take(new Range(new Index(4), new Index(4 + charaArgsLength))).ToArray();
+                        chara.Args = ParseArgs(charaArgs);
+
+                        byte[] charaParams = bytes.Take(new Range(new Index(4 + charaArgsLength), new Index(bytes.Length))).ToArray();
+                        chara.Parameters = ParseParams(charaParams);
+
+                        return chara;
+                    case "3822C7": //passed w01a
+                                   //mesg
+                        Msg msg = new Msg();
+                        msg.Size = (ushort)(bytes.Length - 2); //TODO: where did i get this from? this doesn't make sense
+                        int messageArgsLength = bytes[3];
+                        byte[] mesgArgs = bytes.Take(new Range(new Index(4), new Index(4 + messageArgsLength))).ToArray();
+                        msg.Args = ParseArgs(mesgArgs);
+
+                        return msg;
+                    case "3BD490": //passed w01a
+                                   //trap
+                        Trap trap = new Trap();
+                        trap.Size = (ushort)(bytes.Length - 2);
+                        int trapArgsLength = bytes[3];
+                        byte[] trapArgs = bytes.Take(new Range(new Index(4), new Index(4 + trapArgsLength))).ToArray();
+                        trap.Args = ParseArgs(trapArgs);
+
+                        byte[] trapParams = bytes.Take(new Range(new Index(4 + trapArgsLength), new Index(bytes.Length))).ToArray();
+                        trap.Parameters = ParseParams(trapParams);
+
+                        return trap;
+                    case "082BC9": //passed w01a
+                                   //generic command
+                        GameCommand gameCommand = new GameCommand();
+                        gameCommand.Size = (ushort)(bytes.Length - 2);
+                        int gameCommandArgsLength = bytes[3];
+                        byte[] gameCommandArgs = bytes.Take(new Range(new Index(4), new Index(4 + gameCommandArgsLength))).ToArray();
+                        gameCommand.Args = ParseArgs(gameCommandArgs);
+
+                        byte[] gameCommandParams = bytes.Take(new Range(new Index(4 + gameCommandArgsLength), new Index(bytes.Length))).ToArray();
+                        gameCommand.Parameters = ParseParams(gameCommandParams);
+                        return gameCommand;
+                    case "37C884": //passed w01a
+                                   //load
+                        Load load = new Load();
+                        load.Size = bytes[3]; //TODO: fix these size declarations, these are wrong. this is depicting the size of the args, not the whole command
+                        byte[] loadArgs = bytes.Take(new Range(new Index(4), new Index((int)(4 + load.Size)))).ToArray();
+                        load.Args = ParseArgs(loadArgs);
+
+                        return load;
+                    case "01C090":
+                        //map
+                        Map map = new Map();
+                        //used anywhere?
+                        return map;
+                    case "6BB005":
+                        //restart
+                        Restart restart = new Restart();
+                        restart.Size = bytes[3];
+                        byte[] restartArgs = bytes.Take(new Range(new Index(4), new Index((int)(4 + restart.Size)))).ToArray();
+                        restart.Args = ParseArgs(restartArgs);
+                        //def used
+                        return restart;
+                    case "8B3DF5":
+                        //unknown command
+                        UnknownCommand unknownCommand = new UnknownCommand();
+                        unknownCommand.Size = bytes[3];
+                        byte[] unknownCommandArgs = bytes.Take(new Range(new Index(4), new Index((int)(4 + unknownCommand.Size)))).ToArray();
+                        unknownCommand.Args = ParseArgs(unknownCommandArgs);
+                        return unknownCommand;
+                    case "000D86":
+                        IfBlock ifblock = new IfBlock();
+                        //byte after is length of if block?
+                        ifblock.Size = bytes[3]; //TODO: these feel pretty flimsy - surely at least for if there has to be some that are larger than 255 bytes
+                        byte[] ifBlockArgs = bytes.Take(new Range(new Index(4), new Index((int)(4 + ifblock.Size)))).ToArray();
+                        ifblock.Args = ParseArgs(ifBlockArgs);
+                        //args are the main if
+
+                        byte[] ifParams = bytes.Take(new Range(new Index((int)(4 + ifblock.Size)), new Index(bytes.Length))).ToArray();
+                        //i param is elif, e param is else?
+                        ifblock.Parameters = ParseParams(ifParams);
+                        //def used
+                        return ifblock;
+                    case "A65DB5":
+                        SwitchBlock switchBlock = new SwitchBlock();
+                        //def used
+                        return switchBlock;
+                    case "34648C":
+                        Evaluate evaluateStatement = new Evaluate();
+                        //used anywhere?
+                        return evaluateStatement;
+                    case "3311EC":
+                        Invoke invokeStatement = new Invoke();
+                        //used anywhere?
+                        return invokeStatement;
+                    case "8BE398": //passed w01a
+                        Return returnStatement = new Return();
+                        returnStatement.Size = bytes[3];
+                        byte[] returnArgs = bytes.Take(new Range(new Index(4), new Index((int)(4 + returnStatement.Size)))).ToArray();
+                        returnStatement.Args = ParseArgs(returnArgs);
+
+                        return returnStatement;
+                    case "3AB23B": //passed w01a
+                        Print printStatement = new Print();
+                        printStatement.Size = bytes[3];
+                        byte[] printArgs = bytes.Take(new Range(new Index(4), new Index((int)(4 + printStatement.Size)))).ToArray();
+                        printStatement.Args = ParseArgs(printArgs);
+
+                        return printStatement;
+                    default:
+                        throw new NotImplementedException("Unrecognized command type");
+                }
+            }
+            catch(Exception e)
             {
-                case "6592A7":
-                    //chara
-                    //initial testing with w01a and w22a passed(in that "parsing" those files did not crash xdd)
-                    Chara chara = new Chara();
-                    chara.Size = (ushort) (bytes.Length - 2);
-                    int charaArgsLength = bytes[3]; //TODO: is this ALWAYS true? i think so, but idk for sure
-                    byte[] charaArgs = bytes.Take(new Range(new Index(4), new Index(4 + charaArgsLength))).ToArray();
-                    chara.Args = ParseArgs(charaArgs);
-                    
-                    byte[] charaParams = bytes.Take(new Range(new Index(4 + charaArgsLength), new Index(bytes.Length))).ToArray();
-                    chara.Parameters = ParseParams(charaParams);
-
-                    return chara;
-                case "3822C7": //passed w01a
-                    //mesg
-                    Msg msg = new Msg();
-                    msg.Size = (ushort)(bytes.Length - 2); //TODO: where did i get this from? this doesn't make sense
-                    int messageArgsLength = bytes[3];
-                    byte[] mesgArgs = bytes.Take(new Range(new Index(4), new Index(4 + messageArgsLength))).ToArray();
-                    msg.Args = ParseArgs(mesgArgs);
-
-                    return msg;
-                case "3BD490": //passed w01a
-                    //trap
-                    Trap trap = new Trap();
-                    trap.Size = (ushort) (bytes.Length - 2);
-                    int trapArgsLength = bytes[3];
-                    byte[] trapArgs = bytes.Take(new Range(new Index(4), new Index(4 + trapArgsLength))).ToArray();
-                    trap.Args = ParseArgs(trapArgs);
-
-                    byte[] trapParams = bytes.Take(new Range(new Index(4 + trapArgsLength), new Index(bytes.Length))).ToArray();
-                    trap.Parameters = ParseParams(trapParams);
-
-                    return trap;
-                case "082BC9": //passed w01a
-                    //generic command
-                    GameCommand gameCommand = new GameCommand();
-                    gameCommand.Size = (ushort)(bytes.Length - 2);
-                    int gameCommandArgsLength = bytes[3];
-                    byte[] gameCommandArgs = bytes.Take(new Range(new Index(4), new Index(4+gameCommandArgsLength))).ToArray();
-                    gameCommand.Args = ParseArgs(gameCommandArgs);
-
-                    byte[] gameCommandParams = bytes.Take(new Range(new Index(4 + gameCommandArgsLength), new Index(bytes.Length))).ToArray();
-                    gameCommand.Parameters = ParseParams(gameCommandParams);
-                    return gameCommand;
-                case "37C884": //passed w01a
-                    //load
-                    Load load = new Load();
-                    load.Size = bytes[3]; //TODO: fix these size declarations, these are wrong. this is depicting the size of the args, not the whole command
-                    byte[] loadArgs = bytes.Take(new Range(new Index(4), new Index((int)(4 + load.Size)))).ToArray();
-                    load.Args = ParseArgs(loadArgs);
-                    
-                    return load;
-                case "01C090":
-                    //map
-                    Map map = new Map();
-                    //used anywhere?
-                    return map;
-                case "6BB005":
-                    //restart
-                    Restart restart = new Restart();
-                    restart.Size = bytes[3];
-                    byte[] restartArgs = bytes.Take(new Range(new Index(4), new Index((int)(4 + restart.Size)))).ToArray();
-                    restart.Args = ParseArgs(restartArgs);
-                    //def used
-                    return restart;
-                case "8B3DF5":
-                    //unknown command
-                    UnknownCommand unknownCommand = new UnknownCommand();
-                    unknownCommand.Size = bytes[3];
-                    byte[] unknownCommandArgs = bytes.Take(new Range(new Index(4), new Index((int)(4 + unknownCommand.Size)))).ToArray();
-                    unknownCommand.Args = ParseArgs(unknownCommandArgs);
-                    return unknownCommand;
-                case "000D86":
-                    IfBlock ifblock = new IfBlock();
-                    //byte after is length of if block?
-                    ifblock.Size = bytes[3]; //TODO: these feel pretty flimsy - surely at least for if there has to be some that are larger than 255 bytes
-                    byte[] ifBlockArgs = bytes.Take(new Range(new Index(4), new Index((int)(4 + ifblock.Size)))).ToArray();
-                    ifblock.Args = ParseArgs(ifBlockArgs); 
-                    //args are the main if
-
-                    byte[] ifParams = bytes.Take(new Range(new Index((int)(4 + ifblock.Size)), new Index(bytes.Length))).ToArray();
-                    //i param is elif, e param is else?
-                    ifblock.Parameters = ParseParams(ifParams);
-                    //def used
-                    return ifblock;
-                case "A65DB5":
-                    SwitchBlock switchBlock = new SwitchBlock();
-                    //def used
-                    return switchBlock;
-                case "34648C":
-                    Evaluate evaluateStatement = new Evaluate();
-                    //used anywhere?
-                    return evaluateStatement;
-                case "3311EC":
-                    Invoke invokeStatement = new Invoke();
-                    //used anywhere?
-                    return invokeStatement;
-                case "8BE398": //passed w01a
-                    Return returnStatement = new Return();
-                    returnStatement.Size = bytes[3];
-                    byte[] returnArgs = bytes.Take(new Range(new Index(4), new Index((int)(4 + returnStatement.Size)))).ToArray();
-                    returnStatement.Args = ParseArgs(returnArgs);
-                    
-                    return returnStatement;
-                case "3AB23B": //passed w01a
-                    Print printStatement = new Print();
-                    printStatement.Size = bytes[3];
-                    byte[] printArgs = bytes.Take(new Range(new Index(4), new Index((int)(4 + printStatement.Size)))).ToArray();
-                    printStatement.Args = ParseArgs(printArgs);
-                    
-                    return printStatement;
-                default:
-                    throw new NotImplementedException("Unrecognized command type");
+                throw e;
             }
         }
 

@@ -68,8 +68,8 @@ namespace Gcx
 
     public class Expression : Term
     {
-        public Term Term1 { get; set; }
-        public Term Term2 { get; set; }
+        public Term? Term1 { get; set; }
+        public Term? Term2 { get; set; }
         public Gcx.Operation Operator { get; set; }
         public Expression()
         {

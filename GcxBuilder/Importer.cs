@@ -78,6 +78,11 @@ namespace GcxEditor
                         if(procedure.Name == "0FC3D5")
                         {
                             //these ifblocks are gonna be the death of me. right now we're breaking on the second if's base args
+                            //Okay, so the issue I'm running into NOW is that it is possible, for some reason, for a sub-element to reach
+                            //BEYOND it's parent's capacity. This might be able to be mitigated by using bytes.Take instead of array.copy
+                            //but may cause problems later on when trying to recompile - not sure how the game will handle it. So bizarre.
+
+                            //okay, making that change got me a little further, but it still busted on this function xdd.
                         }
                         try
                         {
