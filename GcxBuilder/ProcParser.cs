@@ -385,7 +385,7 @@ namespace GcxEditor
                     }
                     else
                     {
-                        Expression expression = ParseExpression(bytes);
+                        Expression expression = ParseExpression(bytes.Take(new Range(new Index(position), new Index(bytes.Length))).ToArray());
                         args.Add(new Argument { Value = expression });
                         position += (int)expression.Size;
                     }
@@ -429,7 +429,7 @@ namespace GcxEditor
                             byte[] id = bytes.Take(new Range(new Index(position), new Index(position += 2))).ToArray();
                             variableArray.Id = BitConverter.ToUInt16(id.Reverse().ToArray());
                             //I *think* lownibble may be indicating var size? maybe?
-                            variableArray.SizeAndIndex = ParseVarArrayArgs(bytes.Take(new Range(new Index(position), new Index(bytes.Length - 1))).ToArray(), out int varArraySize);
+                            variableArray.SizeAndIndex = ParseVarArrayArgs(bytes.Take(new Range(new Index(position), new Index(bytes.Length))).ToArray(), out int varArraySize);
                             /*if (bytes[position] > 0xC0)
                             {
                                 //literal
@@ -807,7 +807,15 @@ namespace GcxEditor
                         //def used
                         return ifblock;
                     case "A65DB5":
+                        //TODO: does this share the same weird size pattern as ifs?
                         SwitchBlock switchBlock = new SwitchBlock();
+                        switchBlock.Size = bytes[3];
+                        byte[] switchArgs = bytes.Take(new Range(new Index(4), new Index((int)(4 + switchBlock.Size)))).ToArray();
+                        switchBlock.Args = ParseArgs(switchArgs);
+
+                        byte[] switchParams = bytes.Take(new Range(new Index((int)(4 + switchBlock.Size)), new Index(bytes.Length))).ToArray();
+                        switchBlock.Parameters = ParseParams(switchParams);
+
                         //def used
                         return switchBlock;
                     case "34648C":
