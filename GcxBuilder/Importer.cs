@@ -83,6 +83,17 @@ namespace GcxEditor
                             //but may cause problems later on when trying to recompile - not sure how the game will handle it. So bizarre.
 
                             //okay, making that change got me a little further, but it still busted on this function xdd.
+                            //starts at 0x1EB6
+                        }
+                        //next issue im diagnosing: 9a3d0f8b69c92b0804067f -- solved, i think
+                        if (procedure.Name == "3D8589")
+                        {
+                            //now onto having an issue with 0x3D8589 trying to parse a variable array
+                            //key off of 7c2d64d4220004b4c93241a0006d1a
+                        }
+                        if(procedure.Name == "6A8F69")
+                        {
+                            //the latest problematic function
                         }
                         try
                         {

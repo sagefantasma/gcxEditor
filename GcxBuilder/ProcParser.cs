@@ -49,7 +49,7 @@ namespace GcxEditor
                         byte[] procContents = new byte[size];
                         //Array.Copy(bytes, index, procContents, 0, size);
                         procContents = bytes.Take(new Range(new Index(index), new Index(index + size))).ToArray();
-                        Gcx.Procedure subProcedure = ParseProc(procContents);
+                        Gcx.Procedure subProcedure = ParseProc(procContents); //TODO: modify this to send the whole proc's bytes and position
                         if (subProcedure != null)
                             procedure.DecodedContents.Add(subProcedure);
                         index += size;
@@ -61,7 +61,7 @@ namespace GcxEditor
                         byte[] invokeContents = new byte[size];
                         //Array.Copy(bytes, index, invokeContents, 0, size);
                         invokeContents = bytes.Take(new Range(new Index(index), new Index(index + size))).ToArray();
-                        Invoke invoke = ParseInvoke(invokeContents);
+                        Invoke invoke = ParseInvoke(invokeContents); //TODO: modify this to send the whole proc's bytes and position
                         if (invoke != null)
                             procedure.DecodedContents.Add(invoke);
                         index += size;
@@ -75,7 +75,7 @@ namespace GcxEditor
                         byte[] cmdContents = new byte[size];
                         //Array.Copy(bytes, index, cmdContents, 0, size);
                         cmdContents = bytes.Take(new Range(new Index(index), new Index(index + size))).ToArray();
-                        IProcedureElement command = ParseCommand(cmdContents);
+                        IProcedureElement command = ParseCommand(cmdContents); //TODO: modify this to send the whole proc's bytes and position
                         if (command != null)
                             procedure.DecodedContents.Add(command);
                         index += size;
@@ -97,7 +97,7 @@ namespace GcxEditor
                         byte[] expressionContents = new byte[size];
                         //Array.Copy(bytes, index, expressionContents, 0, size);
                         expressionContents = bytes.Take(new Range(new Index(index), new Index(index + size))).ToArray();
-                        Gcx.Expression expression = ParseExpression(expressionContents);
+                        Gcx.Expression expression = ParseExpression(expressionContents); //TODO: modify this to send the whole proc's bytes and position
                         if (expression != null)
                             procedure.DecodedContents.Add(expression);
                         index += size;
@@ -178,7 +178,7 @@ namespace GcxEditor
             }
         }
 
-        private static Gcx.Expression ParseExpression(byte[] bytes, int end = 2)
+        private static Gcx.Expression ParseExpression(byte[] bytes, int end = 1)
         {
             try
             {
@@ -258,7 +258,8 @@ namespace GcxEditor
                 */
 
                 //im thinking maybe we send 0:-2 to parse args? since it should be the same format?
-                List<Argument> args = ParseArgs(bytes.Take(bytes.Length - end).ToArray()); //seems to work well enough?
+                byte[] argBytes = bytes.Take(bytes.Length/* - end*/).ToArray();
+                List<Argument> args = ParseArgs(argBytes); //seems to work well enough?
                 if (args.Count > 1)
                 {
                     expression.Term1 = args[0];
@@ -417,152 +418,227 @@ namespace GcxEditor
                     //20 means array, 10 means single?
                     if (highNibble == 0x20)
                     {
-                        //var array, still needs work - is not accurate
-                        VariableArray variableArray = new VariableArray();
-                        variableArray.LowNibble = (byte)(bytes[position++] & 0x0F);
-                        //position++;
-                        variableArray.ArrayType = bytes[position++];
-                        //position++;
-                        byte[] id = bytes.Take(new Range(new Index(position), new Index(position+=2))).ToArray();
-                        variableArray.Id = BitConverter.ToUInt16(id.Reverse().ToArray());
-                        //I *think* lownibble may be indicating var size? maybe?
-                        variableArray.SizeAndIndex = ParseVarArrayArgs(bytes.Take(new Range(new Index(position), new Index(bytes.Length - 1))).ToArray(), out int varArraySize);
-                        /*if (bytes[position] > 0xC0)
+                        try
                         {
-                            //literal
-                            variableArray.Size = (ushort)bytes[position++];
+                            //var array, still needs work - is not accurate
+                            VariableArray variableArray = new VariableArray();
+                            variableArray.LowNibble = (byte)(bytes[position++] & 0x0F);
+                            //position++;
+                            variableArray.ArrayType = bytes[position++];
+                            //position++;
+                            byte[] id = bytes.Take(new Range(new Index(position), new Index(position += 2))).ToArray();
+                            variableArray.Id = BitConverter.ToUInt16(id.Reverse().ToArray());
+                            //I *think* lownibble may be indicating var size? maybe?
+                            variableArray.SizeAndIndex = ParseVarArrayArgs(bytes.Take(new Range(new Index(position), new Index(bytes.Length - 1))).ToArray(), out int varArraySize);
+                            /*if (bytes[position] > 0xC0)
+                            {
+                                //literal
+                                variableArray.Size = (ushort)bytes[position++];
+                            }
+                            else
+                            {
+                                Gcx.Gcx.DataType dataType = Gcx.Gcx.DataType.FromCode(bytes[position++]);
+                                byte[] dataValue = new byte[4];
+                                Array.Copy(bytes.Take(new Range(new Index(position), new Index(position += dataType.Length))).ToArray(), dataValue, dataType.Length);
+                                variableArray.Size = BitConverter.ToUInt32(dataValue.Reverse().ToArray()); //TODO: confirm this should be reversed or not
+                            }
+                                variableArray.Size = (ushort)bytes[4];
+                            variableArray.Index = (ushort)bytes[5];*/
+                            //21 80 03 3C F1 DE C1 AB
+
+
+
+
+                            //22 00 04 B4 C9 32 41 A0 == $var:varbuf_0x4B4[$arg1,8]
+                            //my thinking: 22 is array, 00 is varbuf, 04 B4 is ID, C9 is 8, 32 is ??, 41 is arg1, A0 is ??
+                            //i have no idea what the significance is of the lower nibble in 22. i tried messing with different values
+                            //and got nothing changed on oct's decompiler, nor did the game crash or have any kind of hindered performance from what
+                            //i could see. *surely* it isnt a totally random value, right? why is 0x4B4 always 22, but 0x494 is 29?
+                            //why does the game not crash when i change them?
+                            //
+                            //after a little more poking around, setting 22 to anything greater(23->2F) results in no changed behavior.
+                            //however, setting 22 to 21 or 20 results in the locker states getting reset entirely on load. (w01a behavior)
+                            //i'm thinking then that the lower nibble might determine how many bits to track or something for each index of the array?
+                            //maybe the answer lies in single variable declarations, i should poke around in those to see if there's any info to glean
+
+                            //22 00 04 8B CA C2 00 == $var:varbuf_0x48B[2,9]
+                            //22 is array, 00 is varbuf, 04 8B is ID, CA is 9, C2 is 1.
+                            //does 32 indicate the previous number was a real and A0 indicated the previous number was an arg?
+                            //and if neither are present, then both are reals? not sure. need to study oct's decomp more to have a better understanding i think.
+
+                            //args.Add(new Argument { Value = bytes.Take(new Range(new Index(position), new Index(position + 8))).ToList() }); //TODO: figure out how to modify Argument to take this properly
+                            args.Add(new Argument { Value = variableArray });
+                            position += varArraySize; //TODO: confirm it is always this
                         }
-                        else
+                        catch (Exception e) 
                         {
-                            Gcx.Gcx.DataType dataType = Gcx.Gcx.DataType.FromCode(bytes[position++]);
-                            byte[] dataValue = new byte[4];
-                            Array.Copy(bytes.Take(new Range(new Index(position), new Index(position += dataType.Length))).ToArray(), dataValue, dataType.Length);
-                            variableArray.Size = BitConverter.ToUInt32(dataValue.Reverse().ToArray()); //TODO: confirm this should be reversed or not
+                            throw e;
                         }
-                            variableArray.Size = (ushort)bytes[4];
-                        variableArray.Index = (ushort)bytes[5];*/
-                        //21 80 03 3C F1 DE C1 AB
-
-                            
-
-
-                        //22 00 04 B4 C9 32 41 A0 == $var:varbuf_0x4B4[$arg1,8]
-                        //my thinking: 22 is array, 00 is varbuf, 04 B4 is ID, C9 is 8, 32 is ??, 41 is arg1, A0 is ??
-                        //i have no idea what the significance is of the lower nibble in 22. i tried messing with different values
-                        //and got nothing changed on oct's decompiler, nor did the game crash or have any kind of hindered performance from what
-                        //i could see. *surely* it isnt a totally random value, right? why is 0x4B4 always 22, but 0x494 is 29?
-                        //why does the game not crash when i change them?
-                        //
-                        //after a little more poking around, setting 22 to anything greater(23->2F) results in no changed behavior.
-                        //however, setting 22 to 21 or 20 results in the locker states getting reset entirely on load. (w01a behavior)
-                        //i'm thinking then that the lower nibble might determine how many bits to track or something for each index of the array?
-                        //maybe the answer lies in single variable declarations, i should poke around in those to see if there's any info to glean
-
-                        //22 00 04 8B CA C2 00 == $var:varbuf_0x48B[2,9]
-                        //22 is array, 00 is varbuf, 04 8B is ID, CA is 9, C2 is 1.
-                        //does 32 indicate the previous number was a real and A0 indicated the previous number was an arg?
-                        //and if neither are present, then both are reals? not sure. need to study oct's decomp more to have a better understanding i think.
-
-                        //args.Add(new Argument { Value = bytes.Take(new Range(new Index(position), new Index(position + 8))).ToList() }); //TODO: figure out how to modify Argument to take this properly
-                        args.Add(new Argument { Value = variableArray });
-                        position += varArraySize; //TODO: confirm it is always this
                     }
                     else if (highNibble == 0x10)
                     {
-                        //single variable
-                        Variable variable = new Variable();
-                        variable.LowNibble = (byte)(bytes[position] & 0x0F);
-                        byte[] id = bytes.Take(new Range(new Index(2), new Index(4))).ToArray(); //this is fucked
-                        variable.Id = BitConverter.ToUInt16(id.Reverse().ToArray());
+                        try
+                        {
+                            //single variable
+                            Variable variable = new Variable();
+                            variable.LowNibble = (byte)(bytes[position] & 0x0F);
+                            byte[] id = bytes.Take(new Range(new Index(2), new Index(4))).ToArray(); //this is fucked
+                            variable.Id = BitConverter.ToUInt16(id.Reverse().ToArray());
 
-                        //args.Add(new Argument { Value = bytes.Take(new Range(new Index(position), new Index(position + 4))).ToList() }); //TODO: figure out how to modify Argument to take this properly
-                        args.Add(new Argument { Value = variable, Size = 3 }); //TODO: confirm always 3
-                        position += 4;
+                            //args.Add(new Argument { Value = bytes.Take(new Range(new Index(position), new Index(position + 4))).ToList() }); //TODO: figure out how to modify Argument to take this properly
+                            args.Add(new Argument { Value = variable, Size = 3 }); //TODO: confirm always 3
+                            position += 4;
+                        }
+                        catch (Exception e) 
+                        {
+                            throw e;
+                        } //i believe this should be fixed now
                     }
                     else if (highNibble >= 0xC0)
                     {
                         //basic number
                         //args.Add(new Argument { Value = new List<byte> { (byte)(bytes[position] - 0xC1) } });
-                        args.Add(new Argument { Value = new Constant { Size = 1, Value = (byte)(bytes[position] - 0xC1) } });
-                        position++;
+                        try
+                        {
+                            args.Add(new Argument { Value = new Constant { Size = 1, Value = (byte)(bytes[position] - 0xC1) } });
+                            position++;
+                        }
+                        catch (Exception e) 
+                        {
+                            throw e;
+                        }
                     }
                     else if (highNibble == 0x40) //given arg, single byte
                     {
                         //args.Add(new Argument { Value = new List<byte> { bytes[position] } });
-                        args.Add(new Argument { Value = new PassedArg { ArgNum = bytes[position] }, Size = 1 });
-                        position++;
+                        try
+                        {
+                            args.Add(new Argument { Value = new PassedArg { ArgNum = bytes[position] }, Size = 1 });
+                            position++;
+                        }
+                        catch (Exception e) 
+                        {
+                            throw e;
+                        }
                     }
                     else if (highNibble == 0xA0 || highNibble == 0xB0)
                     {
-                        //nested expression x_x;;
-
-                        Gcx.Expression expression = ParseNestedExpression(args[args.Count - 2], args[args.Count - 1], ParseOperator(currentByte));
-                        args.RemoveAt(args.Count - 1);
-                        args.RemoveAt(args.Count - 1);
-                        args.Add(new Argument { Value = expression, Size = expression.Size });
-                        
-                        position++;
-                    }
-                    else if (highNibble == 0x30)
-                    {
-                        byte[] expressionSizeBytes = bytes.Take(new Range(new Index(position), new Index(position + 4))).ToArray();
-                        int size = ParseSize(expressionSizeBytes, ref position);
-                        if(size < 0xD)
+                        if (position != bytes.Length - 1)
                         {
-                            //size--;
-                        }
-                        byte[] expressionBytes = bytes.Take(new Range(new Index(position), new Index(size + position))).ToArray();
-                        Gcx.Expression expression = ParseExpression(expressionBytes);
-                        args.Add(new Argument { Value = expression, Size = expression.Size });
-                        if(size < 0xC)
-                        {
-                            //size++;
-                        }
-                        position += size;
-                    }
-                    else if (highNibble == 0x80)
-                    {
-                        //nested proc
-                        byte[] nestedProcBytes = bytes.Take(new Range(new Index(position), new Index(bytes.Length - 1))).ToArray();
-                        int size = ParseSize(nestedProcBytes, ref position);
-                        if (size < 0xD)
-                        {
-                            size--;
-                        }
-                        nestedProcBytes = bytes.Take(new Range(new Index(position), new Index(size + position))).ToArray();
-                        //TODO: i'm *pretty sure* this will cause issues if the nested proc is not the final parameter.
-                        Gcx.Procedure procedure = ParseProc(nestedProcBytes);
-                        args.Add(new Argument { Value = procedure, Size = procedure.Size });
-                        if (size < 0xC)
-                        {
-                            if(size == 0)
+                            try
                             {
-                                position--;
+                                //nested expression x_x;;
+
+                                Gcx.Expression expression = ParseNestedExpression(args[args.Count - 2], args[args.Count - 1], ParseOperator(currentByte));
+                                args.RemoveAt(args.Count - 1);
+                                args.RemoveAt(args.Count - 1);
+                                args.Add(new Argument { Value = expression, Size = expression.Size });
+
+                                position++;
                             }
-                            size++;
-                        }
-                        position += size;
-                    }
-                    else if (bytes[position] != 0)
-                    {
-                        Gcx.Gcx.DataType dataType = Gcx.Gcx.DataType.FromCode(currentByte);
-                        //args.Add(bytes.Take(new Range(new Index(position + 1), new Index(position + 1 + dataType.Length))).ToArray());
-                        //args.Add(new Argument { Value = bytes.Take(new Range(new Index(position + 1), new Index(position + 1 + dataType.Length))).ToList() });
-                        //byte[] dataValue = new byte[dataType.Length];
-                        byte[] dataValue = new byte[4];
-                        if (dataType == Gcx.Gcx.DataType.String)
-                        {
-                            dataType.Length = bytes[1];
-                            dataValue = new byte[dataType.Length];
-                            Array.Copy(bytes, position + 2, dataValue, 0, dataType.Length);
-                            args.Add(new Argument { Value = new Literal { Value = dataValue }, Size = (ushort)dataType.Length });
+                            catch (Exception e) 
+                            {
+                                throw e;
+                            }
                         }
                         else
                         {
-                            Array.Copy(bytes, position + 1, dataValue, 0, dataType.Length);
-                            args.Add(new Argument { Value = new Literal { Value = BitConverter.ToUInt32(dataValue) }, Size = (ushort)dataType.Length, });
+                            position++; //this *should* be just the end of the whole expression that got started, so a break might do, but im nervous so sticking with pos++
                         }
-                        position += dataType.Length + 1;
+                    }
+                    else if (highNibble == 0x30)
+                    {
+                        try
+                        {
+                            byte[] expressionSizeBytes = bytes.Take(new Range(new Index(position), new Index(position + 4))).ToArray();
+                            int size = ParseSize(expressionSizeBytes, ref position);
+                            if (size < 0xD)
+                            {
+                                //size--;
+                            }
+                            byte[] expressionBytes = bytes.Take(new Range(new Index(position), new Index(size + position))).ToArray();
+                            Gcx.Expression expression = ParseExpression(expressionBytes);
+                            args.Add(new Argument { Value = expression, Size = expression.Size });
+                            if (size < 0xC)
+                            {
+                                //size++;
+                            }
+                            position += size;
+                        }
+                        catch(Exception e) 
+                        {
+                            throw e;
+                        }
+                    }
+                    else if (highNibble == 0x80)
+                    {
+                        try
+                        {
+                            //nested proc
+                            byte[] nestedProcBytes = bytes.Take(new Range(new Index(position), new Index(bytes.Length - 1))).ToArray();
+                            int size = ParseSize(nestedProcBytes, ref position);
+                            if (size < 0xD)
+                            {
+                                size--;
+                            }
+                            nestedProcBytes = bytes.Take(new Range(new Index(position), new Index(size + position))).ToArray();
+                            //TODO: i'm *pretty sure* this will cause issues if the nested proc is not the final parameter.
+                            Gcx.Procedure procedure = ParseProc(nestedProcBytes);
+                            args.Add(new Argument { Value = procedure, Size = procedure.Size });
+                            if (size < 0xC)
+                            {
+                                if (size == 0)
+                                {
+                                    position--;
+                                }
+                                size++;
+                            }
+                            position += size;
+                        }
+                        catch(Exception e)
+                        {
+                            throw e;
+                        }
+                    }
+                    else if (highNibble == 0x90)
+                    {
+                        try
+                        {
+                            args.Add(new Argument { Value = new LocalVar { Id = (ushort)(currentByte & 0x0F) } });
+                            position++;
+                        }
+                        catch(Exception e)
+                        {
+                            throw e;
+                        }
+                    }
+                    else if (bytes[position] != 0)
+                    {
+                        try
+                        {
+                            Gcx.Gcx.DataType dataType = Gcx.Gcx.DataType.FromCode(currentByte);
+                            //args.Add(bytes.Take(new Range(new Index(position + 1), new Index(position + 1 + dataType.Length))).ToArray());
+                            //args.Add(new Argument { Value = bytes.Take(new Range(new Index(position + 1), new Index(position + 1 + dataType.Length))).ToList() });
+                            //byte[] dataValue = new byte[dataType.Length];
+                            byte[] dataValue = new byte[4];
+                            if (dataType == Gcx.Gcx.DataType.String)
+                            {
+                                dataType.Length = bytes[1];
+                                dataValue = new byte[dataType.Length];
+                                Array.Copy(bytes, position + 2, dataValue, 0, dataType.Length);
+                                args.Add(new Argument { Value = new Literal { Value = dataValue }, Size = (ushort)dataType.Length });
+                            }
+                            else
+                            {
+                                Array.Copy(bytes, position + 1, dataValue, 0, dataType.Length);
+                                args.Add(new Argument { Value = new Literal { Value = BitConverter.ToUInt32(dataValue) }, Size = (ushort)dataType.Length, });
+                            }
+                            position += dataType.Length + 1;
+                        }
+                        catch (Exception e)
+                        {
+                            throw e;
+                        }
                     }
                     else
                     {
@@ -595,7 +671,7 @@ namespace GcxEditor
                         continue;
                     }
                     byte lowNibble = (byte)(startOfParameterDeclaration & 0x0F);
-                    int size = ParseSize(bytes.Take(new Range(new Index(position), new Index(bytes.Length - 1))).ToArray(), ref position);
+                    int size = ParseSize(bytes.Take(new Range(new Index(position), new Index(bytes.Length))).ToArray(), ref position);
 
                     Parameter parameter = new Parameter();
                     parameter.ParamType = (char)bytes[position];
@@ -700,7 +776,7 @@ namespace GcxEditor
                         restart.Args = ParseArgs(restartArgs);
                         //def used
                         return restart;
-                    case "8B3DF5":
+                    case "8B3DF5": //passed w01a
                         //unknown command
                         UnknownCommand unknownCommand = new UnknownCommand();
                         unknownCommand.Size = bytes[3];
@@ -710,12 +786,22 @@ namespace GcxEditor
                     case "000D86":
                         IfBlock ifblock = new IfBlock();
                         //byte after is length of if block?
-                        ifblock.Size = bytes[3]; //TODO: these feel pretty flimsy - surely at least for if there has to be some that are larger than 255 bytes
-                        byte[] ifBlockArgs = bytes.Take(new Range(new Index(4), new Index((int)(4 + ifblock.Size)))).ToArray();
+                        int position = 3;
+                        ifblock.Size = bytes[position++]; //TODO: these feel pretty flimsy - surely at least for if there has to be some that are larger than 255 bytes
+                        if(ifblock.Size >= 0x80)
+                        {
+                            byte highNibble = (byte)(ifblock.Size & 0x0F);
+                            byte lowByte = (byte)(bytes[position++]);
+                            byte[] size = new byte[4] { lowByte, highNibble,0, 0 };
+                            ifblock.Size = BitConverter.ToUInt32(size);
+                        }
+                        //is the size for ifs different than other elements? why are there these dead bytes in some of the if blocks?
+                        //holy shit, i think it is lmaooo
+                        byte[] ifBlockArgs = bytes.Take(new Range(new Index(position), new Index((int)(position + ifblock.Size)))).ToArray();
                         ifblock.Args = ParseArgs(ifBlockArgs);
                         //args are the main if
 
-                        byte[] ifParams = bytes.Take(new Range(new Index((int)(4 + ifblock.Size)), new Index(bytes.Length))).ToArray();
+                        byte[] ifParams = bytes.Take(new Range(new Index((int)(position + ifblock.Size)), new Index(bytes.Length))).ToArray();
                         //i param is elif, e param is else?
                         ifblock.Parameters = ParseParams(ifParams);
                         //def used
