@@ -95,6 +95,16 @@ namespace GcxEditor
                         {
                             //the latest problematic function
                         }
+                        if(procedure.Name == "8DCEDB")
+                        {
+                            //the latest-est problematic function, starts at 4A41
+                            //3512000aa0a0ada0 is what broke it, presumably because of all the a0s?
+                        }
+                        if(procedure.Name == "F19AA7")
+                        {
+                            //even more latest problematic function :*(
+                            //breaks in the if statement's args, specifically on param l in the chara... weird
+                        }
                         try
                         {
                             Procedure parsedProc = ProcParser.ParseProc(procedure.RawContents); //raw contents arent getting filled properly?

@@ -271,7 +271,8 @@ namespace GcxEditor
                     expression.Term2 = args[0];
                 }
 
-                expression.Operator = ParseOperator(bytes[bytes.Length - end]);
+                //expression.Operator = ParseOperator(bytes[bytes.Length - end]);
+                expression.Operator = ParseOperator(bytes.Last(x => x != 0x00));
                 expression.Size = (ushort)bytes.Length;
                 return expression;
             }
@@ -357,6 +358,8 @@ namespace GcxEditor
 
         private static List<Argument> ParseVarArrayArgs(byte[] bytes, out int varArraySize)
         {
+            //NOTE: for some reason, a varbuf used inside a vararray is always done as an expression... i dont understand why.
+
             //Okay, so i think the max size of the array is always a literal... but theoretically there's nothing stopping it from being a varbuf reference.
             //I think the best way to do it will be this:
             //If byte >= 0xC0: literal
@@ -385,7 +388,14 @@ namespace GcxEditor
                     }
                     else
                     {
-                        Expression expression = ParseExpression(bytes.Take(new Range(new Index(position), new Index(bytes.Length))).ToArray());
+                        byte[] expressionSizeBytes = bytes.Take(new Range(new Index(position), new Index(position + 4))).ToArray();
+                        int size = ParseSize(expressionSizeBytes, ref position);
+                        if (size < 0xD)
+                        {
+                            //size--;
+                        }
+                        byte[] expressionBytes = bytes.Take(new Range(new Index(position), new Index(size + position))).ToArray();
+                        Gcx.Expression expression = ParseExpression(expressionBytes);
                         args.Add(new Argument { Value = expression });
                         position += (int)expression.Size;
                     }
@@ -513,8 +523,19 @@ namespace GcxEditor
                         //args.Add(new Argument { Value = new List<byte> { bytes[position] } });
                         try
                         {
-                            args.Add(new Argument { Value = new PassedArg { ArgNum = bytes[position] }, Size = 1 });
-                            position++;
+                            if (currentByte < 0x4F)
+                            {
+                                args.Add(new Argument { Value = new PassedArg { ArgNum = bytes[position] }, Size = 1 });
+                                position++;
+                            }
+                            else// if(position != bytes.Length - 1)
+                            {
+                                //looks like 0x4F will be followed by a 0 if it is 15
+                                int argNum = 0xF;
+                                argNum += bytes[position + 1];
+                                args.Add(new Argument { Value = new PassedArg { ArgNum = (byte)argNum }, Size = 2 });
+                                position+=2;
+                            }
                         }
                         catch (Exception e) 
                         {
@@ -623,7 +644,7 @@ namespace GcxEditor
                             byte[] dataValue = new byte[4];
                             if (dataType == Gcx.Gcx.DataType.String)
                             {
-                                dataType.Length = bytes[1];
+                                dataType.Length = bytes[position+1];
                                 dataValue = new byte[dataType.Length];
                                 Array.Copy(bytes, position + 2, dataValue, 0, dataType.Length);
                                 args.Add(new Argument { Value = new Literal { Value = dataValue }, Size = (ushort)dataType.Length });
