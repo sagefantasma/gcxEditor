@@ -36,8 +36,9 @@ namespace GcxEditor
                     List<Procedure> parsedProcedures = new List<Procedure>();
                     foreach (KeyValuePair<byte[],byte[]> procedureOffset in procedureTable)
                     {
-                        int startingIndex = BitConverter.ToInt32(procedureOffset.Value) + sizeof(uint);
-                        ushort procedureSize = ParseProcedureSize(procedureData, BitConverter.ToInt32(procedureOffset.Value) + sizeof(uint));
+                        int startingIndex = (BitConverter.ToInt32(procedureOffset.Value) & 0xFFFFFF ) + sizeof(uint);
+                        //NOTE: I don't understand _why_ the compiler makes the above necessary... but this is what seems to make things work.
+                        ushort procedureSize = ParseProcedureSize(procedureData, startingIndex);
                         int startOffset = procedureSize > 0xFF ? 3 : procedureSize > 0xC ? 2 : 1; //if the function is less than 255 bytes, the data starts 2 bytes after the procedure offset in the table, otherwise it is 3.
 
                         byte[] procedureBody = TakeRangeFromArray(procedureData, startingIndex + startOffset, startingIndex + procedureSize + startOffset);
@@ -104,6 +105,10 @@ namespace GcxEditor
                         {
                             //even more latest problematic function :*(
                             //breaks in the if statement's args, specifically on param l in the chara... weird
+                        }
+                        if(procedure.Name == "AA023F")
+                        {
+                            //breaking on second command
                         }
                         try
                         {
