@@ -31,9 +31,6 @@ namespace GcxEditor
                 {
                     //squelch this error because i'm lazy and it works :)
                 }
-                catch(Exception e) 
-                { 
-                }
             }
 
             return subArray;
@@ -51,106 +48,63 @@ namespace GcxEditor
                 {
                     return procedure;
                 }
+
                 do
                 {
                     byte highByte = (byte)(bytes[index] & 0xF0);
+                    uint size = 0;
 
-                    if (highByte == 0xC0)
+                    switch (highByte)
                     {
-                        //this seems to not be a real case
-                        //going into num
-                    }
-                    else if (highByte == 0x90)
-                    {
-                        //this seems to not be a real case
-                        //local
-                    }
-                    else if (highByte == 0x80)
-                    {
-                        //Going into nested subproc
-                        nestedLevel++; //i think this is unimportant
-                        //uint size = ParseSize(bytes.Take(new Range(new Index(index), new Index(index + 3))).ToArray(), ref index); //TODO: verify
-                        uint size = ParseSize(TakeRange(bytes, index, index + 3), ref index);
-                        if (size < 0xD)
-                            size--;
-                        byte[] procContents = new byte[size];
-                        //Array.Copy(bytes, index, procContents, 0, size);
-                        //procContents = bytes.Take(new Range(new Index(index), new Index(index + size))).ToArray();
-                        procContents = TakeRange(bytes, index, index + size);
-                        Gcx.Procedure subProcedure = ParseProc(procContents); //TODO: modify this to send the whole proc's bytes and position
-                        if (subProcedure != null)
-                            procedure.DecodedContents.Add(subProcedure);
-                        index += size;
-                    }
-                    else if (highByte == 0x70)
-                    {
-                        //going into invoke
-                        //uint size = ParseSize(bytes.Take(new Range(new Index(index), new Index(index + 3))).ToArray(), ref index);
-                        uint size = ParseSize(TakeRange(bytes, index, index + 3), ref index);
-                        byte[] invokeContents = new byte[size];
-                        //Array.Copy(bytes, index, invokeContents, 0, size);
-                        //invokeContents = bytes.Take(new Range(new Index(index), new Index(index + size))).ToArray();
-                        invokeContents = TakeRange(bytes, index, index + size);
-                        Invoke invoke = ParseInvoke(invokeContents); //TODO: modify this to send the whole proc's bytes and position
-                        if (invoke != null)
-                            procedure.DecodedContents.Add(invoke);
-                        index += size;
-                    }
-                    //if (CommandDeclaration.Contains(bytes[index]))
-                    else if (highByte == 0x60)
-                    {
-                        //going into command
-                        nestedLevel++;
-                        //uint size = ParseSize(bytes.Take(new Range(new Index(index), new Index(index + 3))).ToArray(), ref index); //TODO: verify
-                        uint size = ParseSize(TakeRange(bytes, index, index + 3), ref index);
-                        byte[] cmdContents = new byte[size];
-                        //Array.Copy(bytes, index, cmdContents, 0, size);
-                        //cmdContents = bytes.Take(new Range(new Index(index), new Index(index + size))).ToArray();
-                        cmdContents = TakeRange(bytes, index, index + size);
-                        IProcedureElement command = ParseCommand(cmdContents); //TODO: modify this to send the whole proc's bytes and position
-                        if (command != null)
-                            procedure.DecodedContents.Add(command);
-                        index += size;
-                    }
-                    else if (highByte == 0x50)
-                    {
-                        //this seems to not be a real case
-                        //param
-                    }
-                    else if (highByte == 0x40)
-                    {
-                        //this seems to not be a real case
-                        //args
-                    }
-                    else if (highByte == 0x30)
-                    {
-                        //expression
-                        //uint size = ParseSize(bytes.Take(new Range(new Index(index), new Index(index + 3))).ToArray(), ref index);
-                        uint size = ParseSize(TakeRange(bytes, index, index + 3), ref index);
-                        byte[] expressionContents = new byte[size];
-                        //Array.Copy(bytes, index, expressionContents, 0, size);
-                        //expressionContents = bytes.Take(new Range(new Index(index), new Index(index + size))).ToArray();
-                        expressionContents = TakeRange(bytes, index, index + size);
-                        Gcx.Expression expression = ParseExpression(expressionContents); //TODO: modify this to send the whole proc's bytes and position
-                        if (expression != null)
-                            procedure.DecodedContents.Add(expression);
-                        index += size;
-                    }
-                    else if (highByte == 0x20)
-                    {
-                        //this seems to not be a real case
-                        //var array
-                    }
-                    else if (highByte == 0x10)
-                    {
-                        //this seems to not be a real case
-                        //var
-                    }
-                    else
-                    {
-                        //return null;
-                        //if (bytes[index] == 0x0)
-                        index++;
+                        case 0x80:
+                            //Going into nested subproc
+                            nestedLevel++; //i think this is unimportant
+                            size = ParseSize(TakeRange(bytes, index, index + 3), ref index);
+                            if (size < 0xD)
+                                size--;
+                            byte[] procContents = new byte[size];
+                            procContents = TakeRange(bytes, index, index + size);
+                            Gcx.Procedure subProcedure = ParseProc(procContents);
+                            if (subProcedure != null)
+                                procedure.DecodedContents.Add(subProcedure);
+                            index += size;
+                            break;
+                        case 0x70:
+                            //going into invoke
+                            size = ParseSize(TakeRange(bytes, index, index + 3), ref index);
+                            byte[] invokeContents = new byte[size];
+                            invokeContents = TakeRange(bytes, index, index + size);
+                            Invoke invoke = ParseInvoke(invokeContents);
+                            if (invoke != null)
+                                procedure.DecodedContents.Add(invoke);
+                            index += size;
+                            break;
+                        case 0x60:
+                            //going into command
+                            nestedLevel++;
+                            size = ParseSize(TakeRange(bytes, index, index + 3), ref index);
+                            byte[] cmdContents = new byte[size];
+                            cmdContents = TakeRange(bytes, index, index + size);
+                            IProcedureElement command = ParseCommand(cmdContents);
+                            if (command != null)
+                                procedure.DecodedContents.Add(command);
+                            index += size;
+                            break;
+                        case 0x30:
+                            //expression
+                            size = ParseSize(TakeRange(bytes, index, index + 3), ref index);
+                            byte[] expressionContents = new byte[size];
+                            expressionContents = TakeRange(bytes, index, index + size);
+                            Gcx.Expression expression = ParseExpression(expressionContents);
+                            if (expression != null)
+                                procedure.DecodedContents.Add(expression);
+                            index += size;
+                            break;
+                        case 0x0:
+                            index++;
+                            break;
+                        default:
+                            throw new InvalidDataException($"{highByte} at {index} is an invalid declaration.");
                     }
                 } while (index < bytes.Length);
 
@@ -158,7 +112,7 @@ namespace GcxEditor
             }
             catch(Exception e)
             {
-                throw e;
+                throw new ParserException($"Failed to parse procedure: {e}");
             }
         }
 
@@ -173,24 +127,30 @@ namespace GcxEditor
                     index++;
                     return lowNibble;
                 }
+                else if (lowNibble == 0xD)
+                {
+                    index += 2;
+                    return bytes[1];
+                }
+                else if(lowNibble == 0xE)
+                {
+                    index += 3;
+                    return BitConverter.ToUInt16(bytes, 1);
+                }
                 else
                 {
-                    if (lowNibble == 0xD)
-                    {
-                        index += 2;
-                        return bytes[1];
-                    }
-                    else
-                    {
-                        index += 3;
-                        return BitConverter.ToUInt16(bytes, 1);
-                    }
-                    //TODO: technically, 0xE and 0xF are both possible. 0xE is u16, 0xF is u24. need to support that
+                    index += 4;
+                    byte[] u24 = new byte[4];
+                    Array.Copy(bytes, 1, u24, 0, 3);
+                    //Theoretically, I could follow the same pattern used for the u16 sizing, but would require
+                    //sending a larger byte-array for all requests.
+                    //That said, this in itself is already untested, as no standard gcx files have a u24 size anywhere.
+                    return BitConverter.ToUInt32(u24); 
                 }
             }
             catch(Exception e)
             {
-                throw e;
+                throw new ParserException($"Something unexpected went wrong when parsing a size from byte array of [{BitConverter.ToString(bytes).Replace("-", "")}]: {e}");
             }
         }
 
@@ -208,11 +168,11 @@ namespace GcxEditor
             }
             catch(Exception e)
             {
-                throw e;
+                throw new ParserException ($"Failed to parse nested expression: {e}");
             }
         }
 
-        private static Gcx.Expression ParseExpression(byte[] bytes, int end = 1)
+        private static Gcx.Expression ParseExpression(byte[] bytes)
         {
             try
             {
@@ -291,8 +251,7 @@ namespace GcxEditor
                 //A0 is end
                 */
 
-                //im thinking maybe we send 0:-2 to parse args? since it should be the same format?
-                byte[] argBytes = bytes.Take(bytes.Length/* - end*/).ToArray();
+                byte[] argBytes = bytes.Take(bytes.Length).ToArray();
                 List<Argument> args = ParseArgs(argBytes); //seems to work well enough?
                 if (args.Count > 1)
                 {
@@ -304,15 +263,14 @@ namespace GcxEditor
                     expression.Term1 = null;
                     expression.Term2 = args[0];
                 }
-
-                //expression.Operator = ParseOperator(bytes[bytes.Length - end]);
+                
                 expression.Operator = ParseOperator(bytes.Last(x => x != 0x00));
                 expression.Size = (ushort)bytes.Length;
                 return expression;
             }
             catch(Exception e)
             {
-                throw e;
+                throw new ParserException($"Failed to parse gcx expression: {e}");
             }
         }
 
@@ -321,7 +279,7 @@ namespace GcxEditor
             switch (operatorByte)
             {
                 default:
-                    throw new Exception("Invalid expression operator provided");
+                    throw new ParserException("Invalid expression operator provided");
                 case 0xA0:
                     return Gcx.Gcx.Operation.NoOp;
                 case 0xA1:
@@ -386,7 +344,7 @@ namespace GcxEditor
             }
             catch(Exception e)
             {
-                throw e;
+                throw new ParserException($"Failed to parse invoke: {e}");
             }
         }
 
@@ -422,14 +380,9 @@ namespace GcxEditor
                     }
                     else
                     {
-                        //byte[] expressionSizeBytes = bytes.Take(new Range(new Index(position), new Index(position + 4))).ToArray();
                         byte[] expressionSizeBytes = TakeRange(bytes, position, position + 4);
                         uint size = ParseSize(expressionSizeBytes, ref position);
-                        if (size < 0xD)
-                        {
-                            //size--;
-                        }
-                        //byte[] expressionBytes = bytes.Take(new Range(new Index(position), new Index(size + position))).ToArray();
+
                         byte[] expressionBytes = TakeRange(bytes, position, position + size);
                         Gcx.Expression expression = ParseExpression(expressionBytes);
                         args.Add(new Argument { Value = expression });
@@ -442,7 +395,7 @@ namespace GcxEditor
             }
             catch(Exception e)
             {
-                throw e;
+                throw new ParserException($"Failed to parse var array args: {e}");
             }
         }
 
@@ -462,251 +415,235 @@ namespace GcxEditor
                     int highNibble = currentByte & 0xF0;
                     //if second byte == 00, then just varbuf. if == 10, then localvarbuf. if == 80, then linkvarbuf
                     //20 means array, 10 means single?
-                    if (highNibble == 0x20)
+                    switch (highNibble)
                     {
-                        try
-                        {
-                            //var array, still needs work - is not accurate
-                            VariableArray variableArray = new VariableArray();
-                            variableArray.LowNibble = (byte)(bytes[position++] & 0x0F);
-                            //position++;
-                            variableArray.ArrayType = bytes[position++];
-                            //position++;
-                            //byte[] id = bytes.Take(new Range(new Index(position), new Index(position += 2))).ToArray();
-                            byte[] id = TakeRange(bytes, position, position += 2);
-                            variableArray.Id = BitConverter.ToUInt16(id.Reverse().ToArray());
-                            //I *think* lownibble may be indicating var size? maybe?
-                            //variableArray.SizeAndIndex = ParseVarArrayArgs(bytes.Take(new Range(new Index(position), new Index(bytes.Length))).ToArray(), out uint varArraySize);
-                            variableArray.SizeAndIndex = ParseVarArrayArgs(TakeRange(bytes, position, (uint)bytes.Length), out uint varArraySize);
-                            /*if (bytes[position] > 0xC0)
-                            {
-                                //literal
-                                variableArray.Size = (ushort)bytes[position++];
-                            }
-                            else
-                            {
-                                Gcx.Gcx.DataType dataType = Gcx.Gcx.DataType.FromCode(bytes[position++]);
-                                byte[] dataValue = new byte[4];
-                                Array.Copy(bytes.Take(new Range(new Index(position), new Index(position += dataType.Length))).ToArray(), dataValue, dataType.Length);
-                                variableArray.Size = BitConverter.ToUInt32(dataValue.Reverse().ToArray()); //TODO: confirm this should be reversed or not
-                            }
-                                variableArray.Size = (ushort)bytes[4];
-                            variableArray.Index = (ushort)bytes[5];*/
-                            //21 80 03 3C F1 DE C1 AB
-
-
-
-
-                            //22 00 04 B4 C9 32 41 A0 == $var:varbuf_0x4B4[$arg1,8]
-                            //my thinking: 22 is array, 00 is varbuf, 04 B4 is ID, C9 is 8, 32 is ??, 41 is arg1, A0 is ??
-                            //i have no idea what the significance is of the lower nibble in 22. i tried messing with different values
-                            //and got nothing changed on oct's decompiler, nor did the game crash or have any kind of hindered performance from what
-                            //i could see. *surely* it isnt a totally random value, right? why is 0x4B4 always 22, but 0x494 is 29?
-                            //why does the game not crash when i change them?
-                            //
-                            //after a little more poking around, setting 22 to anything greater(23->2F) results in no changed behavior.
-                            //however, setting 22 to 21 or 20 results in the locker states getting reset entirely on load. (w01a behavior)
-                            //i'm thinking then that the lower nibble might determine how many bits to track or something for each index of the array?
-                            //maybe the answer lies in single variable declarations, i should poke around in those to see if there's any info to glean
-
-                            //22 00 04 8B CA C2 00 == $var:varbuf_0x48B[2,9]
-                            //22 is array, 00 is varbuf, 04 8B is ID, CA is 9, C2 is 1.
-                            //does 32 indicate the previous number was a real and A0 indicated the previous number was an arg?
-                            //and if neither are present, then both are reals? not sure. need to study oct's decomp more to have a better understanding i think.
-
-                            //args.Add(new Argument { Value = bytes.Take(new Range(new Index(position), new Index(position + 8))).ToList() }); //TODO: figure out how to modify Argument to take this properly
-                            args.Add(new Argument { Value = variableArray });
-                            position += varArraySize; //TODO: confirm it is always this
-                        }
-                        catch (Exception e) 
-                        {
-                            throw e;
-                        }
-                    }
-                    else if (highNibble == 0x10)
-                    {
-                        try
-                        {
-                            //single variable
-                            Variable variable = new Variable();
-                            variable.LowNibble = (byte)(bytes[position] & 0x0F);
-                            byte[] id = bytes.Take(new Range(new Index(2), new Index(4))).ToArray(); //this is fucked
-                            variable.Id = BitConverter.ToUInt16(id.Reverse().ToArray());
-
-                            //args.Add(new Argument { Value = bytes.Take(new Range(new Index(position), new Index(position + 4))).ToList() }); //TODO: figure out how to modify Argument to take this properly
-                            args.Add(new Argument { Value = variable, Size = 3 }); //TODO: confirm always 3
-                            position += 4;
-                        }
-                        catch (Exception e) 
-                        {
-                            throw e;
-                        } //i believe this should be fixed now
-                    }
-                    else if (highNibble >= 0xC0)
-                    {
-                        //basic number
-                        //args.Add(new Argument { Value = new List<byte> { (byte)(bytes[position] - 0xC1) } });
-                        try
-                        {
-                            args.Add(new Argument { Value = new Constant { Size = 1, Value = (byte)(bytes[position] - 0xC1) } });
-                            position++;
-                        }
-                        catch (Exception e) 
-                        {
-                            throw e;
-                        }
-                    }
-                    else if (highNibble == 0x40) //given arg, single byte
-                    {
-                        //args.Add(new Argument { Value = new List<byte> { bytes[position] } });
-                        try
-                        {
-                            if (currentByte < 0x4F)
-                            {
-                                args.Add(new Argument { Value = new PassedArg { ArgNum = bytes[position] }, Size = 1 });
-                                position++;
-                            }
-                            else// if(position != bytes.Length - 1)
-                            {
-                                //looks like 0x4F will be followed by a 0 if it is 15
-                                int argNum = 0xF;
-                                argNum += bytes[position + 1];
-                                args.Add(new Argument { Value = new PassedArg { ArgNum = (byte)argNum }, Size = 2 });
-                                position+=2;
-                            }
-                        }
-                        catch (Exception e) 
-                        {
-                            throw e;
-                        }
-                    }
-                    else if (highNibble == 0xA0 || highNibble == 0xB0)
-                    {
-                        if (position != bytes.Length - 1)
-                        {
+                        case 0xF0:
+                        case 0xE0:
+                        case 0xD0:
+                        case 0xC0:
+                            //basic number
                             try
                             {
-                                //nested expression x_x;;
-
-                                Gcx.Expression expression = ParseNestedExpression(args[args.Count - 2], args[args.Count - 1], ParseOperator(currentByte));
-                                args.RemoveAt(args.Count - 1);
-                                args.RemoveAt(args.Count - 1);
-                                args.Add(new Argument { Value = expression, Size = expression.Size });
-
+                                args.Add(new Argument { Value = new Constant { Size = 1, Value = (byte)(bytes[position] - 0xC1) } });
                                 position++;
                             }
-                            catch (Exception e) 
+                            catch (Exception e)
                             {
                                 throw e;
                             }
-                        }
-                        else
-                        {
-                            position++; //this *should* be just the end of the whole expression that got started, so a break might do, but im nervous so sticking with pos++
-                        }
-                    }
-                    else if (highNibble == 0x30)
-                    {
-                        try
-                        {
-                            //byte[] expressionSizeBytes = bytes.Take(new Range(new Index(position), new Index(position + 4))).ToArray();
-                            byte[] expressionSizeBytes = TakeRange(bytes, position, position + 4);
-                            uint size = ParseSize(expressionSizeBytes, ref position);
-                            if (size < 0xD)
+                            break;
+
+                        case 0xB0:
+                        case 0xA0:
+                            if (position != bytes.Length - 1)
                             {
-                                //size--;
-                            }
-                            //byte[] expressionBytes = bytes.Take(new Range(new Index(position), new Index(size + position))).ToArray();
-                            byte[] expressionBytes = TakeRange(bytes, position, size + position);
-                            Gcx.Expression expression = ParseExpression(expressionBytes);
-                            args.Add(new Argument { Value = expression, Size = expression.Size });
-                            if (size < 0xC)
-                            {
-                                //size++;
-                            }
-                            position += size;
-                        }
-                        catch(Exception e) 
-                        {
-                            throw e;
-                        }
-                    }
-                    else if (highNibble == 0x80)
-                    {
-                        try
-                        {
-                            //nested proc
-                            //byte[] nestedProcBytes = bytes.Take(new Range(new Index(position), new Index(bytes.Length - 1))).ToArray();
-                            byte[] nestedProcBytes = TakeRange(bytes, position, (uint)(bytes.Length - 1));
-                            uint size = ParseSize(nestedProcBytes, ref position);
-                            if (size < 0xD)
-                            {
-                                size--;
-                            }
-                            //nestedProcBytes = bytes.Take(new Range(new Index(position), new Index(size + position))).ToArray();
-                            nestedProcBytes = TakeRange(bytes, position, size + position);
-                            //TODO: i'm *pretty sure* this will cause issues if the nested proc is not the final parameter.
-                            Gcx.Procedure procedure = ParseProc(nestedProcBytes);
-                            args.Add(new Argument { Value = procedure, Size = procedure.Size });
-                            if (size < 0xC)
-                            {
-                                if (size == 0)
+                                try
                                 {
-                                    position--;
+                                    //nested expression x_x;;
+
+                                    Gcx.Expression expression = ParseNestedExpression(args[args.Count - 2], args[args.Count - 1], ParseOperator(currentByte));
+                                    args.RemoveAt(args.Count - 1);
+                                    args.RemoveAt(args.Count - 1);
+                                    args.Add(new Argument { Value = expression, Size = expression.Size });
+
+                                    position++;
                                 }
-                                size++;
-                            }
-                            position += size;
-                        }
-                        catch(Exception e)
-                        {
-                            throw e;
-                        }
-                    }
-                    else if (highNibble == 0x90)
-                    {
-                        try
-                        {
-                            args.Add(new Argument { Value = new LocalVar { Id = (ushort)(currentByte & 0x0F) } });
-                            position++;
-                        }
-                        catch(Exception e)
-                        {
-                            throw e;
-                        }
-                    }
-                    else if (bytes[position] != 0)
-                    {
-                        try
-                        {
-                            Gcx.Gcx.DataType dataType = Gcx.Gcx.DataType.FromCode(currentByte);
-                            //args.Add(bytes.Take(new Range(new Index(position + 1), new Index(position + 1 + dataType.Length))).ToArray());
-                            //args.Add(new Argument { Value = bytes.Take(new Range(new Index(position + 1), new Index(position + 1 + dataType.Length))).ToList() });
-                            //byte[] dataValue = new byte[dataType.Length];
-                            byte[] dataValue = new byte[4];
-                            if (dataType == Gcx.Gcx.DataType.String)
-                            {
-                                dataType.Length = bytes[position+1];
-                                dataValue = new byte[dataType.Length];
-                                Array.Copy(bytes, position + 2, dataValue, 0, dataType.Length);
-                                args.Add(new Argument { Value = new Literal { Value = dataValue }, Size = (ushort)dataType.Length });
+                                catch (Exception e)
+                                {
+                                    throw e;
+                                }
                             }
                             else
                             {
-                                Array.Copy(bytes, position + 1, dataValue, 0, dataType.Length);
-                                args.Add(new Argument { Value = new Literal { Value = BitConverter.ToUInt32(dataValue) }, Size = (ushort)dataType.Length, });
+                                position++; //this *should* be just the end of the whole expression that got started, so a break might do, but im nervous so sticking with pos++
                             }
-                            position += (uint)(dataType.Length + 1);
-                        }
-                        catch (Exception e)
-                        {
-                            throw e;
-                        }
-                    }
-                    else
-                    {
-                        //empty value, ignore
-                        position++;
+                            break;
+
+                        case 0x90:
+                            try
+                            {
+                                args.Add(new Argument { Value = new LocalVar { Id = (ushort)(currentByte & 0x0F) } });
+                                position++;
+                            }
+                            catch (Exception e)
+                            {
+                                throw e;
+                            }
+                            break;
+
+                        case 0x80:
+                            try
+                            {
+                                //nested proc
+                                byte[] nestedProcBytes = TakeRange(bytes, position, (uint)(bytes.Length - 1));
+                                uint size = ParseSize(nestedProcBytes, ref position);
+                                if (size < 0xD)
+                                {
+                                    size--;
+                                }
+                                nestedProcBytes = TakeRange(bytes, position, size + position);
+                                //TODO: i'm *pretty sure* this will cause issues if the nested proc is not the final parameter.
+                                Gcx.Procedure procedure = ParseProc(nestedProcBytes);
+                                args.Add(new Argument { Value = procedure, Size = procedure.Size });
+                                if (size < 0xC)
+                                {
+                                    if (size == 0)
+                                    {
+                                        position--;
+                                    }
+                                    size++;
+                                }
+                                position += size;
+                            }
+                            catch (Exception e)
+                            {
+                                throw e;
+                            }
+                            break;
+
+                        case 0x40:
+                            try
+                            {
+                                if (currentByte < 0x4F)
+                                {
+                                    args.Add(new Argument { Value = new PassedArg { ArgNum = bytes[position] }, Size = 1 });
+                                    position++;
+                                }
+                                else// if(position != bytes.Length - 1)
+                                {
+                                    //looks like 0x4F will be followed by a 0 if it is 15
+                                    int argNum = 0xF;
+                                    argNum += bytes[position + 1];
+                                    args.Add(new Argument { Value = new PassedArg { ArgNum = (byte)argNum }, Size = 2 });
+                                    position += 2;
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                throw e;
+                            }
+                            break;
+
+                        case 0x30:
+                            try
+                            {
+                                byte[] expressionSizeBytes = TakeRange(bytes, position, position + 4);
+                                uint size = ParseSize(expressionSizeBytes, ref position);
+                                byte[] expressionBytes = TakeRange(bytes, position, size + position);
+                                Gcx.Expression expression = ParseExpression(expressionBytes);
+                                args.Add(new Argument { Value = expression, Size = expression.Size });
+                                position += size;
+                            }
+                            catch (Exception e)
+                            {
+                                throw e;
+                            }
+                            break;
+
+                        case 0x20:
+                            try
+                            {
+                                //var array, still needs work
+                                VariableArray variableArray = new VariableArray();
+                                variableArray.LowNibble = (byte)(bytes[position++] & 0x0F);
+                                variableArray.ArrayType = bytes[position++];
+                                byte[] id = TakeRange(bytes, position, position += 2);
+                                variableArray.Id = BitConverter.ToUInt16(id.Reverse().ToArray());
+                                //I *think* lownibble may be indicating var size? maybe?
+                                variableArray.SizeAndIndex = ParseVarArrayArgs(TakeRange(bytes, position, (uint)bytes.Length), out uint varArraySize);
+                                /*if (bytes[position] > 0xC0)
+                                {
+                                    //literal
+                                    variableArray.Size = (ushort)bytes[position++];
+                                }
+                                else
+                                {
+                                    Gcx.Gcx.DataType dataType = Gcx.Gcx.DataType.FromCode(bytes[position++]);
+                                    byte[] dataValue = new byte[4];
+                                    Array.Copy(bytes.Take(new Range(new Index(position), new Index(position += dataType.Length))).ToArray(), dataValue, dataType.Length);
+                                    variableArray.Size = BitConverter.ToUInt32(dataValue.Reverse().ToArray()); //TODO: confirm this should be reversed or not
+                                }
+                                    variableArray.Size = (ushort)bytes[4];
+                                variableArray.Index = (ushort)bytes[5];*/
+                                //21 80 03 3C F1 DE C1 AB
+
+
+
+
+                                //22 00 04 B4 C9 32 41 A0 == $var:varbuf_0x4B4[$arg1,8]
+                                //my thinking: 22 is array, 00 is varbuf, 04 B4 is ID, C9 is 8, 32 is ??, 41 is arg1, A0 is ??
+                                //i have no idea what the significance is of the lower nibble in 22. i tried messing with different values
+                                //and got nothing changed on oct's decompiler, nor did the game crash or have any kind of hindered performance from what
+                                //i could see. *surely* it isnt a totally random value, right? why is 0x4B4 always 22, but 0x494 is 29?
+                                //why does the game not crash when i change them?
+                                //
+                                //after a little more poking around, setting 22 to anything greater(23->2F) results in no changed behavior.
+                                //however, setting 22 to 21 or 20 results in the locker states getting reset entirely on load. (w01a behavior)
+                                //i'm thinking then that the lower nibble might determine how many bits to track or something for each index of the array?
+                                //maybe the answer lies in single variable declarations, i should poke around in those to see if there's any info to glean
+
+                                //22 00 04 8B CA C2 00 == $var:varbuf_0x48B[2,9]
+                                //22 is array, 00 is varbuf, 04 8B is ID, CA is 9, C2 is 1.
+                                //does 32 indicate the previous number was a real and A0 indicated the previous number was an arg?
+                                //and if neither are present, then both are reals? not sure. need to study oct's decomp more to have a better understanding i think.
+
+                                args.Add(new Argument { Value = variableArray });
+                                position += varArraySize; //TODO: confirm it is always this
+                            }
+                            catch (Exception e)
+                            {
+                                throw e;
+                            }
+                            break;
+
+                        case 0x10:
+                            try
+                            {
+                                //single variable
+                                Variable variable = new Variable();
+                                variable.LowNibble = (byte)(bytes[position] & 0x0F);
+                                byte[] id = bytes.Take(new Range(new Index(2), new Index(4))).ToArray(); //this is fucked
+                                variable.Id = BitConverter.ToUInt16(id.Reverse().ToArray());
+
+                                args.Add(new Argument { Value = variable, Size = 3 }); //TODO: confirm always 3
+                                position += 4;
+                            }
+                            catch (Exception e)
+                            {
+                                throw e;
+                            } //i believe this should be fixed now
+                            break;
+
+                        case 0x0:
+                            //empty value, ignore
+                            position++;
+                            break;
+
+                        default:
+                            try
+                            {
+                                Gcx.Gcx.DataType dataType = Gcx.Gcx.DataType.FromCode(currentByte);
+                                
+                                byte[] dataValue = new byte[4];
+                                if (dataType == Gcx.Gcx.DataType.String)
+                                {
+                                    dataType.Length = bytes[position + 1];
+                                    dataValue = new byte[dataType.Length];
+                                    Array.Copy(bytes, position + 2, dataValue, 0, dataType.Length);
+                                    args.Add(new Argument { Value = new Literal { Value = dataValue }, Size = (ushort)dataType.Length });
+                                }
+                                else
+                                {
+                                    Array.Copy(bytes, position + 1, dataValue, 0, dataType.Length);
+                                    args.Add(new Argument { Value = new Literal { Value = BitConverter.ToUInt32(dataValue) }, Size = (ushort)dataType.Length, });
+                                }
+                                position += (uint)(dataType.Length + 1);
+                            }
+                            catch (Exception e)
+                            {
+                                throw e;
+                            }
+                            break;
                     }
                 } while (position < bytes.Length);
 
