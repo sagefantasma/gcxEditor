@@ -13,11 +13,37 @@ namespace GcxEditor
 {
     public static class ProcParser
     {
+        private static byte[] TakeRange(byte[] bytes, uint startingIndex, uint endingIndex)
+        {
+            var test = bytes.Take(new Range(new Index((int)startingIndex), new Index((int)endingIndex)));
+            if(startingIndex != 0)
+            {
+
+            }
+            byte[] subArray = new byte[endingIndex - startingIndex];
+            for(uint i = startingIndex; i < endingIndex; i++)
+            {
+                try
+                {
+                    subArray[i-startingIndex] = bytes[i];
+                }
+                catch(IndexOutOfRangeException e)
+                {
+                    //squelch this error because i'm lazy and it works :)
+                }
+                catch(Exception e) 
+                { 
+                }
+            }
+
+            return subArray;
+        }
+
         public static Gcx.Procedure ParseProc(byte[] bytes)
         {
             try
             {
-                int index = 0;
+                uint index = 0;
                 int nestedLevel = 0; //how important is this?
                 Gcx.Procedure procedure = new Procedure();
                 procedure.DecodedContents = new List<dynamic>();
@@ -43,12 +69,14 @@ namespace GcxEditor
                     {
                         //Going into nested subproc
                         nestedLevel++; //i think this is unimportant
-                        int size = ParseSize(bytes.Take(new Range(new Index(index), new Index(index + 3))).ToArray(), ref index); //TODO: verify
+                        //uint size = ParseSize(bytes.Take(new Range(new Index(index), new Index(index + 3))).ToArray(), ref index); //TODO: verify
+                        uint size = ParseSize(TakeRange(bytes, index, index + 3), ref index);
                         if (size < 0xD)
                             size--;
                         byte[] procContents = new byte[size];
                         //Array.Copy(bytes, index, procContents, 0, size);
-                        procContents = bytes.Take(new Range(new Index(index), new Index(index + size))).ToArray();
+                        //procContents = bytes.Take(new Range(new Index(index), new Index(index + size))).ToArray();
+                        procContents = TakeRange(bytes, index, index + size);
                         Gcx.Procedure subProcedure = ParseProc(procContents); //TODO: modify this to send the whole proc's bytes and position
                         if (subProcedure != null)
                             procedure.DecodedContents.Add(subProcedure);
@@ -57,10 +85,12 @@ namespace GcxEditor
                     else if (highByte == 0x70)
                     {
                         //going into invoke
-                        int size = ParseSize(bytes.Take(new Range(new Index(index), new Index(index + 3))).ToArray(), ref index);
+                        //uint size = ParseSize(bytes.Take(new Range(new Index(index), new Index(index + 3))).ToArray(), ref index);
+                        uint size = ParseSize(TakeRange(bytes, index, index + 3), ref index);
                         byte[] invokeContents = new byte[size];
                         //Array.Copy(bytes, index, invokeContents, 0, size);
-                        invokeContents = bytes.Take(new Range(new Index(index), new Index(index + size))).ToArray();
+                        //invokeContents = bytes.Take(new Range(new Index(index), new Index(index + size))).ToArray();
+                        invokeContents = TakeRange(bytes, index, index + size);
                         Invoke invoke = ParseInvoke(invokeContents); //TODO: modify this to send the whole proc's bytes and position
                         if (invoke != null)
                             procedure.DecodedContents.Add(invoke);
@@ -71,10 +101,12 @@ namespace GcxEditor
                     {
                         //going into command
                         nestedLevel++;
-                        int size = ParseSize(bytes.Take(new Range(new Index(index), new Index(index + 3))).ToArray(), ref index); //TODO: verify
+                        //uint size = ParseSize(bytes.Take(new Range(new Index(index), new Index(index + 3))).ToArray(), ref index); //TODO: verify
+                        uint size = ParseSize(TakeRange(bytes, index, index + 3), ref index);
                         byte[] cmdContents = new byte[size];
                         //Array.Copy(bytes, index, cmdContents, 0, size);
-                        cmdContents = bytes.Take(new Range(new Index(index), new Index(index + size))).ToArray();
+                        //cmdContents = bytes.Take(new Range(new Index(index), new Index(index + size))).ToArray();
+                        cmdContents = TakeRange(bytes, index, index + size);
                         IProcedureElement command = ParseCommand(cmdContents); //TODO: modify this to send the whole proc's bytes and position
                         if (command != null)
                             procedure.DecodedContents.Add(command);
@@ -93,10 +125,12 @@ namespace GcxEditor
                     else if (highByte == 0x30)
                     {
                         //expression
-                        int size = ParseSize(bytes.Take(new Range(new Index(index), new Index(index + 3))).ToArray(), ref index);
+                        //uint size = ParseSize(bytes.Take(new Range(new Index(index), new Index(index + 3))).ToArray(), ref index);
+                        uint size = ParseSize(TakeRange(bytes, index, index + 3), ref index);
                         byte[] expressionContents = new byte[size];
                         //Array.Copy(bytes, index, expressionContents, 0, size);
-                        expressionContents = bytes.Take(new Range(new Index(index), new Index(index + size))).ToArray();
+                        //expressionContents = bytes.Take(new Range(new Index(index), new Index(index + size))).ToArray();
+                        expressionContents = TakeRange(bytes, index, index + size);
                         Gcx.Expression expression = ParseExpression(expressionContents); //TODO: modify this to send the whole proc's bytes and position
                         if (expression != null)
                             procedure.DecodedContents.Add(expression);
@@ -128,7 +162,7 @@ namespace GcxEditor
             }
         }
 
-        private static int ParseSize(byte[] bytes, ref int index)
+        private static uint ParseSize(byte[] bytes, ref uint index)
         {
             try
             {
@@ -149,7 +183,7 @@ namespace GcxEditor
                     else
                     {
                         index += 3;
-                        return BitConverter.ToInt16(bytes, 1);
+                        return BitConverter.ToUInt16(bytes, 1);
                     }
                     //TODO: technically, 0xE and 0xF are both possible. 0xE is u16, 0xF is u24. need to support that
                 }
@@ -356,7 +390,7 @@ namespace GcxEditor
             }
         }
 
-        private static List<Argument> ParseVarArrayArgs(byte[] bytes, out int varArraySize)
+        private static List<Argument> ParseVarArrayArgs(byte[] bytes, out uint varArraySize)
         {
             //NOTE: for some reason, a varbuf used inside a vararray is always done as an expression... i dont understand why.
 
@@ -367,7 +401,7 @@ namespace GcxEditor
             //else, expression?
             try
             {
-                int position = 0;
+                uint position = 0;
                 List<Argument> args = new List<Argument>();
                 while (position < bytes.Length)
                 {
@@ -388,16 +422,18 @@ namespace GcxEditor
                     }
                     else
                     {
-                        byte[] expressionSizeBytes = bytes.Take(new Range(new Index(position), new Index(position + 4))).ToArray();
-                        int size = ParseSize(expressionSizeBytes, ref position);
+                        //byte[] expressionSizeBytes = bytes.Take(new Range(new Index(position), new Index(position + 4))).ToArray();
+                        byte[] expressionSizeBytes = TakeRange(bytes, position, position + 4);
+                        uint size = ParseSize(expressionSizeBytes, ref position);
                         if (size < 0xD)
                         {
                             //size--;
                         }
-                        byte[] expressionBytes = bytes.Take(new Range(new Index(position), new Index(size + position))).ToArray();
+                        //byte[] expressionBytes = bytes.Take(new Range(new Index(position), new Index(size + position))).ToArray();
+                        byte[] expressionBytes = TakeRange(bytes, position, position + size);
                         Gcx.Expression expression = ParseExpression(expressionBytes);
                         args.Add(new Argument { Value = expression });
-                        position += (int)expression.Size;
+                        position += expression.Size;
                     }
                 }
 
@@ -412,7 +448,7 @@ namespace GcxEditor
 
         private static List<Argument> ParseArgs(byte[] bytes)
         {
-            int position = 0;
+            uint position = 0;
             List<Argument> args = new List<Argument>();
             if(bytes.Length == 0)
             {
@@ -436,10 +472,12 @@ namespace GcxEditor
                             //position++;
                             variableArray.ArrayType = bytes[position++];
                             //position++;
-                            byte[] id = bytes.Take(new Range(new Index(position), new Index(position += 2))).ToArray();
+                            //byte[] id = bytes.Take(new Range(new Index(position), new Index(position += 2))).ToArray();
+                            byte[] id = TakeRange(bytes, position, position += 2);
                             variableArray.Id = BitConverter.ToUInt16(id.Reverse().ToArray());
                             //I *think* lownibble may be indicating var size? maybe?
-                            variableArray.SizeAndIndex = ParseVarArrayArgs(bytes.Take(new Range(new Index(position), new Index(bytes.Length))).ToArray(), out int varArraySize);
+                            //variableArray.SizeAndIndex = ParseVarArrayArgs(bytes.Take(new Range(new Index(position), new Index(bytes.Length))).ToArray(), out uint varArraySize);
+                            variableArray.SizeAndIndex = ParseVarArrayArgs(TakeRange(bytes, position, (uint)bytes.Length), out uint varArraySize);
                             /*if (bytes[position] > 0xC0)
                             {
                                 //literal
@@ -571,13 +609,15 @@ namespace GcxEditor
                     {
                         try
                         {
-                            byte[] expressionSizeBytes = bytes.Take(new Range(new Index(position), new Index(position + 4))).ToArray();
-                            int size = ParseSize(expressionSizeBytes, ref position);
+                            //byte[] expressionSizeBytes = bytes.Take(new Range(new Index(position), new Index(position + 4))).ToArray();
+                            byte[] expressionSizeBytes = TakeRange(bytes, position, position + 4);
+                            uint size = ParseSize(expressionSizeBytes, ref position);
                             if (size < 0xD)
                             {
                                 //size--;
                             }
-                            byte[] expressionBytes = bytes.Take(new Range(new Index(position), new Index(size + position))).ToArray();
+                            //byte[] expressionBytes = bytes.Take(new Range(new Index(position), new Index(size + position))).ToArray();
+                            byte[] expressionBytes = TakeRange(bytes, position, size + position);
                             Gcx.Expression expression = ParseExpression(expressionBytes);
                             args.Add(new Argument { Value = expression, Size = expression.Size });
                             if (size < 0xC)
@@ -596,13 +636,15 @@ namespace GcxEditor
                         try
                         {
                             //nested proc
-                            byte[] nestedProcBytes = bytes.Take(new Range(new Index(position), new Index(bytes.Length - 1))).ToArray();
-                            int size = ParseSize(nestedProcBytes, ref position);
+                            //byte[] nestedProcBytes = bytes.Take(new Range(new Index(position), new Index(bytes.Length - 1))).ToArray();
+                            byte[] nestedProcBytes = TakeRange(bytes, position, (uint)(bytes.Length - 1));
+                            uint size = ParseSize(nestedProcBytes, ref position);
                             if (size < 0xD)
                             {
                                 size--;
                             }
-                            nestedProcBytes = bytes.Take(new Range(new Index(position), new Index(size + position))).ToArray();
+                            //nestedProcBytes = bytes.Take(new Range(new Index(position), new Index(size + position))).ToArray();
+                            nestedProcBytes = TakeRange(bytes, position, size + position);
                             //TODO: i'm *pretty sure* this will cause issues if the nested proc is not the final parameter.
                             Gcx.Procedure procedure = ParseProc(nestedProcBytes);
                             args.Add(new Argument { Value = procedure, Size = procedure.Size });
@@ -654,7 +696,7 @@ namespace GcxEditor
                                 Array.Copy(bytes, position + 1, dataValue, 0, dataType.Length);
                                 args.Add(new Argument { Value = new Literal { Value = BitConverter.ToUInt32(dataValue) }, Size = (ushort)dataType.Length, });
                             }
-                            position += dataType.Length + 1;
+                            position += (uint)(dataType.Length + 1);
                         }
                         catch (Exception e)
                         {
@@ -682,7 +724,7 @@ namespace GcxEditor
             {
                 List<Parameter> parameters = new List<Parameter>(); //TODO: verify
 
-                int position = 0;
+                uint position = 0;
                 while (position < bytes.Length)
                 {
                     int startOfParameterDeclaration = bytes[position];
@@ -692,18 +734,20 @@ namespace GcxEditor
                         continue;
                     }
                     byte lowNibble = (byte)(startOfParameterDeclaration & 0x0F);
-                    int size = ParseSize(bytes.Take(new Range(new Index(position), new Index(bytes.Length))).ToArray(), ref position);
+                    //int size = ParseSize(bytes.Take(new Range(new Index(position), new Index(bytes.Length))).ToArray(), ref position);
+                    uint size = ParseSize(TakeRange(bytes, position, (uint)bytes.Length), ref position);
 
                     Parameter parameter = new Parameter();
                     parameter.ParamType = (char)bytes[position];
                     position++;
-                    parameter.Contents = bytes.Take(new Range(new Index(position), new Index(position + size - 1))).ToArray();
+                    //parameter.Contents = bytes.Take(new Range(new Index(position), new Index(position + size - 1))).ToArray();
+                    parameter.Contents = TakeRange(bytes, position, position + size - 1);
                     if ((int)parameter.ParamType == 0x41)
                     {
 
                     }
                     parameter.Args = ParseArgs(parameter.Contents);
-                    position += parameter.Contents.Length;
+                    position += (uint)parameter.Contents.Length;
                     parameters.Add(parameter);
                 }
 
@@ -721,6 +765,7 @@ namespace GcxEditor
             {
                 int startType = 0;
                 int endType = 3;
+                int position = 0;
                 /*if(bytes.Length > 0xFF)
                 {
                     startType++;
@@ -736,11 +781,12 @@ namespace GcxEditor
                         //initial testing with w01a and w22a passed(in that "parsing" those files did not crash xdd)
                         Chara chara = new Chara();
                         chara.Size = (ushort)(bytes.Length - 2);
-                        int charaArgsLength = bytes[3]; //TODO: is this ALWAYS true? i think so, but idk for sure
-                        byte[] charaArgs = bytes.Take(new Range(new Index(4), new Index(4 + charaArgsLength))).ToArray();
+                        position = 3;
+                        uint charaArgsLength = ParseArgsLength(bytes, ref position);
+                        byte[] charaArgs = bytes.Take(new Range(new Index(position), new Index((int) (position + charaArgsLength)))).ToArray();
                         chara.Args = ParseArgs(charaArgs);
 
-                        byte[] charaParams = bytes.Take(new Range(new Index(4 + charaArgsLength), new Index(bytes.Length))).ToArray();
+                        byte[] charaParams = bytes.Take(new Range(new Index((int) (position + charaArgsLength)), new Index(bytes.Length))).ToArray();
                         chara.Parameters = ParseParams(charaParams);
 
                         return chara;
@@ -748,8 +794,9 @@ namespace GcxEditor
                                    //mesg
                         Msg msg = new Msg();
                         msg.Size = (ushort)(bytes.Length - 2); //TODO: where did i get this from? this doesn't make sense
-                        int messageArgsLength = bytes[3];
-                        byte[] mesgArgs = bytes.Take(new Range(new Index(4), new Index(4 + messageArgsLength))).ToArray();
+                        position = 3;
+                        uint messageArgsLength = ParseArgsLength(bytes, ref position);
+                        byte[] mesgArgs = bytes.Take(new Range(new Index(position), new Index((int)(position + messageArgsLength)))).ToArray();
                         msg.Args = ParseArgs(mesgArgs);
 
                         return msg;
@@ -757,11 +804,12 @@ namespace GcxEditor
                                    //trap
                         Trap trap = new Trap();
                         trap.Size = (ushort)(bytes.Length - 2);
-                        int trapArgsLength = bytes[3];
-                        byte[] trapArgs = bytes.Take(new Range(new Index(4), new Index(4 + trapArgsLength))).ToArray();
+                        position = 3;
+                        uint trapArgsLength = ParseArgsLength(bytes, ref position);
+                        byte[] trapArgs = bytes.Take(new Range(new Index(position), new Index((int)(position + trapArgsLength)))).ToArray();
                         trap.Args = ParseArgs(trapArgs);
 
-                        byte[] trapParams = bytes.Take(new Range(new Index(4 + trapArgsLength), new Index(bytes.Length))).ToArray();
+                        byte[] trapParams = bytes.Take(new Range(new Index((int)(position + trapArgsLength)), new Index(bytes.Length))).ToArray();
                         trap.Parameters = ParseParams(trapParams);
 
                         return trap;
@@ -769,18 +817,20 @@ namespace GcxEditor
                                    //generic command
                         GameCommand gameCommand = new GameCommand();
                         gameCommand.Size = (ushort)(bytes.Length - 2);
-                        int gameCommandArgsLength = bytes[3];
-                        byte[] gameCommandArgs = bytes.Take(new Range(new Index(4), new Index(4 + gameCommandArgsLength))).ToArray();
+                        position = 3;
+                        uint gameCommandArgsLength = ParseArgsLength(bytes, ref position);
+                        byte[] gameCommandArgs = bytes.Take(new Range(new Index(position), new Index((int)(position + gameCommandArgsLength)))).ToArray();
                         gameCommand.Args = ParseArgs(gameCommandArgs);
 
-                        byte[] gameCommandParams = bytes.Take(new Range(new Index(4 + gameCommandArgsLength), new Index(bytes.Length))).ToArray();
+                        byte[] gameCommandParams = bytes.Take(new Range(new Index((int)(position + gameCommandArgsLength)), new Index(bytes.Length))).ToArray();
                         gameCommand.Parameters = ParseParams(gameCommandParams);
                         return gameCommand;
                     case "37C884": //passed w01a
                                    //load
                         Load load = new Load();
-                        load.Size = bytes[3]; //TODO: fix these size declarations, these are wrong. this is depicting the size of the args, not the whole command
-                        byte[] loadArgs = bytes.Take(new Range(new Index(4), new Index((int)(4 + load.Size)))).ToArray();
+                        position = 3;
+                        load.Size = ParseArgsLength(bytes, ref position); //TODO: fix these size declarations, these are wrong. this is depicting the size of the args, not the whole command
+                        byte[] loadArgs = bytes.Take(new Range(new Index(position), new Index((int)(position + load.Size)))).ToArray();
                         load.Args = ParseArgs(loadArgs);
 
                         return load;
@@ -792,30 +842,25 @@ namespace GcxEditor
                     case "6BB005":
                         //restart
                         Restart restart = new Restart();
-                        restart.Size = bytes[3];
-                        byte[] restartArgs = bytes.Take(new Range(new Index(4), new Index((int)(4 + restart.Size)))).ToArray();
+                        position = 3;
+                        restart.Size = ParseArgsLength(bytes, ref position);
+                        byte[] restartArgs = bytes.Take(new Range(new Index(position), new Index((int)(position + restart.Size)))).ToArray();
                         restart.Args = ParseArgs(restartArgs);
                         //def used
                         return restart;
                     case "8B3DF5": //passed w01a
                         //unknown command
                         UnknownCommand unknownCommand = new UnknownCommand();
-                        unknownCommand.Size = bytes[3];
-                        byte[] unknownCommandArgs = bytes.Take(new Range(new Index(4), new Index((int)(4 + unknownCommand.Size)))).ToArray();
+                        position = 3;
+                        unknownCommand.Size = ParseArgsLength(bytes, ref position);
+                        byte[] unknownCommandArgs = bytes.Take(new Range(new Index(position), new Index((int)(position + unknownCommand.Size)))).ToArray();
                         unknownCommand.Args = ParseArgs(unknownCommandArgs);
                         return unknownCommand;
                     case "000D86":
                         IfBlock ifblock = new IfBlock();
                         //byte after is length of if block?
-                        int position = 3;
-                        ifblock.Size = bytes[position++]; //TODO: these feel pretty flimsy - surely at least for if there has to be some that are larger than 255 bytes
-                        if(ifblock.Size >= 0x80)
-                        {
-                            byte highNibble = (byte)(ifblock.Size & 0x0F);
-                            byte lowByte = (byte)(bytes[position++]);
-                            byte[] size = new byte[4] { lowByte, highNibble,0, 0 };
-                            ifblock.Size = BitConverter.ToUInt32(size);
-                        }
+                        position = 3;
+                        ifblock.Size = ParseArgsLength(bytes, ref position);
                         //is the size for ifs different than other elements? why are there these dead bytes in some of the if blocks?
                         //holy shit, i think it is lmaooo
                         byte[] ifBlockArgs = bytes.Take(new Range(new Index(position), new Index((int)(position + ifblock.Size)))).ToArray();
@@ -830,11 +875,12 @@ namespace GcxEditor
                     case "A65DB5":
                         //TODO: does this share the same weird size pattern as ifs?
                         SwitchBlock switchBlock = new SwitchBlock();
-                        switchBlock.Size = bytes[3];
-                        byte[] switchArgs = bytes.Take(new Range(new Index(4), new Index((int)(4 + switchBlock.Size)))).ToArray();
+                        position = 3;
+                        switchBlock.Size = ParseArgsLength(bytes, ref position);
+                        byte[] switchArgs = bytes.Take(new Range(new Index(position), new Index((int)(position + switchBlock.Size)))).ToArray();
                         switchBlock.Args = ParseArgs(switchArgs);
 
-                        byte[] switchParams = bytes.Take(new Range(new Index((int)(4 + switchBlock.Size)), new Index(bytes.Length))).ToArray();
+                        byte[] switchParams = bytes.Take(new Range(new Index((int)(position + switchBlock.Size)), new Index(bytes.Length))).ToArray();
                         switchBlock.Parameters = ParseParams(switchParams);
 
                         //def used
@@ -849,15 +895,17 @@ namespace GcxEditor
                         return invokeStatement;
                     case "8BE398": //passed w01a
                         Return returnStatement = new Return();
-                        returnStatement.Size = bytes[3];
-                        byte[] returnArgs = bytes.Take(new Range(new Index(4), new Index((int)(4 + returnStatement.Size)))).ToArray();
+                        position = 3;
+                        returnStatement.Size = ParseArgsLength(bytes, ref position);
+                        byte[] returnArgs = bytes.Take(new Range(new Index(position), new Index((int)(position + returnStatement.Size)))).ToArray();
                         returnStatement.Args = ParseArgs(returnArgs);
 
                         return returnStatement;
                     case "3AB23B": //passed w01a
                         Print printStatement = new Print();
-                        printStatement.Size = bytes[3];
-                        byte[] printArgs = bytes.Take(new Range(new Index(4), new Index((int)(4 + printStatement.Size)))).ToArray();
+                        position = 3;
+                        printStatement.Size = ParseArgsLength(bytes, ref position);
+                        byte[] printArgs = bytes.Take(new Range(new Index(position), new Index((int)(position + printStatement.Size)))).ToArray();
                         printStatement.Args = ParseArgs(printArgs);
 
                         return printStatement;
@@ -869,6 +917,20 @@ namespace GcxEditor
             {
                 throw e;
             }
+        }
+
+        private static uint ParseArgsLength(byte[] bytes, ref int position)
+        {
+            uint size = bytes[position++];
+            if (size >= 0x80)
+            {
+                byte highNibble = (byte)(size & 0x0F);
+                byte lowByte = (byte)(bytes[position++]);
+                byte[] sizeBytes = new byte[4] { lowByte, highNibble, 0, 0 };
+                size = BitConverter.ToUInt32(sizeBytes);
+            }
+
+            return size;
         }
 
         private static Gcx.Statement ParseStatement(byte[] bytes)

@@ -110,6 +110,10 @@ namespace GcxEditor
                         {
                             //breaking on second command
                         }
+                        if(procedure.Name == "2F6F8A")
+                        {
+                            //Arithmetic operation resulted in an overflow error thrown on this one in scenerio_stage_select
+                        }
                         try
                         {
                             Procedure parsedProc = ProcParser.ParseProc(procedure.RawContents); //raw contents arent getting filled properly?
@@ -148,11 +152,11 @@ namespace GcxEditor
         private static Dictionary<byte[], byte[]> GetProcedureTable(byte[] gcxContents)
         {
             Dictionary<byte[], byte[]> procedureTable = new Dictionary<byte[], byte[]>();
-            do
+            while (!gcxContents.Take(new Range(new Index(cursor), new Index(cursor + 8))).ToArray().SequenceEqual(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 }))
             {
                 procedureTable.Add(TakeAndAdvance4Bytes(gcxContents),
                     TakeAndAdvance4Bytes(gcxContents));
-            } while (!gcxContents.Take(new Range(new Index(cursor), new Index(cursor + 8))).ToArray().SequenceEqual(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 }));
+            } 
 
             TakeAndAdvance8Bytes(gcxContents);
 
