@@ -46,9 +46,9 @@ namespace GcxEditor
                         parsedProcedures.Add(parsedProcedure);
                     }
 
-                    ushort mainSize = ParseProcedureSize(mainProcedureData, 4);
                     int mainStartOffset = 4;
-                    byte[] mainBody = TakeRangeFromArray(mainProcedureData, mainStartOffset, mainSize);
+                    ushort mainSize = ParseProcedureSize(mainProcedureData, mainStartOffset);                    
+                    byte[] mainBody = TakeRangeFromArray(mainProcedureData, mainStartOffset, mainSize + mainStartOffset);
                     Procedure mainProcedure = ParseProcedure(mainBody, null, mainSize);
 
                     FileTable fileTable = new FileTable();
@@ -116,13 +116,19 @@ namespace GcxEditor
                         }
                         try
                         {
-                            Procedure parsedProc = ProcParser.ParseProc(procedure.RawContents); //raw contents arent getting filled properly?
+                            Procedure parsedProc = ProcDecoder.DecodeProc(procedure.RawContents); //raw contents arent getting filled properly?
                             procedure.DecodedContents = parsedProc.DecodedContents;
                         }
                         catch (Exception ex)
                         {
                         }
                     }
+
+                    Procedure decodedMain = ProcDecoder.DecodeProc(mainProcedure.RawContents);
+                    Main main = new Main();
+                    main.EncodedContents = mainProcedure.RawContents;
+                    main.DecodedContents = decodedMain.DecodedContents;
+                    gcx.Main = main;
                     return gcx;
                 }
 

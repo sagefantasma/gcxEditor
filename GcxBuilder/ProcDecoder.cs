@@ -11,32 +11,28 @@ using Parameter = Gcx.Parameter;
 
 namespace GcxEditor
 {
-    public static class ProcParser
+    public static class ProcDecoder
     {
         private static byte[] TakeRange(byte[] bytes, uint startingIndex, uint endingIndex)
         {
-            var test = bytes.Take(new Range(new Index((int)startingIndex), new Index((int)endingIndex)));
-            if(startingIndex != 0)
-            {
-
-            }
             byte[] subArray = new byte[endingIndex - startingIndex];
             for(uint i = startingIndex; i < endingIndex; i++)
             {
-                try
-                {
-                    subArray[i-startingIndex] = bytes[i];
-                }
-                catch(IndexOutOfRangeException e)
-                {
-                    //squelch this error because i'm lazy and it works :)
-                }
+                if (bytes.Length <= i)
+                    break;
+                subArray[i-startingIndex] = bytes[i];
             }
 
             return subArray;
         }
 
-        public static Gcx.Procedure ParseProc(byte[] bytes)
+        /// <summary>
+        /// Takes in an array of bytes and decodes them into a series of MGS2 GCL-like objects.
+        /// </summary>
+        /// <param name="bytes">An array of bytes taken from a GCX file compatible with MGS2 that represents a procedure.</param>
+        /// <returns></returns>
+        /// <exception cref="ParserException"></exception>
+        public static Gcx.Procedure DecodeProc(byte[] bytes)
         {
             try
             {
@@ -59,22 +55,22 @@ namespace GcxEditor
                         case 0x80:
                             //Going into nested subproc
                             nestedLevel++; //i think this is unimportant
-                            size = ParseSize(TakeRange(bytes, index, index + 3), ref index);
+                            size = DecodeSize(TakeRange(bytes, index, index + 3), ref index);
                             if (size < 0xD)
                                 size--;
                             byte[] procContents = new byte[size];
                             procContents = TakeRange(bytes, index, index + size);
-                            Gcx.Procedure subProcedure = ParseProc(procContents);
+                            Gcx.Procedure subProcedure = DecodeProc(procContents);
                             if (subProcedure != null)
                                 procedure.DecodedContents.Add(subProcedure);
                             index += size;
                             break;
                         case 0x70:
                             //going into invoke
-                            size = ParseSize(TakeRange(bytes, index, index + 3), ref index);
+                            size = DecodeSize(TakeRange(bytes, index, index + 3), ref index);
                             byte[] invokeContents = new byte[size];
                             invokeContents = TakeRange(bytes, index, index + size);
-                            Invoke invoke = ParseInvoke(invokeContents);
+                            Invoke invoke = DecodeInvoke(invokeContents);
                             if (invoke != null)
                                 procedure.DecodedContents.Add(invoke);
                             index += size;
@@ -82,20 +78,20 @@ namespace GcxEditor
                         case 0x60:
                             //going into command
                             nestedLevel++;
-                            size = ParseSize(TakeRange(bytes, index, index + 3), ref index);
+                            size = DecodeSize(TakeRange(bytes, index, index + 3), ref index);
                             byte[] cmdContents = new byte[size];
                             cmdContents = TakeRange(bytes, index, index + size);
-                            IProcedureElement command = ParseCommand(cmdContents);
+                            IProcedureElement command = DecodeCommand(cmdContents);
                             if (command != null)
                                 procedure.DecodedContents.Add(command);
                             index += size;
                             break;
                         case 0x30:
                             //expression
-                            size = ParseSize(TakeRange(bytes, index, index + 3), ref index);
+                            size = DecodeSize(TakeRange(bytes, index, index + 3), ref index);
                             byte[] expressionContents = new byte[size];
                             expressionContents = TakeRange(bytes, index, index + size);
-                            Gcx.Expression expression = ParseExpression(expressionContents);
+                            Gcx.Expression expression = DecodeExpression(expressionContents);
                             if (expression != null)
                                 procedure.DecodedContents.Add(expression);
                             index += size;
@@ -116,7 +112,7 @@ namespace GcxEditor
             }
         }
 
-        private static uint ParseSize(byte[] bytes, ref uint index)
+        private static uint DecodeSize(byte[] bytes, ref uint index)
         {
             try
             {
@@ -154,7 +150,7 @@ namespace GcxEditor
             }
         }
 
-        private static Gcx.Expression ParseNestedExpression(Argument term1, Argument term2, Gcx.Gcx.Operation operation)
+        private static Gcx.Expression DecodeNestedExpression(Argument term1, Argument term2, Gcx.Gcx.Operation operation)
         {
             try
             {
@@ -163,6 +159,7 @@ namespace GcxEditor
                 expression.Term2 = term2;
                 expression.Operator = operation;
                 expression.Size = (ushort)(term1.Size + term2.Size + 1);
+                //TODO: figure out setting encoded contents
 
                 return expression;
             }
@@ -172,7 +169,7 @@ namespace GcxEditor
             }
         }
 
-        private static Gcx.Expression ParseExpression(byte[] bytes)
+        private static Gcx.Expression DecodeExpression(byte[] bytes)
         {
             try
             {
@@ -251,8 +248,9 @@ namespace GcxEditor
                 //A0 is end
                 */
 
+                expression.EncodedContents = bytes;
                 byte[] argBytes = bytes.Take(bytes.Length).ToArray();
-                List<Argument> args = ParseArgs(argBytes); //seems to work well enough?
+                List<Argument> args = DecodeArgs(argBytes); //seems to work well enough?
                 if (args.Count > 1)
                 {
                     expression.Term1 = args[0];
@@ -264,17 +262,17 @@ namespace GcxEditor
                     expression.Term2 = args[0];
                 }
                 
-                expression.Operator = ParseOperator(bytes.Last(x => x != 0x00));
+                expression.Operator = DecodeOperator(bytes.Last(x => x != 0x00));
                 expression.Size = (ushort)bytes.Length;
                 return expression;
             }
             catch(Exception e)
             {
-                throw new ParserException($"Failed to parse gcx expression: {e}");
+                throw new ParserException($"Failed to parse gcx expression from bytearray [{BitConverter.ToString(bytes).Replace("-", "")}]: {e}");
             }
         }
 
-        private static Gcx.Gcx.Operation ParseOperator(byte operatorByte)
+        private static Gcx.Gcx.Operation DecodeOperator(byte operatorByte)
         {
             switch (operatorByte)
             {
@@ -331,24 +329,25 @@ namespace GcxEditor
             }
         }
 
-        private static Invoke ParseInvoke(byte[] bytes)
+        private static Invoke DecodeInvoke(byte[] bytes)
         {
             try
             {
                 Invoke invoke = new Invoke();
+                invoke.EncodedContents = bytes;
                 byte[] procedureName = new byte[4]; //TODO: confirm if this is 100% always the case. i havent SEEN a 4byte proc name, but i won't say its impossible.
                 Array.Copy(bytes.Take(3).ToArray(), procedureName, 3);
                 invoke.ProcedureInvoked = new Procedure { Name = BitConverter.ToUInt32(procedureName).ToString() };
-                invoke.Args = ParseArgs(bytes.Take(new Range(new Index(3), new Index(bytes.Length))).ToArray());
+                invoke.Args = DecodeArgs(bytes.Take(new Range(new Index(3), new Index(bytes.Length))).ToArray());
                 return invoke;
             }
             catch(Exception e)
             {
-                throw new ParserException($"Failed to parse invoke: {e}");
+                throw new ParserException($"Failed to parse invoke from byte array [{BitConverter.ToString(bytes).Replace("-", "")}]: {e}");
             }
         }
 
-        private static List<Argument> ParseVarArrayArgs(byte[] bytes, out uint varArraySize)
+        private static List<Argument> DecodeVarArrayArgs(byte[] bytes, out uint varArraySize)
         {
             //NOTE: for some reason, a varbuf used inside a vararray is always done as an expression... i dont understand why.
 
@@ -381,10 +380,10 @@ namespace GcxEditor
                     else
                     {
                         byte[] expressionSizeBytes = TakeRange(bytes, position, position + 4);
-                        uint size = ParseSize(expressionSizeBytes, ref position);
+                        uint size = DecodeSize(expressionSizeBytes, ref position);
 
                         byte[] expressionBytes = TakeRange(bytes, position, position + size);
-                        Gcx.Expression expression = ParseExpression(expressionBytes);
+                        Gcx.Expression expression = DecodeExpression(expressionBytes);
                         args.Add(new Argument { Value = expression });
                         position += expression.Size;
                     }
@@ -395,11 +394,11 @@ namespace GcxEditor
             }
             catch(Exception e)
             {
-                throw new ParserException($"Failed to parse var array args: {e}");
+                throw new ParserException($"Failed to parse var array args from byte array [{BitConverter.ToString(bytes).Replace("-", "")}]: {e}");
             }
         }
 
-        private static List<Argument> ParseArgs(byte[] bytes)
+        private static List<Argument> DecodeArgs(byte[] bytes)
         {
             uint position = 0;
             List<Argument> args = new List<Argument>();
@@ -424,12 +423,12 @@ namespace GcxEditor
                             //basic number
                             try
                             {
-                                args.Add(new Argument { Value = new Constant { Size = 1, Value = (byte)(bytes[position] - 0xC1) } });
+                                args.Add(new Argument { Value = new Constant { Size = 1, Value = (byte)(bytes[position] - 0xC1), EncodedContents = new[] { bytes[position] } } });
                                 position++;
                             }
                             catch (Exception e)
                             {
-                                throw e;
+                                throw new ParserException($"Failed to parse basic number in args from byte array [{BitConverter.ToString(bytes).Replace("-", "")}] @{position}: {e}");
                             }
                             break;
 
@@ -441,7 +440,7 @@ namespace GcxEditor
                                 {
                                     //nested expression x_x;;
 
-                                    Gcx.Expression expression = ParseNestedExpression(args[args.Count - 2], args[args.Count - 1], ParseOperator(currentByte));
+                                    Gcx.Expression expression = DecodeNestedExpression(args[args.Count - 2], args[args.Count - 1], DecodeOperator(currentByte));
                                     args.RemoveAt(args.Count - 1);
                                     args.RemoveAt(args.Count - 1);
                                     args.Add(new Argument { Value = expression, Size = expression.Size });
@@ -450,7 +449,7 @@ namespace GcxEditor
                                 }
                                 catch (Exception e)
                                 {
-                                    throw e;
+                                    throw new ParserException($"Failed to parse nested expression in args from byte array [{BitConverter.ToString(bytes).Replace("-", "")}] @{position}: {e}");
                                 }
                             }
                             else
@@ -462,12 +461,12 @@ namespace GcxEditor
                         case 0x90:
                             try
                             {
-                                args.Add(new Argument { Value = new LocalVar { Id = (ushort)(currentByte & 0x0F) } });
+                                args.Add(new Argument { Value = new LocalVar { Id = (ushort)(currentByte & 0x0F), EncodedContents = new[] { currentByte } } });
                                 position++;
                             }
                             catch (Exception e)
                             {
-                                throw e;
+                                throw new ParserException($"Failed to parse local variable in args from byte array [{BitConverter.ToString(bytes).Replace("-", "")}] @{position}: {e}");
                             }
                             break;
 
@@ -476,15 +475,15 @@ namespace GcxEditor
                             {
                                 //nested proc
                                 byte[] nestedProcBytes = TakeRange(bytes, position, (uint)(bytes.Length - 1));
-                                uint size = ParseSize(nestedProcBytes, ref position);
+                                uint size = DecodeSize(nestedProcBytes, ref position);
                                 if (size < 0xD)
                                 {
                                     size--;
                                 }
                                 nestedProcBytes = TakeRange(bytes, position, size + position);
                                 //TODO: i'm *pretty sure* this will cause issues if the nested proc is not the final parameter.
-                                Gcx.Procedure procedure = ParseProc(nestedProcBytes);
-                                args.Add(new Argument { Value = procedure, Size = procedure.Size });
+                                Gcx.Procedure procedure = DecodeProc(nestedProcBytes);
+                                args.Add(new Argument { Value = procedure, Size = procedure.Size, EncodedContents = nestedProcBytes });
                                 if (size < 0xC)
                                 {
                                     if (size == 0)
@@ -497,7 +496,7 @@ namespace GcxEditor
                             }
                             catch (Exception e)
                             {
-                                throw e;
+                                throw new ParserException($"Failed to parse procedure in args from byte array [{BitConverter.ToString(bytes).Replace("-", "")}] @{position}: {e}");
                             }
                             break;
 
@@ -506,7 +505,7 @@ namespace GcxEditor
                             {
                                 if (currentByte < 0x4F)
                                 {
-                                    args.Add(new Argument { Value = new PassedArg { ArgNum = bytes[position] }, Size = 1 });
+                                    args.Add(new Argument { Value = new PassedArg { ArgNum = (byte)(bytes[position] - 0x40), EncodedContents = new[] { bytes[position] } }, Size = 1 });
                                     position++;
                                 }
                                 else// if(position != bytes.Length - 1)
@@ -514,13 +513,13 @@ namespace GcxEditor
                                     //looks like 0x4F will be followed by a 0 if it is 15
                                     int argNum = 0xF;
                                     argNum += bytes[position + 1];
-                                    args.Add(new Argument { Value = new PassedArg { ArgNum = (byte)argNum }, Size = 2 });
+                                    args.Add(new Argument { Value = new PassedArg { ArgNum = (byte)argNum, EncodedContents = TakeRange(bytes, position, position + 1) }, Size = 2 });
                                     position += 2;
                                 }
                             }
                             catch (Exception e)
                             {
-                                throw e;
+                                throw new ParserException($"Failed to parse passed arg in args from byte array [{BitConverter.ToString(bytes).Replace("-", "")}] @{position}: {e}");
                             }
                             break;
 
@@ -528,46 +527,31 @@ namespace GcxEditor
                             try
                             {
                                 byte[] expressionSizeBytes = TakeRange(bytes, position, position + 4);
-                                uint size = ParseSize(expressionSizeBytes, ref position);
+                                uint size = DecodeSize(expressionSizeBytes, ref position);
                                 byte[] expressionBytes = TakeRange(bytes, position, size + position);
-                                Gcx.Expression expression = ParseExpression(expressionBytes);
+                                Gcx.Expression expression = DecodeExpression(expressionBytes);
                                 args.Add(new Argument { Value = expression, Size = expression.Size });
                                 position += size;
                             }
                             catch (Exception e)
                             {
-                                throw e;
+                                throw new ParserException($"Failed to parse expression in args from byte array [{BitConverter.ToString(bytes).Replace("-", "")}] @{position}: {e}");
                             }
                             break;
 
                         case 0x20:
                             try
                             {
-                                //var array, still needs work
+                                //var array, probably still needs work
                                 VariableArray variableArray = new VariableArray();
                                 variableArray.LowNibble = (byte)(bytes[position++] & 0x0F);
                                 variableArray.ArrayType = bytes[position++];
                                 byte[] id = TakeRange(bytes, position, position += 2);
                                 variableArray.Id = BitConverter.ToUInt16(id.Reverse().ToArray());
                                 //I *think* lownibble may be indicating var size? maybe?
-                                variableArray.SizeAndIndex = ParseVarArrayArgs(TakeRange(bytes, position, (uint)bytes.Length), out uint varArraySize);
-                                /*if (bytes[position] > 0xC0)
-                                {
-                                    //literal
-                                    variableArray.Size = (ushort)bytes[position++];
-                                }
-                                else
-                                {
-                                    Gcx.Gcx.DataType dataType = Gcx.Gcx.DataType.FromCode(bytes[position++]);
-                                    byte[] dataValue = new byte[4];
-                                    Array.Copy(bytes.Take(new Range(new Index(position), new Index(position += dataType.Length))).ToArray(), dataValue, dataType.Length);
-                                    variableArray.Size = BitConverter.ToUInt32(dataValue.Reverse().ToArray()); //TODO: confirm this should be reversed or not
-                                }
-                                    variableArray.Size = (ushort)bytes[4];
-                                variableArray.Index = (ushort)bytes[5];*/
+                                variableArray.SizeAndIndex = DecodeVarArrayArgs(TakeRange(bytes, position, (uint)bytes.Length), out uint varArraySize);
+                                variableArray.EncodedContents = TakeRange(bytes, position - 4, position + varArraySize);
                                 //21 80 03 3C F1 DE C1 AB
-
-
 
 
                                 //22 00 04 B4 C9 32 41 A0 == $var:varbuf_0x4B4[$arg1,8]
@@ -592,7 +576,7 @@ namespace GcxEditor
                             }
                             catch (Exception e)
                             {
-                                throw e;
+                                throw new ParserException($"Failed to parse vararray in args from byte array [{BitConverter.ToString(bytes).Replace("-", "")}] @{position}: {e}");
                             }
                             break;
 
@@ -602,46 +586,50 @@ namespace GcxEditor
                                 //single variable
                                 Variable variable = new Variable();
                                 variable.LowNibble = (byte)(bytes[position] & 0x0F);
-                                byte[] id = bytes.Take(new Range(new Index(2), new Index(4))).ToArray(); //this is fucked
+                                byte[] id = TakeRange(bytes, position + 2, position + 4);
                                 variable.Id = BitConverter.ToUInt16(id.Reverse().ToArray());
+                                variable.EncodedContents = TakeRange(bytes, position, position + 4);
 
                                 args.Add(new Argument { Value = variable, Size = 3 }); //TODO: confirm always 3
                                 position += 4;
                             }
                             catch (Exception e)
                             {
-                                throw e;
+                                throw new ParserException($"Failed to parse variable in args from byte array [{BitConverter.ToString(bytes).Replace("-", "")}] @{position}: {e}");
                             } //i believe this should be fixed now
                             break;
 
-                        case 0x0:
-                            //empty value, ignore
-                            position++;
-                            break;
-
                         default:
-                            try
+                            if (currentByte == 0)
                             {
-                                Gcx.Gcx.DataType dataType = Gcx.Gcx.DataType.FromCode(currentByte);
-                                
-                                byte[] dataValue = new byte[4];
-                                if (dataType == Gcx.Gcx.DataType.String)
-                                {
-                                    dataType.Length = bytes[position + 1];
-                                    dataValue = new byte[dataType.Length];
-                                    Array.Copy(bytes, position + 2, dataValue, 0, dataType.Length);
-                                    args.Add(new Argument { Value = new Literal { Value = dataValue }, Size = (ushort)dataType.Length });
-                                }
-                                else
-                                {
-                                    Array.Copy(bytes, position + 1, dataValue, 0, dataType.Length);
-                                    args.Add(new Argument { Value = new Literal { Value = BitConverter.ToUInt32(dataValue) }, Size = (ushort)dataType.Length, });
-                                }
-                                position += (uint)(dataType.Length + 1);
+                                //empty value, ignore
+                                position++;
                             }
-                            catch (Exception e)
+                            else
                             {
-                                throw e;
+                                try
+                                {
+                                    Gcx.Gcx.DataType dataType = Gcx.Gcx.DataType.FromCode(currentByte);
+
+                                    byte[] dataValue = new byte[4];
+                                    if (dataType == Gcx.Gcx.DataType.String)
+                                    {
+                                        dataType.Length = bytes[position + 1];
+                                        dataValue = new byte[dataType.Length];
+                                        Array.Copy(bytes, position + 2, dataValue, 0, dataType.Length);
+                                        args.Add(new Argument { Value = new Literal { Value = dataValue, EncodedContents = TakeRange(bytes, position, (uint)(position + 2 + dataType.Length)) }, Size = (ushort)dataType.Length });
+                                    }
+                                    else
+                                    {
+                                        Array.Copy(bytes, position + 1, dataValue, 0, dataType.Length);
+                                        args.Add(new Argument { Value = new Literal { Value = BitConverter.ToUInt32(dataValue), EncodedContents = TakeRange(bytes, position, (uint)(position + 1 + dataType.Length)) }, Size = (ushort)dataType.Length, });
+                                    }
+                                    position += (uint)(dataType.Length + 1);
+                                }
+                                catch (Exception e)
+                                {
+                                    throw new ParserException($"Failed to parse dataType in args from byte array [{BitConverter.ToString(bytes).Replace("-", "")}] @{position}: {e}");
+                                }
                             }
                             break;
                     }
@@ -651,11 +639,11 @@ namespace GcxEditor
             }
             catch(Exception e)
             {
-                throw e;
+                throw new ParserException($"Failed to parse args: {e}");
             }
         }
 
-        private static List<Parameter> ParseParams(byte[] bytes)
+        private static List<Parameter> DecodeParams(byte[] bytes)
         {
             try
             {
@@ -671,20 +659,14 @@ namespace GcxEditor
                         continue;
                     }
                     byte lowNibble = (byte)(startOfParameterDeclaration & 0x0F);
-                    //int size = ParseSize(bytes.Take(new Range(new Index(position), new Index(bytes.Length))).ToArray(), ref position);
-                    uint size = ParseSize(TakeRange(bytes, position, (uint)bytes.Length), ref position);
+                    uint size = DecodeSize(TakeRange(bytes, position, (uint)bytes.Length), ref position);
 
                     Parameter parameter = new Parameter();
                     parameter.ParamType = (char)bytes[position];
                     position++;
-                    //parameter.Contents = bytes.Take(new Range(new Index(position), new Index(position + size - 1))).ToArray();
-                    parameter.Contents = TakeRange(bytes, position, position + size - 1);
-                    if ((int)parameter.ParamType == 0x41)
-                    {
-
-                    }
-                    parameter.Args = ParseArgs(parameter.Contents);
-                    position += (uint)parameter.Contents.Length;
+                    parameter.EncodedContents = TakeRange(bytes, position, position + size - 1);
+                    parameter.Args = DecodeArgs(parameter.EncodedContents);
+                    position += (uint)parameter.EncodedContents.Length;
                     parameters.Add(parameter);
                 }
 
@@ -692,135 +674,124 @@ namespace GcxEditor
             }
             catch(Exception e)
             {
-                throw e;
+                throw new ParserException($"Failed to parse params from byte array [{BitConverter.ToString(bytes).Replace("-", "")}]: {e}");
             }
         }
 
-        private static IProcedureElement ParseCommand(byte[] bytes)
+        private static IProcedureElement DecodeCommand(byte[] bytes)
         {
             try
             {
                 int startType = 0;
                 int endType = 3;
-                int position = 0;
-                /*if(bytes.Length > 0xFF)
-                {
-                    startType++;
-                    endType++;
-                }*/
+                uint position = 0;
+
                 byte[] knownCommandType = bytes.Take(new Range(new Index(startType), new Index(endType))).ToArray();
                 string commandTypeInHex = BitConverter.ToString(knownCommandType.Reverse().ToArray()).Replace("-", "");
 
                 switch (commandTypeInHex)
                 {
                     case "6592A7":
-                        //chara
-                        //initial testing with w01a and w22a passed(in that "parsing" those files did not crash xdd)
                         Chara chara = new Chara();
                         chara.Size = (ushort)(bytes.Length - 2);
                         position = 3;
-                        uint charaArgsLength = ParseArgsLength(bytes, ref position);
-                        byte[] charaArgs = bytes.Take(new Range(new Index(position), new Index((int) (position + charaArgsLength)))).ToArray();
-                        chara.Args = ParseArgs(charaArgs);
+                        chara.EncodedContents = bytes;
+                        uint charaArgsLength = DecodeArgsLength(bytes, ref position);
+                        byte[] charaArgs = TakeRange(bytes, position, position + charaArgsLength);
+                        chara.Args = DecodeArgs(charaArgs);
 
-                        byte[] charaParams = bytes.Take(new Range(new Index((int) (position + charaArgsLength)), new Index(bytes.Length))).ToArray();
-                        chara.Parameters = ParseParams(charaParams);
+                        byte[] charaParams = TakeRange(bytes, position + charaArgsLength, (uint)bytes.Length);
+                        chara.Parameters = DecodeParams(charaParams);
 
                         return chara;
-                    case "3822C7": //passed w01a
-                                   //mesg
+                    case "3822C7": 
                         Msg msg = new Msg();
                         msg.Size = (ushort)(bytes.Length - 2); //TODO: where did i get this from? this doesn't make sense
                         position = 3;
-                        uint messageArgsLength = ParseArgsLength(bytes, ref position);
-                        byte[] mesgArgs = bytes.Take(new Range(new Index(position), new Index((int)(position + messageArgsLength)))).ToArray();
-                        msg.Args = ParseArgs(mesgArgs);
+                        msg.EncodedContents = bytes;
+                        uint messageArgsLength = DecodeArgsLength(bytes, ref position);
+                        byte[] mesgArgs = TakeRange(bytes, position, position + messageArgsLength);
+                        msg.Args = DecodeArgs(mesgArgs);
 
                         return msg;
-                    case "3BD490": //passed w01a
-                                   //trap
+                    case "3BD490": 
                         Trap trap = new Trap();
                         trap.Size = (ushort)(bytes.Length - 2);
                         position = 3;
-                        uint trapArgsLength = ParseArgsLength(bytes, ref position);
-                        byte[] trapArgs = bytes.Take(new Range(new Index(position), new Index((int)(position + trapArgsLength)))).ToArray();
-                        trap.Args = ParseArgs(trapArgs);
+                        trap.EncodedContents = bytes;
+                        uint trapArgsLength = DecodeArgsLength(bytes, ref position);
+                        byte[] trapArgs = TakeRange(bytes, position, position + trapArgsLength);
+                        trap.Args = DecodeArgs(trapArgs);
 
-                        byte[] trapParams = bytes.Take(new Range(new Index((int)(position + trapArgsLength)), new Index(bytes.Length))).ToArray();
-                        trap.Parameters = ParseParams(trapParams);
+                        byte[] trapParams = TakeRange(bytes, position + trapArgsLength, (uint)bytes.Length);
+                        trap.Parameters = DecodeParams(trapParams);
 
                         return trap;
-                    case "082BC9": //passed w01a
-                                   //generic command
+                    case "082BC9": 
                         GameCommand gameCommand = new GameCommand();
                         gameCommand.Size = (ushort)(bytes.Length - 2);
                         position = 3;
-                        uint gameCommandArgsLength = ParseArgsLength(bytes, ref position);
-                        byte[] gameCommandArgs = bytes.Take(new Range(new Index(position), new Index((int)(position + gameCommandArgsLength)))).ToArray();
-                        gameCommand.Args = ParseArgs(gameCommandArgs);
+                        gameCommand.EncodedContents = bytes;
+                        uint gameCommandArgsLength = DecodeArgsLength(bytes, ref position);
+                        byte[] gameCommandArgs = TakeRange(bytes, position, position + gameCommandArgsLength);
+                        gameCommand.Args = DecodeArgs(gameCommandArgs);
 
-                        byte[] gameCommandParams = bytes.Take(new Range(new Index((int)(position + gameCommandArgsLength)), new Index(bytes.Length))).ToArray();
-                        gameCommand.Parameters = ParseParams(gameCommandParams);
+                        byte[] gameCommandParams = TakeRange(bytes, position + gameCommandArgsLength, (uint)bytes.Length);
+                        gameCommand.Parameters = DecodeParams(gameCommandParams);
                         return gameCommand;
-                    case "37C884": //passed w01a
-                                   //load
+                    case "37C884": 
                         Load load = new Load();
                         position = 3;
-                        load.Size = ParseArgsLength(bytes, ref position); //TODO: fix these size declarations, these are wrong. this is depicting the size of the args, not the whole command
-                        byte[] loadArgs = bytes.Take(new Range(new Index(position), new Index((int)(position + load.Size)))).ToArray();
-                        load.Args = ParseArgs(loadArgs);
+                        load.EncodedContents = bytes;
+                        load.Size = DecodeArgsLength(bytes, ref position); //TODO: fix these size declarations, these are wrong. this is depicting the size of the args, not the whole command
+                        byte[] loadArgs = TakeRange(bytes, position, position + load.Size);
+                        load.Args = DecodeArgs(loadArgs);
 
                         return load;
                     case "01C090":
-                        //map
                         Map map = new Map();
                         //used anywhere?
                         return map;
                     case "6BB005":
-                        //restart
                         Restart restart = new Restart();
                         position = 3;
-                        restart.Size = ParseArgsLength(bytes, ref position);
-                        byte[] restartArgs = bytes.Take(new Range(new Index(position), new Index((int)(position + restart.Size)))).ToArray();
-                        restart.Args = ParseArgs(restartArgs);
+                        restart.EncodedContents = bytes;
+                        restart.Size = DecodeArgsLength(bytes, ref position);
+                        byte[] restartArgs = TakeRange(bytes, position, position + restart.Size);
+                        restart.Args = DecodeArgs(restartArgs);
                         //def used
                         return restart;
-                    case "8B3DF5": //passed w01a
-                        //unknown command
+                    case "8B3DF5": 
                         UnknownCommand unknownCommand = new UnknownCommand();
                         position = 3;
-                        unknownCommand.Size = ParseArgsLength(bytes, ref position);
-                        byte[] unknownCommandArgs = bytes.Take(new Range(new Index(position), new Index((int)(position + unknownCommand.Size)))).ToArray();
-                        unknownCommand.Args = ParseArgs(unknownCommandArgs);
+                        unknownCommand.EncodedContents = bytes;
+                        unknownCommand.Size = DecodeArgsLength(bytes, ref position);
+                        byte[] unknownCommandArgs = TakeRange(bytes, position, position + unknownCommand.Size);
+                        unknownCommand.Args = DecodeArgs(unknownCommandArgs);
                         return unknownCommand;
                     case "000D86":
                         IfBlock ifblock = new IfBlock();
-                        //byte after is length of if block?
                         position = 3;
-                        ifblock.Size = ParseArgsLength(bytes, ref position);
-                        //is the size for ifs different than other elements? why are there these dead bytes in some of the if blocks?
-                        //holy shit, i think it is lmaooo
-                        byte[] ifBlockArgs = bytes.Take(new Range(new Index(position), new Index((int)(position + ifblock.Size)))).ToArray();
-                        ifblock.Args = ParseArgs(ifBlockArgs);
+                        ifblock.EncodedContents = bytes;
+                        ifblock.Size = DecodeArgsLength(bytes, ref position);
+                        byte[] ifBlockArgs = TakeRange(bytes, position, position + ifblock.Size);
+                        ifblock.Args = DecodeArgs(ifBlockArgs);
                         //args are the main if
 
-                        byte[] ifParams = bytes.Take(new Range(new Index((int)(position + ifblock.Size)), new Index(bytes.Length))).ToArray();
+                        byte[] ifParams = TakeRange(bytes, position + ifblock.Size, (uint)bytes.Length);
                         //i param is elif, e param is else?
-                        ifblock.Parameters = ParseParams(ifParams);
-                        //def used
+                        ifblock.Parameters = DecodeParams(ifParams);
                         return ifblock;
                     case "A65DB5":
-                        //TODO: does this share the same weird size pattern as ifs?
                         SwitchBlock switchBlock = new SwitchBlock();
                         position = 3;
-                        switchBlock.Size = ParseArgsLength(bytes, ref position);
-                        byte[] switchArgs = bytes.Take(new Range(new Index(position), new Index((int)(position + switchBlock.Size)))).ToArray();
-                        switchBlock.Args = ParseArgs(switchArgs);
+                        switchBlock.EncodedContents = bytes;
+                        switchBlock.Size = DecodeArgsLength(bytes, ref position);
+                        byte[] switchArgs = TakeRange(bytes, position, position + switchBlock.Size);
+                        switchBlock.Args = DecodeArgs(switchArgs);
 
-                        byte[] switchParams = bytes.Take(new Range(new Index((int)(position + switchBlock.Size)), new Index(bytes.Length))).ToArray();
-                        switchBlock.Parameters = ParseParams(switchParams);
-
-                        //def used
+                        byte[] switchParams = TakeRange(bytes, position + switchBlock.Size, (uint)bytes.Length);
+                        switchBlock.Parameters = DecodeParams(switchParams);
                         return switchBlock;
                     case "34648C":
                         Evaluate evaluateStatement = new Evaluate();
@@ -830,20 +801,22 @@ namespace GcxEditor
                         Invoke invokeStatement = new Invoke();
                         //used anywhere?
                         return invokeStatement;
-                    case "8BE398": //passed w01a
+                    case "8BE398":
                         Return returnStatement = new Return();
                         position = 3;
-                        returnStatement.Size = ParseArgsLength(bytes, ref position);
-                        byte[] returnArgs = bytes.Take(new Range(new Index(position), new Index((int)(position + returnStatement.Size)))).ToArray();
-                        returnStatement.Args = ParseArgs(returnArgs);
+                        returnStatement.EncodedContents = bytes;
+                        returnStatement.Size = DecodeArgsLength(bytes, ref position);
+                        byte[] returnArgs = TakeRange(bytes, position, position + returnStatement.Size);
+                        returnStatement.Args = DecodeArgs(returnArgs);
 
                         return returnStatement;
-                    case "3AB23B": //passed w01a
+                    case "3AB23B": 
                         Print printStatement = new Print();
                         position = 3;
-                        printStatement.Size = ParseArgsLength(bytes, ref position);
-                        byte[] printArgs = bytes.Take(new Range(new Index(position), new Index((int)(position + printStatement.Size)))).ToArray();
-                        printStatement.Args = ParseArgs(printArgs);
+                        printStatement.EncodedContents = bytes;
+                        printStatement.Size = DecodeArgsLength(bytes, ref position);
+                        byte[] printArgs = TakeRange(bytes, position, position + printStatement.Size);
+                        printStatement.Args = DecodeArgs(printArgs);
 
                         return printStatement;
                     default:
@@ -852,11 +825,11 @@ namespace GcxEditor
             }
             catch(Exception e)
             {
-                throw e;
+                throw new ParserException($"Failed to parse command: {e}");
             }
         }
 
-        private static uint ParseArgsLength(byte[] bytes, ref int position)
+        private static uint DecodeArgsLength(byte[] bytes, ref uint position)
         {
             uint size = bytes[position++];
             if (size >= 0x80)
@@ -868,11 +841,6 @@ namespace GcxEditor
             }
 
             return size;
-        }
-
-        private static Gcx.Statement ParseStatement(byte[] bytes)
-        {
-            throw new NotImplementedException();
         }
     }
 }

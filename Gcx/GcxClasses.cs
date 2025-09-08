@@ -16,6 +16,7 @@ namespace Gcx
             public uint Timestamp { get; set; }
             private FileTable FileTable { get; set; }
             public ProcedureBlock ProcBlock { get; set; }
+            public Main Main { get; set; }
 
             private const uint IntPadding = 0x00000000;
             private const ulong LongPadding = 0x0000000000000000;

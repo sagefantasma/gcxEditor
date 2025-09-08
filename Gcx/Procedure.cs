@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Gcx
@@ -10,6 +11,7 @@ namespace Gcx
     {
         public uint Size { get; set; }
         public string Type { get; set; }
+        public byte[] EncodedContents { get; set; }
     }
 
     public class Procedure : Term
@@ -60,6 +62,7 @@ namespace Gcx
         public string Type { get; set; }
         public List<Parameter> Parameters { get; set; } = new List<Parameter>();
         public List<Argument> Args = new List<Argument>();
+        public byte[] EncodedContents { get; set; }
         public Command()
         {
             Type = GetType().Name;
@@ -139,6 +142,7 @@ namespace Gcx
     {
         public uint Size { get; set; }
         public string Type { get; set; }
+        public byte[] EncodedContents { get; set; }
         public Term()
         {
             Type = GetType().Name;
@@ -245,7 +249,7 @@ namespace Gcx
     {
         public uint Size { get; set; }
         public char ParamType { get; set; }
-        public byte[] Contents { get; set; }
+        public byte[] EncodedContents { get; set; }
         public List<Argument> Args { get; set; }
         public string Type { get; set; } = "Parameter";
     }
