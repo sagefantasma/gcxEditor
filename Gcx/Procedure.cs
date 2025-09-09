@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace Gcx
 {
@@ -32,9 +31,12 @@ namespace Gcx
                 Order = uint.Parse(value);
             }
         }
+        [JsonIgnore]
         public uint Order { get; private set; }
+        [JsonIgnore]
         public ushort Size { get; set; }
         public string Type { get; set; }
+        [JsonIgnore]
         public byte[] RawContents { get; set; } //TODO: to be implemented for editing
         public List<dynamic> DecodedContents { get; set; }
         public Procedure()
@@ -64,6 +66,7 @@ namespace Gcx
 
     public class Main : Procedure
     {
+        [JsonIgnore]
         public new uint Order { get; set; }
         public new string Name { get; set; }
         public Main()
@@ -77,10 +80,12 @@ namespace Gcx
     public class Command : IProcedureElement
     {
         //0x6D/6E ....? what?
+        [JsonIgnore]
         public uint Size { get; set; }
         public string Type { get; set; }
         public List<Parameter> Parameters { get; set; } = new List<Parameter>();
         public List<Argument> Args = new List<Argument>();
+        [JsonIgnore]
         public byte[] EncodedContents { get; set; }
         public Command()
         {
@@ -207,8 +212,10 @@ namespace Gcx
 
     public class Term : IProcedureElement
     {
+        [JsonIgnore]
         public uint Size { get; set; }
         public string Type { get; set; }
+        [JsonIgnore]
         public byte[] EncodedContents { get; set; }
         public Term()
         {
@@ -368,8 +375,10 @@ namespace Gcx
 
     public class Parameter : IProcedureElement
     {
+        [JsonIgnore]
         public uint Size { get; set; }
         public char ParamType { get; set; }
+        [JsonIgnore]
         public byte[] EncodedContents { get; set; }
         public List<Argument> Args { get; set; }
         public string Type { get; set; } = "Parameter";
