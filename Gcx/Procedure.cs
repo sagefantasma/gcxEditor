@@ -41,6 +41,25 @@ namespace Gcx
         {
             Type = GetType().Name;
         }
+
+        public override string ToString()
+        {
+            string printedString = "";
+            if (Name != "000000")
+                printedString += $"Procedure {Name}:";
+            else
+                printedString += "Subprocedure: ";
+
+            if (DecodedContents != null)
+            {
+                foreach (dynamic item in DecodedContents)
+                {
+                    printedString += @$"{Environment.NewLine}     {item.ToString()}";
+                }
+            }
+
+            return printedString;
+        }
     }
 
     public class Main : Procedure
@@ -67,6 +86,32 @@ namespace Gcx
         {
             Type = GetType().Name;
         }
+
+        public override string ToString()
+        {
+            string printedString = $"Args: ";
+
+            foreach (Argument arg in Args)
+            {
+                if (Args.Last() != arg)
+                    printedString += $"{arg.ToString()}, ";
+                else
+                    printedString += arg.ToString();
+            }
+
+            printedString += $"{Environment.NewLine}{Environment.NewLine}" +
+                $"Parameters: ";
+
+            foreach (Parameter param in Parameters)
+            {
+                if (Parameters.Last() != param)
+                    printedString += $"{param.ToString()}, ";
+                else
+                    printedString += param.ToString();
+            }
+
+            return printedString;
+        }
     }
 
     public class Expression : Term
@@ -77,6 +122,11 @@ namespace Gcx
         public Expression()
         {
             Type = GetType().Name;
+        }
+
+        public override string ToString()
+        {
+            return $"{Term1}{Gcx.OperationToString(Operator)}{Term2}";
         }
     }
 
@@ -136,6 +186,23 @@ namespace Gcx
         {
             Type = GetType().Name;
         }
+
+        public override string ToString()
+        {
+            string printedString = $"Invoke:{Environment.NewLine}" +
+                @$" - Procedure Invoked: {ProcedureInvoked}" +
+                @$"      - Args on invoke: ";
+
+            foreach (Argument arg in Args)
+            {
+                if (Args.Last() != arg)
+                    printedString += $"{arg.ToString()}, ";
+                else
+                    printedString += arg.ToString();
+            }
+
+            return printedString;
+        }
     }
 
     public class Term : IProcedureElement
@@ -156,6 +223,11 @@ namespace Gcx
         {
             Type = GetType().Name;
         }
+
+        public override string ToString()
+        {
+            return Value.ToString();
+        }
     }
 
     public class Return : Statement
@@ -163,6 +235,11 @@ namespace Gcx
         public Return()
         {
             Type = GetType().Name;
+        }
+
+        public override string ToString()
+        {
+            return $"Return:{Environment.NewLine}{base.ToString()}";
         }
     }
 
@@ -172,6 +249,10 @@ namespace Gcx
         {
             Type = GetType().Name;
         }
+        public override string ToString()
+        {
+            return $"Print:{Environment.NewLine}{base.ToString()}";
+        }
     }
 
     public class Msg : Command
@@ -180,6 +261,11 @@ namespace Gcx
         {
             Type = GetType().Name;
         }
+
+        public override string ToString()
+        {
+            return $"MessageCommand:{base.ToString()}";
+        }
     }
 
     public class GameCommand : Command
@@ -187,6 +273,11 @@ namespace Gcx
         public GameCommand()
         {
             Type = GetType().Name;
+        }
+
+        public override string ToString()
+        {
+            return $"GameCommand:{base.ToString()}";
         }
     }
 
@@ -197,6 +288,11 @@ namespace Gcx
         {
             Type = GetType().Name;
         }
+
+        public override string ToString()
+        {
+            return $"CreateCharaCommand:{base.ToString()}";
+        }
     }
 
     public class Trap : Command
@@ -205,6 +301,11 @@ namespace Gcx
         {
             Type = GetType().Name;
         }
+
+        public override string ToString()
+        {
+            return $"CreateTrapCommand:{base.ToString()}";
+        }
     }
 
     public class Load : Command
@@ -212,6 +313,11 @@ namespace Gcx
         public Load()
         {
             Type = GetType().Name;
+        }
+
+        public override string ToString()
+        {
+            return $"LoadCommand:{base.ToString()}";
         }
     }
 
@@ -222,6 +328,11 @@ namespace Gcx
         {
             Type = this.GetType().Name;
         }
+
+        public override string ToString()
+        {
+            return $"KnownUnknownCommand:{base.ToString()}";
+        }
     }
 
     public class Map : Command
@@ -230,6 +341,11 @@ namespace Gcx
         {
             Type = GetType().Name;
         }
+
+        public override string ToString()
+        {
+            return $"MapCommand:{base.ToString()}";
+        }
     }
 
     public class Restart : Command
@@ -237,6 +353,11 @@ namespace Gcx
         public Restart()
         {
             Type = GetType().Name;
+        }
+
+        public override string ToString()
+        {
+            return $"RestartCommand:{base.ToString()}";
         }
     }
 
@@ -252,6 +373,20 @@ namespace Gcx
         public byte[] EncodedContents { get; set; }
         public List<Argument> Args { get; set; }
         public string Type { get; set; } = "Parameter";
+
+        public override string ToString()
+        {
+            string printedString = $"parameter({ParamType}):";
+            foreach(Argument arg in Args)
+            {
+                if (Args.Last() != arg)
+                    printedString += $"{arg.ToString()}, ";
+                else
+                    printedString += arg.ToString();
+            }
+
+            return printedString;
+        }
     }
 
     /*public class Value : IProcedureElement 
@@ -266,6 +401,11 @@ namespace Gcx
         {
             Type = GetType().Name;
         }
+
+        public override string ToString()
+        {
+            return BitConverter.ToString(new[] { Value });
+        }
     }
 
     public class Literal : Term
@@ -274,6 +414,11 @@ namespace Gcx
         public Literal()
         {
             Type = GetType().Name;
+        }
+
+        public override string ToString()
+        {
+            return Value.ToString();
         }
     }
 
@@ -284,6 +429,11 @@ namespace Gcx
         {
             Type = GetType().Name;
         }
+
+        public override string ToString()
+        {
+            return $"arg{ArgNum}";
+        }
     }
 
     public class Variable : Term
@@ -293,6 +443,11 @@ namespace Gcx
         public Variable()
         {
             Type = GetType().Name;
+        }
+
+        public override string ToString()
+        {
+            return $"var_0x{BitConverter.ToString(BitConverter.GetBytes(Id).Reverse().ToArray()).Replace("-", "")}";
         }
     }
 
@@ -308,6 +463,11 @@ namespace Gcx
         {
             Type = GetType().Name;
         }
+
+        public override string ToString()
+        {
+            return $"varArray_0x{BitConverter.ToString(BitConverter.GetBytes(Id).Reverse().ToArray()).Replace("-", "")}";
+        }
     }
 
     public class Linkvarbuf : Variable
@@ -315,6 +475,11 @@ namespace Gcx
         public Linkvarbuf()
         {
             Type = GetType().Name;
+        }
+
+        public override string ToString()
+        {
+            return $"linkVarbuf_0x{BitConverter.ToString(BitConverter.GetBytes(Id).Reverse().ToArray()).Replace("-", "")}";
         }
     }
 
@@ -324,6 +489,11 @@ namespace Gcx
         {
             Type = GetType().Name;
         }
+
+        public override string ToString()
+        {
+            return $"varbuf_0x{BitConverter.ToString(BitConverter.GetBytes(Id).Reverse().ToArray()).Replace("-", "")}";
+        }
     }
 
     public class LocalVar : Variable
@@ -331,6 +501,11 @@ namespace Gcx
         public LocalVar()
         {
             Type = GetType().Name;
+        }
+
+        public override string ToString()
+        {
+            return $"localVar_0x{BitConverter.ToString(BitConverter.GetBytes(Id).Reverse().ToArray()).Replace("-","")}";
         }
     }
 }

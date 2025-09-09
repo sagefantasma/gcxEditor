@@ -2,6 +2,59 @@
 {
     public class Gcx
     {
+        public static string OperationToString(Operation operation)
+        {
+            switch (operation)
+            {
+                case Operation.NoOp:
+                case Operation.Value2:
+                    return "";
+                case Operation.NegateValue2:
+                case Operation.Value1MinusValue2:
+                    return " - ";
+                case Operation.Value1PlusValue2:
+                    return " + ";
+                case Operation.Value2Equals0:
+                    return "0 == ";
+                case Operation.Value1MulitpliedByValue2:
+                    return " * ";
+                case Operation.Value1DividedByValue2:
+                    return " / ";
+                case Operation.Value1ModuloValue2:
+                    return " % ";
+                case Operation.Value1LeftShiftValue2:
+                    return " << ";
+                case Operation.Value1RightShiftValue2:
+                    return " >> ";
+                case Operation.Value1IsEqualToValue2:
+                    return " == ";
+                case Operation.Value1NotEqualToValue2:
+                    return " != ";
+                case Operation.Value1LessThanValue2:
+                    return " < ";
+                case Operation.Value1LessThanOrEqualToValue2:
+                    return " <= ";
+                case Operation.Value1GreaterThanValue2:
+                    return " > ";
+                case Operation.Value1GreaterThanOrEqualToValue2:
+                    return " >= ";
+                case Operation.Value1BitwiseOrValue2:
+                    return " | ";
+                case Operation.Value1BitwiseAndValue2:
+                    return " & ";
+                case Operation.Value1BitwiseXorValue2:
+                    return " XOR ";
+                case Operation.Value1OrValue2:
+                    return " || ";
+                case Operation.Value1AndValue2:
+                    return " && ";
+                case Operation.Value1SetToValue2:
+                    return " = ";
+                default:
+                    return " UNKNOWN OPERATOR ";
+            }
+        }
+
         public enum Operation
         {
             NoOp = 0xA0,

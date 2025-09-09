@@ -584,6 +584,7 @@ namespace GcxEditor
                             try
                             {
                                 //single variable
+                                //TODO: make these localvarbuf, linkvarbuf, etc
                                 Variable variable = new Variable();
                                 variable.LowNibble = (byte)(bytes[position] & 0x0F);
                                 byte[] id = TakeRange(bytes, position + 2, position + 4);

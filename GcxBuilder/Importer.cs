@@ -62,73 +62,29 @@ namespace GcxEditor
                     procedureBlock.Main = mainProcedure;
                     GcxClasses.Gcx gcx = new GcxClasses.Gcx(fileTable, procedureBlock);
 
-                    foreach(Procedure procedure in parsedProcedures)
+                    string formattedContents = "";
+                    
+                    foreach (Procedure procedure in parsedProcedures)
                     {
-                        if(procedure.Name == "085B23")
-                        {
-
-                        }
-                        if(procedure.Name == "025E89")
-                        {
-
-                        }
-                        if(procedure.Name == "0DD51D")
-                        {
-
-                        }
-                        if(procedure.Name == "0FC3D5")
-                        {
-                            //these ifblocks are gonna be the death of me. right now we're breaking on the second if's base args
-                            //Okay, so the issue I'm running into NOW is that it is possible, for some reason, for a sub-element to reach
-                            //BEYOND it's parent's capacity. This might be able to be mitigated by using bytes.Take instead of array.copy
-                            //but may cause problems later on when trying to recompile - not sure how the game will handle it. So bizarre.
-
-                            //okay, making that change got me a little further, but it still busted on this function xdd.
-                            //starts at 0x1EB6
-                        }
-                        //next issue im diagnosing: 9a3d0f8b69c92b0804067f -- solved, i think
-                        if (procedure.Name == "3D8589")
-                        {
-                            //now onto having an issue with 0x3D8589 trying to parse a variable array
-                            //key off of 7c2d64d4220004b4c93241a0006d1a
-                        }
-                        if(procedure.Name == "6A8F69")
-                        {
-                            //the latest problematic function
-                        }
-                        if(procedure.Name == "8DCEDB")
-                        {
-                            //the latest-est problematic function, starts at 4A41
-                            //3512000aa0a0ada0 is what broke it, presumably because of all the a0s?
-                        }
-                        if(procedure.Name == "F19AA7")
-                        {
-                            //even more latest problematic function :*(
-                            //breaks in the if statement's args, specifically on param l in the chara... weird
-                        }
-                        if(procedure.Name == "AA023F")
-                        {
-                            //breaking on second command
-                        }
-                        if(procedure.Name == "2F6F8A")
-                        {
-                            //Arithmetic operation resulted in an overflow error thrown on this one in scenerio_stage_select
-                        }
                         try
                         {
                             Procedure parsedProc = ProcDecoder.DecodeProc(procedure.RawContents); //raw contents arent getting filled properly?
                             procedure.DecodedContents = parsedProc.DecodedContents;
+                            formattedContents += procedure.ToString();
                         }
                         catch (Exception ex)
                         {
                         }
                     }
 
+                    File.WriteAllText("formattedOutput.txt", formattedContents);
+
                     Procedure decodedMain = ProcDecoder.DecodeProc(mainProcedure.RawContents);
                     Main main = new Main();
                     main.EncodedContents = mainProcedure.RawContents;
                     main.DecodedContents = decodedMain.DecodedContents;
                     gcx.Main = main;
+
                     return gcx;
                 }
 
