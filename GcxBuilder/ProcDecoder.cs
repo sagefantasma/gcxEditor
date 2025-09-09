@@ -461,7 +461,7 @@ namespace GcxEditor
                         case 0x90:
                             try
                             {
-                                args.Add(new Argument { Value = new LocalVar { Id = (ushort)(currentByte & 0x0F), EncodedContents = new[] { currentByte } } });
+                                args.Add(new Argument { Value = new LocalVar { Id = (byte)(currentByte & 0x0F), EncodedContents = new[] { currentByte } } });
                                 position++;
                             }
                             catch (Exception e)
@@ -584,8 +584,22 @@ namespace GcxEditor
                             try
                             {
                                 //single variable
-                                //TODO: make these localvarbuf, linkvarbuf, etc
                                 Variable variable = new Variable();
+                                switch(bytes[position + 1])
+                                {
+                                    case 0x80:
+                                        //linkvarbuf
+                                        variable = new Linkvarbuf();
+                                        break;
+                                    case 0x10:
+                                        //localvarbuf
+                                        variable = new Localvarbuf();
+                                        break;
+                                    default:
+                                        variable = new Varbuf();
+                                        (variable as Varbuf).ByteType = bytes[position + 1];
+                                        break;
+                                }
                                 variable.LowNibble = (byte)(bytes[position] & 0x0F);
                                 byte[] id = TakeRange(bytes, position + 2, position + 4);
                                 variable.Id = BitConverter.ToUInt16(id.Reverse().ToArray());

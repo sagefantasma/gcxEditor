@@ -11,6 +11,8 @@ namespace Gcx
         public uint Size { get; set; }
         public string Type { get; set; }
         public byte[] EncodedContents { get; set; }
+
+        public byte[] Encode();
     }
 
     public class Procedure : Term
@@ -44,6 +46,12 @@ namespace Gcx
             Type = GetType().Name;
         }
 
+        public override byte[] Encode()
+        {
+            //TODO: implement
+            throw new NotImplementedException();
+        }
+
         public override string ToString()
         {
             string printedString = "";
@@ -75,9 +83,15 @@ namespace Gcx
             Order = 0;
             Type = GetType().Name;
         }
+
+        public override byte[] Encode()
+        {
+            //TODO: determine if necessary, and implement if so
+            throw new NotImplementedException();
+        }
     }
 
-    public class Command : IProcedureElement
+    public abstract class Command : IProcedureElement
     {
         //0x6D/6E ....? what?
         [JsonIgnore]
@@ -117,6 +131,8 @@ namespace Gcx
 
             return printedString;
         }
+
+        public abstract byte[] Encode();
     }
 
     public class Expression : Term
@@ -129,13 +145,19 @@ namespace Gcx
             Type = GetType().Name;
         }
 
+        public override byte[] Encode()
+        {
+            //TODO: implement
+            throw new NotImplementedException();
+        }
+
         public override string ToString()
         {
             return $"{Term1}{Gcx.OperationToString(Operator)}{Term2}";
         }
     }
 
-    public class Statement : Command
+    public abstract class Statement : Command
     {
         public Statement()
         {
@@ -149,21 +171,11 @@ namespace Gcx
         {
             Type = GetType().Name;
         }
-    }
 
-    public class ElseIfBlock : IfBlock
-    {
-        public ElseIfBlock()
+        public override byte[] Encode()
         {
-            Type = GetType().Name;
-        }
-    }
-
-    public class ElseBlock : IfBlock
-    {
-        public ElseBlock()
-        {
-            Type = GetType().Name;
+            //TODO: implement
+            throw new NotImplementedException();
         }
     }
 
@@ -173,6 +185,12 @@ namespace Gcx
         {
             Type = GetType().Name;
         }
+
+        public override byte[] Encode()
+        {
+            //TODO: implement
+            throw new NotImplementedException();
+        }
     }
 
     public class Evaluate : Statement
@@ -180,6 +198,12 @@ namespace Gcx
         public Evaluate()
         {
             Type = GetType().Name;
+        }
+
+        public override byte[] Encode()
+        {
+            //TODO: implement
+            throw new NotImplementedException();
         }
     }
 
@@ -190,6 +214,12 @@ namespace Gcx
         public Invoke()
         {
             Type = GetType().Name;
+        }
+
+        public override byte[] Encode()
+        {
+            //TODO: implement
+            throw new NotImplementedException();
         }
 
         public override string ToString()
@@ -210,7 +240,7 @@ namespace Gcx
         }
     }
 
-    public class Term : IProcedureElement
+    public partial class Term : IProcedureElement
     {
         [JsonIgnore]
         public uint Size { get; set; }
@@ -221,15 +251,22 @@ namespace Gcx
         {
             Type = GetType().Name;
         }
+
+        public virtual byte[] Encode()
+        {
+            throw new NotImplementedException();
+        }
     }
 
-    public class Argument : Term
+    public partial class Argument : Term
     {
         public Term Value { get; set; } = new Term();
         public Argument()
         {
             Type = GetType().Name;
         }
+
+        //Should not need an encode command as we should never have an untyped arg
 
         public override string ToString()
         {
@@ -244,6 +281,12 @@ namespace Gcx
             Type = GetType().Name;
         }
 
+        public override byte[] Encode()
+        {
+            //TODO: implement
+            throw new NotImplementedException();
+        }
+
         public override string ToString()
         {
             return $"Return:{Environment.NewLine}{base.ToString()}";
@@ -256,6 +299,13 @@ namespace Gcx
         {
             Type = GetType().Name;
         }
+
+        public override byte[] Encode()
+        {
+            //TODO: implement
+            throw new NotImplementedException();
+        }
+
         public override string ToString()
         {
             return $"Print:{Environment.NewLine}{base.ToString()}";
@@ -269,6 +319,12 @@ namespace Gcx
             Type = GetType().Name;
         }
 
+        public override byte[] Encode()
+        {
+            //TODO: implement
+            throw new NotImplementedException();
+        }
+
         public override string ToString()
         {
             return $"MessageCommand:{base.ToString()}";
@@ -280,6 +336,12 @@ namespace Gcx
         public GameCommand()
         {
             Type = GetType().Name;
+        }
+
+        public override byte[] Encode()
+        {
+            //TODO: implement
+            throw new NotImplementedException();
         }
 
         public override string ToString()
@@ -296,6 +358,12 @@ namespace Gcx
             Type = GetType().Name;
         }
 
+        public override byte[] Encode()
+        {
+            //TODO: implement
+            throw new NotImplementedException();
+        }
+
         public override string ToString()
         {
             return $"CreateCharaCommand:{base.ToString()}";
@@ -309,6 +377,12 @@ namespace Gcx
             Type = GetType().Name;
         }
 
+        public override byte[] Encode()
+        {
+            //TODO: implement
+            throw new NotImplementedException();
+        }
+
         public override string ToString()
         {
             return $"CreateTrapCommand:{base.ToString()}";
@@ -320,6 +394,12 @@ namespace Gcx
         public Load()
         {
             Type = GetType().Name;
+        }
+
+        public override byte[] Encode()
+        {
+            //TODO: implement
+            throw new NotImplementedException();
         }
 
         public override string ToString()
@@ -336,6 +416,12 @@ namespace Gcx
             Type = this.GetType().Name;
         }
 
+        public override byte[] Encode()
+        {
+            //TODO: implement
+            throw new NotImplementedException();
+        }
+
         public override string ToString()
         {
             return $"KnownUnknownCommand:{base.ToString()}";
@@ -349,6 +435,12 @@ namespace Gcx
             Type = GetType().Name;
         }
 
+        public override byte[] Encode()
+        {
+            //TODO: implement
+            throw new NotImplementedException();
+        }
+
         public override string ToString()
         {
             return $"MapCommand:{base.ToString()}";
@@ -360,6 +452,12 @@ namespace Gcx
         public Restart()
         {
             Type = GetType().Name;
+        }
+
+        public override byte[] Encode()
+        {
+            //TODO: implement
+            throw new NotImplementedException();
         }
 
         public override string ToString()
@@ -383,6 +481,12 @@ namespace Gcx
         public List<Argument> Args { get; set; }
         public string Type { get; set; } = "Parameter";
 
+        public byte[] Encode()
+        {
+            //TODO: implement
+            throw new NotImplementedException();
+        }
+
         public override string ToString()
         {
             string printedString = $"parameter({ParamType}):";
@@ -398,17 +502,17 @@ namespace Gcx
         }
     }
 
-    /*public class Value : IProcedureElement 
-    {
-        public ushort Size { get; set; }
-    }*/
-
     public class Constant : Term
     {
         public byte Value { get; set; }
         public Constant()
         {
             Type = GetType().Name;
+        }
+
+        public override byte[] Encode()
+        {
+            return new[] { (byte)(0xC1 + Value) }; 
         }
 
         public override string ToString()
@@ -425,6 +529,12 @@ namespace Gcx
             Type = GetType().Name;
         }
 
+        public override byte[] Encode()
+        {
+            //TODO: implement
+            throw new NotImplementedException();
+        }
+
         public override string ToString()
         {
             return Value.ToString();
@@ -439,20 +549,31 @@ namespace Gcx
             Type = GetType().Name;
         }
 
+        public override byte[] Encode()
+        {
+            //TODO: confirm this works
+            if(ArgNum < 0xF)
+            {
+                return new[] { (byte)(0x40 + ArgNum) };
+            }
+            else
+            {
+                return new[] { (byte)0x4F, (byte)(ArgNum - 0xF) };
+            }
+        }
+
         public override string ToString()
         {
             return $"arg{ArgNum}";
         }
     }
 
-    public class Variable : Term
+    public partial class Variable : Term
     {
         public ushort Id { get; set; }
         public byte LowNibble { get; set; }
-        public Variable()
-        {
-            Type = GetType().Name;
-        }
+
+        //Should not have an encode, as we should never have an untyped variable
 
         public override string ToString()
         {
@@ -473,6 +594,21 @@ namespace Gcx
             Type = GetType().Name;
         }
 
+        public VariableArray(ushort id, byte lowNibble, byte arrayType, List<Argument> sizeAndIndex)
+        {
+            Type = GetType().Name;
+            Id = id;
+            LowNibble = lowNibble;
+            ArrayType = arrayType;
+            SizeAndIndex = sizeAndIndex;
+        }
+
+        public override byte[] Encode()
+        {
+            //TODO: implement
+            throw new NotImplementedException();
+        }
+
         public override string ToString()
         {
             return $"varArray_0x{BitConverter.ToString(BitConverter.GetBytes(Id).Reverse().ToArray()).Replace("-", "")}";
@@ -486,6 +622,23 @@ namespace Gcx
             Type = GetType().Name;
         }
 
+        public Linkvarbuf(ushort id)
+        {
+            Type = GetType().Name;
+            Id = id;
+        }
+
+        public override byte[] Encode()
+        {
+            //TODO: confirm this works
+            byte[] encodedVarbuf = new byte[4];
+            encodedVarbuf[0] = (byte)(0x10 + LowNibble);
+            encodedVarbuf[1] = 0x80; //is this always correct?
+            Array.Copy(BitConverter.GetBytes(Id), 0, encodedVarbuf, 2, 2);
+
+            return encodedVarbuf;
+        }
+
         public override string ToString()
         {
             return $"linkVarbuf_0x{BitConverter.ToString(BitConverter.GetBytes(Id).Reverse().ToArray()).Replace("-", "")}";
@@ -494,14 +647,62 @@ namespace Gcx
 
     public class Varbuf : Variable
     {
+        public byte ByteType { get; set; }
         public Varbuf()
         {
             Type = GetType().Name;
         }
 
+        public Varbuf(ushort id)
+        {
+            Type = GetType().Name;
+            Id = id;
+        }
+
+        public override byte[] Encode()
+        {
+            //TODO: confirm this works
+            byte[] encodedVarbuf = new byte[4];
+            encodedVarbuf[0] = (byte)(0x10 + LowNibble);
+            encodedVarbuf[1] = ByteType; 
+            Array.Copy(BitConverter.GetBytes(Id), 0, encodedVarbuf, 2, 2);
+
+            return encodedVarbuf;
+        }
+
         public override string ToString()
         {
             return $"varbuf_0x{BitConverter.ToString(BitConverter.GetBytes(Id).Reverse().ToArray()).Replace("-", "")}";
+        }
+    }
+
+    public class Localvarbuf : Variable
+    {
+        public Localvarbuf()
+        {
+            Type = GetType().Name;
+        }
+
+        public Localvarbuf(ushort id)
+        {
+            Type = GetType().Name;
+            Id = id;
+        }
+
+        public override byte[] Encode()
+        {
+            //TODO: confirm this works
+            byte[] encodedVarbuf = new byte[4];
+            encodedVarbuf[0] = (byte)(0x10 + LowNibble);
+            encodedVarbuf[1] = 0x10; //is this always correct?
+            Array.Copy(BitConverter.GetBytes(Id), 0, encodedVarbuf, 2, 2);
+
+            return encodedVarbuf;
+        }
+
+        public override string ToString()
+        {
+            return $"localvarbuf_0x{BitConverter.ToString(BitConverter.GetBytes(Id).Reverse().ToArray()).Replace("-", "")}";
         }
     }
 
@@ -511,6 +712,21 @@ namespace Gcx
         {
             Type = GetType().Name;
         }
+
+        public LocalVar(byte input)
+        {
+            Type = GetType().Name;
+            Id = input;
+        }
+
+        public override byte[] Encode()
+        {
+            //TODO: confirm this works
+            byte[] idBytes = BitConverter.GetBytes(Id);
+            byte highNibble = 0x90;
+            return new[] { (byte)(highNibble + idBytes.FirstOrDefault()) };
+        }
+
 
         public override string ToString()
         {

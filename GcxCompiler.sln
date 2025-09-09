@@ -3,10 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.9.34902.65
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GcxCompiler", "GcxCompiler\GcxCompiler.csproj", "{171D537F-8026-4AAD-B50D-8BFC10750230}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GcxDecompiler", "GcxDecompiler\GcxDecompiler.csproj", "{FF8C602C-83D9-41B4-BB90-DD58F5C8CAE7}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gcx", "Gcx\Gcx.csproj", "{8F66D769-EE95-4F6C-B1E0-056D3F7957B8}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Take 1", "Take 1", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
@@ -21,14 +17,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{171D537F-8026-4AAD-B50D-8BFC10750230}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{171D537F-8026-4AAD-B50D-8BFC10750230}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{171D537F-8026-4AAD-B50D-8BFC10750230}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{171D537F-8026-4AAD-B50D-8BFC10750230}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FF8C602C-83D9-41B4-BB90-DD58F5C8CAE7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FF8C602C-83D9-41B4-BB90-DD58F5C8CAE7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FF8C602C-83D9-41B4-BB90-DD58F5C8CAE7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FF8C602C-83D9-41B4-BB90-DD58F5C8CAE7}.Release|Any CPU.Build.0 = Release|Any CPU
 		{8F66D769-EE95-4F6C-B1E0-056D3F7957B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8F66D769-EE95-4F6C-B1E0-056D3F7957B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8F66D769-EE95-4F6C-B1E0-056D3F7957B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -46,8 +34,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{171D537F-8026-4AAD-B50D-8BFC10750230} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
-		{FF8C602C-83D9-41B4-BB90-DD58F5C8CAE7} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{8F66D769-EE95-4F6C-B1E0-056D3F7957B8} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
