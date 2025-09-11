@@ -1,13 +1,12 @@
-﻿using Gcx;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using Expression = Gcx.Expression;
-using Parameter = Gcx.Parameter;
+using Expression = GcxEditor.Expression;
+using Parameter = GcxEditor.Parameter;
 
 namespace GcxEditor
 {
@@ -32,13 +31,13 @@ namespace GcxEditor
         /// <param name="bytes">An array of bytes taken from a GCX file compatible with MGS2 that represents a procedure.</param>
         /// <returns></returns>
         /// <exception cref="ParserException"></exception>
-        public static Gcx.Procedure DecodeProc(byte[] bytes)
+        public static GcxEditor.Procedure DecodeProc(byte[] bytes)
         {
             try
             {
                 uint index = 0;
                 int nestedLevel = 0; //how important is this?
-                Gcx.Procedure procedure = new Procedure();
+                GcxEditor.Procedure procedure = new Procedure();
                 procedure.DecodedContents = new List<dynamic>();
                 if (bytes.Length == 0)
                 {
@@ -60,7 +59,7 @@ namespace GcxEditor
                                 size--;
                             byte[] procContents = new byte[size];
                             procContents = TakeRange(bytes, index, index + size);
-                            Gcx.Procedure subProcedure = DecodeProc(procContents);
+                            GcxEditor.Procedure subProcedure = DecodeProc(procContents);
                             if (subProcedure != null)
                                 procedure.DecodedContents.Add(subProcedure);
                             index += size;
@@ -91,7 +90,7 @@ namespace GcxEditor
                             size = DecodeSize(TakeRange(bytes, index, index + 3), ref index);
                             byte[] expressionContents = new byte[size];
                             expressionContents = TakeRange(bytes, index, index + size);
-                            Gcx.Expression expression = DecodeExpression(expressionContents);
+                            GcxEditor.Expression expression = DecodeExpression(expressionContents);
                             if (expression != null)
                                 procedure.DecodedContents.Add(expression);
                             index += size;
@@ -150,11 +149,11 @@ namespace GcxEditor
             }
         }
 
-        private static Gcx.Expression DecodeNestedExpression(Argument term1, Argument term2, Gcx.Gcx.Operation operation)
+        private static GcxEditor.Expression DecodeNestedExpression(Argument term1, Argument term2, Gcx.Operation operation)
         {
             try
             {
-                Gcx.Expression expression = new Gcx.Expression();
+                GcxEditor.Expression expression = new GcxEditor.Expression();
                 expression.Term1 = term1;
                 expression.Term2 = term2;
                 expression.Operator = operation;
@@ -169,11 +168,11 @@ namespace GcxEditor
             }
         }
 
-        private static Gcx.Expression DecodeExpression(byte[] bytes)
+        private static GcxEditor.Expression DecodeExpression(byte[] bytes)
         {
             try
             {
-                Gcx.Expression expression = new Gcx.Expression();
+                GcxEditor.Expression expression = new GcxEditor.Expression();
                 /*3A 19 00 0B E8 01 26 F7 B6 A0 == $var:varbuf_0xBE8 = 0xF726
                 //3A is denoting expression, A bytes long
                 //19 is single variable, not sure what lowbyte signifies. maybe long?
@@ -272,60 +271,60 @@ namespace GcxEditor
             }
         }
 
-        private static Gcx.Gcx.Operation DecodeOperator(byte operatorByte)
+        private static Gcx.Operation DecodeOperator(byte operatorByte)
         {
             switch (operatorByte)
             {
                 default:
                     throw new ParserException("Invalid expression operator provided");
                 case 0xA0:
-                    return Gcx.Gcx.Operation.NoOp;
+                    return Gcx.Operation.NoOp;
                 case 0xA1:
-                    return Gcx.Gcx.Operation.NegateValue2;
+                    return Gcx.Operation.NegateValue2;
                 case 0xA2:
-                    return Gcx.Gcx.Operation.Value2Equals0;
+                    return Gcx.Operation.Value2Equals0;
                 case 0xA3:
-                    return Gcx.Gcx.Operation.BitwiseComplementOfValue2;
+                    return Gcx.Operation.BitwiseComplementOfValue2;
                 case 0xA4:
-                    return Gcx.Gcx.Operation.Value1PlusValue2;
+                    return Gcx.Operation.Value1PlusValue2;
                 case 0xA5:
-                    return Gcx.Gcx.Operation.Value1MinusValue2;
+                    return Gcx.Operation.Value1MinusValue2;
                 case 0xA6:
-                    return Gcx.Gcx.Operation.Value1MulitpliedByValue2;
+                    return Gcx.Operation.Value1MulitpliedByValue2;
                 case 0xA7:
-                    return Gcx.Gcx.Operation.Value1DividedByValue2;
+                    return Gcx.Operation.Value1DividedByValue2;
                 case 0xA8:
-                    return Gcx.Gcx.Operation.Value1ModuloValue2;
+                    return Gcx.Operation.Value1ModuloValue2;
                 case 0xA9:
-                    return Gcx.Gcx.Operation.Value1LeftShiftValue2;
+                    return Gcx.Operation.Value1LeftShiftValue2;
                 case 0xAA:
-                    return Gcx.Gcx.Operation.Value1RightShiftValue2;
+                    return Gcx.Operation.Value1RightShiftValue2;
                 case 0xAB:
-                    return Gcx.Gcx.Operation.Value1IsEqualToValue2;
+                    return Gcx.Operation.Value1IsEqualToValue2;
                 case 0xAC:
-                    return Gcx.Gcx.Operation.Value1NotEqualToValue2;
+                    return Gcx.Operation.Value1NotEqualToValue2;
                 case 0xAD:
-                    return Gcx.Gcx.Operation.Value1LessThanValue2;
+                    return Gcx.Operation.Value1LessThanValue2;
                 case 0xAE:
-                    return Gcx.Gcx.Operation.Value1LessThanOrEqualToValue2;
+                    return Gcx.Operation.Value1LessThanOrEqualToValue2;
                 case 0xAF:
-                    return Gcx.Gcx.Operation.Value1GreaterThanValue2;
+                    return Gcx.Operation.Value1GreaterThanValue2;
                 case 0xB0:
-                    return Gcx.Gcx.Operation.Value1GreaterThanOrEqualToValue2;
+                    return Gcx.Operation.Value1GreaterThanOrEqualToValue2;
                 case 0xB1:
-                    return Gcx.Gcx.Operation.Value1BitwiseOrValue2;
+                    return Gcx.Operation.Value1BitwiseOrValue2;
                 case 0xB2:
-                    return Gcx.Gcx.Operation.Value1BitwiseAndValue2;
+                    return Gcx.Operation.Value1BitwiseAndValue2;
                 case 0xB3:
-                    return Gcx.Gcx.Operation.Value1BitwiseXorValue2;
+                    return Gcx.Operation.Value1BitwiseXorValue2;
                 case 0xB4:
-                    return Gcx.Gcx.Operation.Value1OrValue2;
+                    return Gcx.Operation.Value1OrValue2;
                 case 0xB5:
-                    return Gcx.Gcx.Operation.Value1AndValue2;
+                    return Gcx.Operation.Value1AndValue2;
                 case 0xB6:
-                    return Gcx.Gcx.Operation.Value1SetToValue2;
+                    return Gcx.Operation.Value1SetToValue2;
                 case 0xB7:
-                    return Gcx.Gcx.Operation.Value2;
+                    return Gcx.Operation.Value2;
             }
         }
 
@@ -383,7 +382,7 @@ namespace GcxEditor
                         uint size = DecodeSize(expressionSizeBytes, ref position);
 
                         byte[] expressionBytes = TakeRange(bytes, position, position + size);
-                        Gcx.Expression expression = DecodeExpression(expressionBytes);
+                        GcxEditor.Expression expression = DecodeExpression(expressionBytes);
                         args.Add(new Argument { Value = expression });
                         position += expression.Size;
                     }
@@ -440,7 +439,7 @@ namespace GcxEditor
                                 {
                                     //nested expression x_x;;
 
-                                    Gcx.Expression expression = DecodeNestedExpression(args[args.Count - 2], args[args.Count - 1], DecodeOperator(currentByte));
+                                    GcxEditor.Expression expression = DecodeNestedExpression(args[args.Count - 2], args[args.Count - 1], DecodeOperator(currentByte));
                                     args.RemoveAt(args.Count - 1);
                                     args.RemoveAt(args.Count - 1);
                                     args.Add(new Argument { Value = expression, Size = expression.Size });
@@ -482,7 +481,7 @@ namespace GcxEditor
                                 }
                                 nestedProcBytes = TakeRange(bytes, position, size + position);
                                 //TODO: i'm *pretty sure* this will cause issues if the nested proc is not the final parameter.
-                                Gcx.Procedure procedure = DecodeProc(nestedProcBytes);
+                                GcxEditor.Procedure procedure = DecodeProc(nestedProcBytes);
                                 args.Add(new Argument { Value = procedure, Size = procedure.Size, EncodedContents = nestedProcBytes });
                                 if (size < 0xC)
                                 {
@@ -529,7 +528,7 @@ namespace GcxEditor
                                 byte[] expressionSizeBytes = TakeRange(bytes, position, position + 4);
                                 uint size = DecodeSize(expressionSizeBytes, ref position);
                                 byte[] expressionBytes = TakeRange(bytes, position, size + position);
-                                Gcx.Expression expression = DecodeExpression(expressionBytes);
+                                GcxEditor.Expression expression = DecodeExpression(expressionBytes);
                                 args.Add(new Argument { Value = expression, Size = expression.Size });
                                 position += size;
                             }
@@ -624,10 +623,10 @@ namespace GcxEditor
                             {
                                 try
                                 {
-                                    Gcx.Gcx.DataType dataType = Gcx.Gcx.DataType.FromCode(currentByte);
+                                    Gcx.DataType dataType = Gcx.DataType.FromCode(currentByte);
 
                                     byte[] dataValue = new byte[4];
-                                    if (dataType == Gcx.Gcx.DataType.String)
+                                    if (dataType == Gcx.DataType.String)
                                     {
                                         dataType.Length = bytes[position + 1];
                                         dataValue = new byte[dataType.Length];

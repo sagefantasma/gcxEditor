@@ -1,10 +1,42 @@
-﻿namespace LibraryTester
+﻿using Newtonsoft.Json;
+using System.Text.Json.Serialization;
+
+namespace LibraryTester
 {
     internal class Program
     {
         static void Main(string[] args)
         {
-            GcxEditor.Importer.ImportGcxFile("C:\\Users\\yonan\\Documents\\Pinned Folders\\C Drive Steam Games\\MGS2\\assets\\gcx\\eu\\_bp\\scenerio_stage_w01a.gcx");
+            /*foreach (string file in Directory.GetFiles("C:\\Users\\yonan\\Documents\\Pinned Folders\\C Drive Steam Games\\MGS2\\assets\\gcx\\eu\\_bp"))
+            {
+                //issue in scenerio.gcx
+                //issue in scenerio_stage_a00b.gcx
+                //if (file.Contains("scenerio.gcx") || file.Contains("scenerio_stage_a00b.gcx") || file.Contains("scenerio_stage_a00c.gcx"))
+                //{
+                //    continue;
+               // }
+                //if (!file.Contains("_w"))
+                //{
+                //    continue;
+                //}
+                //if (file.Contains("bak"))
+                //{
+                //    continue;
+                //}
+                GcxEditor.Importer.ImportGcxFile(file);
+            }*/
+
+            GcxEditor.GcxClasses.Gcx gcxFile = GcxEditor.Importer.ImportGcxFile("C:\\Users\\yonan\\Documents\\Pinned Folders\\C Drive Steam Games\\MGS2\\assets\\gcx\\eu\\_bp\\scenerio_stage_w00a.gcx");
+            Task serializeTask = SerializeIt(gcxFile);
+            while (!serializeTask.IsCompleted)
+            {
+
+            }
+        }
+
+        static async Task SerializeIt(GcxEditor.GcxClasses.Gcx gcxFile)
+        {
+            File.WriteAllText("gcxOutput.json", JsonConvert.SerializeObject(gcxFile, Formatting.Indented));
         }
     }
 }

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
-namespace Gcx
+namespace GcxEditor
 {
     public partial interface IProcedureElement
     {
@@ -139,7 +139,7 @@ namespace Gcx
     {
         public Term? Term1 { get; set; }
         public Term? Term2 { get; set; }
-        public Gcx.Operation Operator { get; set; }
+        public GcxEditor.Gcx.Operation Operator { get; set; }
         public Expression()
         {
             Type = GetType().Name;
@@ -485,8 +485,18 @@ namespace Gcx
 
         public byte[] Encode()
         {
-            //TODO: implement
-            byte[] encodedBytes = Builder.InitializeSize(Size, 0x50);
+            //TODO: confirm this works
+            byte[] encodedBytes = Builder.InitializeSize(Size, 0x50, out int position);
+            encodedBytes[position] = (byte)ParamType;
+            
+            foreach (Argument arg in Args)
+            {
+                byte[] encodedArg = arg.Encode();
+                Array.Copy(encodedArg, 0, encodedBytes, position, encodedArg.Length);
+                position += encodedArg.Length;
+            }
+
+            return encodedBytes;
         }
 
         public override string ToString()

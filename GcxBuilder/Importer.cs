@@ -1,11 +1,8 @@
-﻿using Gcx;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static Gcx.Gcx;
-using static Gcx.GcxClasses;
 
 namespace GcxEditor
 {
@@ -51,13 +48,13 @@ namespace GcxEditor
                     byte[] mainBody = TakeRangeFromArray(mainProcedureData, mainStartOffset, mainSize + mainStartOffset);
                     Procedure mainProcedure = ParseProcedure(mainBody, null, mainSize);
 
-                    FileTable fileTable = new FileTable();
+                    GcxClasses.FileTable fileTable = new GcxClasses.FileTable();
                     fileTable.ScriptTableOffset = FileTable["scriptOffset"];
                     fileTable.ResourceTableOffset = FileTable["resourceOffset"];
                     fileTable.StringTableOffset = FileTable["stringsOffset"];
                     fileTable.FontDataOffset = FileTable["fontOffset"];
                     fileTable.Key = FileTable["key"];
-                    ProcedureBlock procedureBlock = new ProcedureBlock();
+                    GcxClasses.ProcedureBlock procedureBlock = new GcxClasses.ProcedureBlock();
                     procedureBlock.Procedures = parsedProcedures;
                     procedureBlock.Main = mainProcedure;
                     GcxClasses.Gcx gcx = new GcxClasses.Gcx(fileTable, procedureBlock);
