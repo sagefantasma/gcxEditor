@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
@@ -48,8 +49,51 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            //TODO: implement
-            throw new NotImplementedException();
+            //TODO: confirm this works
+            //Encode decoded contents, get the size, slap that on?
+
+            List<byte[]> encodedContents = new List<byte[]>();
+
+            int sizeOfEncodedContents = 0;
+            foreach(dynamic decodedContent in DecodedContents)
+            {
+                byte[] encodedContent = decodedContent.Encode();
+                encodedContents.Add(encodedContent);
+                sizeOfEncodedContents += encodedContent.Length;
+            }
+
+            byte[] encodedBytes;
+            int position = 0;
+            if (sizeOfEncodedContents < 0xD)
+            {
+                encodedBytes = new byte[sizeOfEncodedContents + 1];
+                encodedBytes[position++] = (byte)(0x80 + (byte)sizeOfEncodedContents);
+            }
+            else if(sizeOfEncodedContents < 0xFF)
+            {
+                encodedBytes = new byte[sizeOfEncodedContents + 2];
+                encodedBytes[position++] = 0x8D;
+                encodedBytes[position++] = (byte)sizeOfEncodedContents;
+            }
+            else if(sizeOfEncodedContents < 0xFFFF)
+            {
+                encodedBytes = new byte[sizeOfEncodedContents + 3];
+                encodedBytes[position++] = 0x8E;
+                Array.Copy(BitConverter.GetBytes((ushort)sizeOfEncodedContents), 0, encodedBytes, position+=2, sizeof(ushort));
+            }
+            else
+            {
+                encodedBytes = new byte[sizeOfEncodedContents + 4];
+                encodedBytes[position++] = 0x8F;
+                Array.Copy(BitConverter.GetBytes(sizeOfEncodedContents), 1, encodedBytes, position += 3, 3);
+            }
+
+            foreach (byte[] encodedContent in encodedContents)
+            {
+                Array.Copy(encodedContent, 0, encodedBytes, position += encodedContent.Length, encodedContent.Length);
+            }
+
+            return encodedBytes;
         }
 
         public override string ToString()
@@ -93,7 +137,6 @@ namespace GcxEditor
 
     public abstract class Command : IProcedureElement
     {
-        //0x6D/6E ....? what?
         [JsonIgnore]
         public uint Size { get; set; }
         public string Type { get; set; }
@@ -147,8 +190,51 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            //TODO: implement
-            throw new NotImplementedException();
+            //TODO: confirm this works
+            List<byte[]> encodedContents = new List<byte[]>();
+
+            int sizeOfEncodedContents = 0;
+            byte[] term1Encoded = Term1.Encode();
+            sizeOfEncodedContents += term1Encoded.Length;
+            encodedContents.Add(term1Encoded);
+            byte[] term2Encoded = Term2.Encode();
+            sizeOfEncodedContents += term2Encoded.Length;
+            encodedContents.Add(term2Encoded);
+
+            byte[] encodedBytes;
+            int position = 0;
+            if (sizeOfEncodedContents < 0xD)
+            {
+                encodedBytes = new byte[sizeOfEncodedContents + 3];
+                encodedBytes[position++] = (byte)(0x30 + (byte)sizeOfEncodedContents);
+            }
+            else if (sizeOfEncodedContents < 0xFF)
+            {
+                encodedBytes = new byte[sizeOfEncodedContents + 4];
+                encodedBytes[position++] = 0x3D;
+                encodedBytes[position++] = (byte)sizeOfEncodedContents;
+            }
+            else if (sizeOfEncodedContents < 0xFFFF)
+            {
+                encodedBytes = new byte[sizeOfEncodedContents + 5];
+                encodedBytes[position++] = 0x3E;
+                Array.Copy(BitConverter.GetBytes((ushort)sizeOfEncodedContents), 0, encodedBytes, position += 2, sizeof(ushort));
+            }
+            else
+            {
+                encodedBytes = new byte[sizeOfEncodedContents + 6];
+                encodedBytes[position++] = 0x3F;
+                Array.Copy(BitConverter.GetBytes(sizeOfEncodedContents), 1, encodedBytes, position += 3, 3);
+            }
+
+            foreach (byte[] encodedContent in encodedContents)
+            {
+                Array.Copy(encodedContent, 0, encodedBytes, position += encodedContent.Length, encodedContent.Length);
+            }
+            encodedBytes[encodedBytes.Length - 1] = 0xA0;
+            encodedBytes[encodedBytes.Length - 2] = (byte)Operator;
+
+            return encodedBytes;
         }
 
         public override string ToString()
@@ -218,8 +304,57 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            //TODO: implement
-            throw new NotImplementedException();
+            //TODO: confirm this works
+            //TODO: does an invoke always end with a 00 buffer?
+            int procedureInvokedBytes = 4;
+            uint argsBytesLength = 0;
+
+            foreach (Argument argument in Args)
+            {
+                argsBytesLength += argument.Size;
+            }
+
+            byte[] encodedBytes;
+            int position = 0;
+            if ((argsBytesLength + 3) > 0xD)
+            {
+                //no change to procedureInvokedBytes
+                encodedBytes = new byte[procedureInvokedBytes + argsBytesLength];
+                encodedBytes[position++] = (byte)(0x70 + procedureInvokedBytes + argsBytesLength);
+            }
+            else if((argsBytesLength + 3) < 0xFF)
+            {
+                procedureInvokedBytes++;
+                encodedBytes = new byte[procedureInvokedBytes + argsBytesLength];
+                encodedBytes[position++] = 0x7D;
+                encodedBytes[position++] = (byte)(argsBytesLength + 3);
+            }
+            else if((argsBytesLength + 3) > 0xFF && (argsBytesLength + 3) < 0xFFFF)
+            {
+                procedureInvokedBytes += 2;
+                encodedBytes = new byte[procedureInvokedBytes + argsBytesLength];
+                encodedBytes[position++] = 0x7E;
+                Array.Copy(BitConverter.GetBytes((ushort)(argsBytesLength + 3)), 0, encodedBytes, position += sizeof(ushort), sizeof(ushort));
+            }
+            else
+            {
+                procedureInvokedBytes += 3;
+                encodedBytes = new byte[procedureInvokedBytes + argsBytesLength];
+                encodedBytes[position++] = 0x7F;
+                Array.Copy(BitConverter.GetBytes(argsBytesLength + 3), 0, encodedBytes, position += 3, 3);
+            }
+
+
+            Array.Copy(BitConverter.GetBytes(ProcedureInvoked.Order), 1, encodedBytes, position += 3, 3);
+            
+            foreach (Argument arg in Args)
+            {
+                byte[] encodedArg = arg.Encode();
+                Array.Copy(encodedArg, 0, encodedBytes, position, encodedArg.Length);
+                position += encodedArg.Length;
+            }
+
+            return encodedBytes;
         }
 
         public override string ToString()
@@ -254,6 +389,7 @@ namespace GcxEditor
 
         public virtual byte[] Encode()
         {
+            //TODO: can i take this out?
             throw new NotImplementedException();
         }
     }
@@ -536,6 +672,8 @@ namespace GcxEditor
     public class Literal : Term
     {
         public dynamic Value { get; set; }
+        public byte DataTypeByte { get; set; }
+        public Gcx.DataType DataType { get; set; }
         public Literal()
         {
             Type = GetType().Name;
@@ -543,8 +681,24 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            //TODO: implement
-            throw new NotImplementedException();
+            //TODO: confirm this works
+            byte[] encodedBytes;
+            if(DataType == Gcx.DataType.String)
+            {
+                encodedBytes = new byte[(Value as string).Length + 1];
+                encodedBytes[0] = 0x07;
+                encodedBytes[1] = Value.Length();
+                Array.Copy(Encoding.Default.GetBytes(Value), 0, encodedBytes, 2, Value.Length);
+            }
+            else
+            {
+                encodedBytes = new byte[DataType.Length + 1];
+                encodedBytes[0] = DataTypeByte; //TODO: can we reverse engineer what determines this so we can make a "fresh" file?
+                byte[] dataBytes = BitConverter.GetBytes(Value);
+                Array.Copy(dataBytes, 0, encodedBytes, 1, dataBytes.Length);
+            }
+
+            return encodedBytes;
         }
 
         public override string ToString()
@@ -617,8 +771,26 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            //TODO: implement
-            throw new NotImplementedException();
+            //TODO: confirm this works
+            int idAndTypeDeclarationSize = 4;
+            int sizeOfArgs = 0;
+            foreach (Argument argument in SizeAndIndex) 
+            {
+                sizeOfArgs += (int)argument.Size;
+            }
+            byte[] encodedBytes = new byte[idAndTypeDeclarationSize + sizeOfArgs];
+            encodedBytes[0] = (byte)(0x20 + LowNibble);
+            encodedBytes[1] = ArrayType;
+            Array.Copy(BitConverter.GetBytes(Id), 0, encodedBytes, 2, sizeof(ushort));
+            int position = 4;
+            foreach(Argument argument in SizeAndIndex)
+            {
+                byte[] encodedArg = argument.Encode();
+                Array.Copy(encodedArg, 0, encodedBytes, position, encodedArg.Length);
+                position += encodedArg.Length;
+            }
+
+            return encodedBytes;
         }
 
         public override string ToString()

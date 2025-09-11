@@ -624,19 +624,18 @@ namespace GcxEditor
                                 try
                                 {
                                     Gcx.DataType dataType = Gcx.DataType.FromCode(currentByte);
-
                                     byte[] dataValue = new byte[4];
                                     if (dataType == Gcx.DataType.String)
                                     {
                                         dataType.Length = bytes[position + 1];
                                         dataValue = new byte[dataType.Length];
                                         Array.Copy(bytes, position + 2, dataValue, 0, dataType.Length);
-                                        args.Add(new Argument { Value = new Literal { Value = dataValue, EncodedContents = TakeRange(bytes, position, (uint)(position + 2 + dataType.Length)) }, Size = (ushort)dataType.Length });
+                                        args.Add(new Argument { Value = new Literal { Value = dataValue, DataTypeByte = currentByte, EncodedContents = TakeRange(bytes, position, (uint)(position + 2 + dataType.Length)), DataType = dataType }, Size = (ushort)dataType.Length });
                                     }
                                     else
                                     {
                                         Array.Copy(bytes, position + 1, dataValue, 0, dataType.Length);
-                                        args.Add(new Argument { Value = new Literal { Value = BitConverter.ToUInt32(dataValue), EncodedContents = TakeRange(bytes, position, (uint)(position + 1 + dataType.Length)) }, Size = (ushort)dataType.Length, });
+                                        args.Add(new Argument { Value = new Literal { Value = BitConverter.ToUInt32(dataValue), DataTypeByte = currentByte, EncodedContents = TakeRange(bytes, position, (uint)(position + 1 + dataType.Length)), DataType = dataType }, Size = (ushort)dataType.Length, });
                                     }
                                     position += (uint)(dataType.Length + 1);
                                 }
