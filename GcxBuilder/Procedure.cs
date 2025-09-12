@@ -260,8 +260,8 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            //TODO: implement
-            throw new NotImplementedException();
+            //TODO: confirm this works
+            return Builder.EncodeCommandWithArgsAndParams(Args, Parameters, new byte[] { 0x86, 0x0D, 0x00 });
         }
     }
 
@@ -274,8 +274,8 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            //TODO: implement
-            throw new NotImplementedException();
+            //TODO: confirm this works
+            return Builder.EncodeCommandWithArgsAndParams(Args, Parameters, new byte[] { 0xB5, 0x5D, 0xA6 });
         }
     }
 
@@ -419,8 +419,8 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            //TODO: implement
-            throw new NotImplementedException();
+            //TODO: confirm this works
+            return Builder.EncodeCommandWithOnlyArgs(Args, new byte[] { 0x8B, 0xE3, 0x98 });
         }
 
         public override string ToString()
@@ -438,8 +438,8 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            //TODO: implement
-            throw new NotImplementedException();
+            //TODO: confirm this works
+            return Builder.EncodeCommandWithOnlyArgs(Args, new byte[] { 0x3B, 0xB2, 0x3A });
         }
 
         public override string ToString()
@@ -457,8 +457,8 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            //TODO: implement
-            throw new NotImplementedException();
+            //TODO: confirm this works
+            return Builder.EncodeCommandWithOnlyArgs(Args, new byte[] { 0xC7, 0x22, 0x38 });
         }
 
         public override string ToString()
@@ -476,8 +476,8 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            //TODO: implement
-            throw new NotImplementedException();
+            //TODO: confirm this works
+            return Builder.EncodeCommandWithArgsAndParams(Args, Parameters, new byte[] { 0xC9, 0x2B, 0x08 });
         }
 
         public override string ToString()
@@ -496,8 +496,8 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            //TODO: implement
-            throw new NotImplementedException();
+            //TODO: confirm this works
+            return Builder.EncodeCommandWithArgsAndParams(Args, Parameters, new byte[] { 0xA7, 0x92, 0x65 });
         }
 
         public override string ToString()
@@ -515,8 +515,8 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            //TODO: implement
-            throw new NotImplementedException();
+            //TODO: confirm this works
+            return Builder.EncodeCommandWithArgsAndParams(Args, Parameters, new byte[] { 0x90, 0xD4, 0x3B });
         }
 
         public override string ToString()
@@ -534,8 +534,8 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            //TODO: implement
-            throw new NotImplementedException();
+            //TODO: confirm this works
+            return Builder.EncodeCommandWithOnlyArgs(Args, new byte[] { 0x84, 0xC8, 0x37 });
         }
 
         public override string ToString()
@@ -554,8 +554,8 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            //TODO: implement
-            throw new NotImplementedException();
+            //TODO: confirm this works
+            return Builder.EncodeCommandWithOnlyArgs(Args, new byte[] { 0xF5, 0x3D, 0x8B });
         }
 
         public override string ToString()
@@ -592,8 +592,8 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            //TODO: implement
-            throw new NotImplementedException();
+            //TODO: confirm this works
+            return Builder.EncodeCommandWithOnlyArgs(Args, new byte[] { 0x05, 0xB0, 0x6B });
         }
 
         public override string ToString()
