@@ -695,6 +695,12 @@ namespace GcxEditor
                     position++;
                     parameter.EncodedContents = TakeRange(bytes, position, position + size - 1);
                     parameter.Args = DecodeArgs(parameter.EncodedContents);
+                    uint parameterSize = 0;
+                    foreach (Term arg in parameter.Args)
+                    {
+                        parameterSize += arg.Size;
+                    }
+                    parameter.Size = parameterSize + 1; //+1 for paramtype declaration
                     position += (uint)parameter.EncodedContents.Length;
                     parameters.Add(parameter);
                 }

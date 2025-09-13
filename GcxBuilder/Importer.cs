@@ -66,9 +66,11 @@ namespace GcxEditor
                         try
                         {
                             Procedure parsedProc = ProcDecoder.DecodeProc(procedure.RawContents); //raw contents arent getting filled properly?
-                            if(procedure.Name == "5B6127")
+                            if(procedure.Name == "6572E6")
                             {
-                                //okay, this one looks good! ^___^
+                                //okay, 5B6127 looks good! ^___^
+                                //7A6AFF looks good now
+                                //6572E6 is correct
                                 byte[] reEncodedBytes = parsedProc.Encode();
                             }
                             procedure.DecodedContents = parsedProc.DecodedContents;

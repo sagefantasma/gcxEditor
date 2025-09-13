@@ -621,7 +621,7 @@ namespace GcxEditor
         {
             //TODO: confirm this works
             byte[] encodedBytes = Builder.InitializeSize(Size, 0x50, out int position);
-            encodedBytes[position] = (byte)ParamType;
+            encodedBytes[position++] = (byte)ParamType;
             
             foreach (Term arg in Args)
             {

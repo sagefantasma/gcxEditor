@@ -10,29 +10,30 @@ namespace GcxEditor
         {
             byte[] containerBytes;
 
+            uint sizeOfContentsPadded = (uint)(contents.Length + 1);
             int position = 0;
-            if (contents.Length < 0xD)
+            if (sizeOfContentsPadded < 0xD)
             {
-                containerBytes = new byte[contents.Length + 1];
-                containerBytes[position++] = (byte)(declarationNibble + contents.Length);
+                containerBytes = new byte[sizeOfContentsPadded + 1];
+                containerBytes[position++] = (byte)(declarationNibble + sizeOfContentsPadded);
             }
-            else if (contents.Length < 0xFF)
+            else if (sizeOfContentsPadded < 0xFF)
             {
-                containerBytes = new byte[contents.Length + 2];
+                containerBytes = new byte[sizeOfContentsPadded + 2];
                 containerBytes[position++] = (byte)(declarationNibble + 0xD);
-                containerBytes[position++] = (byte)contents.Length;
+                containerBytes[position++] = (byte)(sizeOfContentsPadded);
             }
-            else if (contents.Length < 0xFFFF)
+            else if (sizeOfContentsPadded < 0xFFFF)
             {
-                containerBytes = new byte[contents.Length + 2];
+                containerBytes = new byte[sizeOfContentsPadded + 3];
                 containerBytes[position++] = (byte)(declarationNibble + 0xE);
-                Array.Copy(BitConverter.GetBytes((ushort)contents.Length), 0, containerBytes, position+=2, sizeof(short));
+                Array.Copy(BitConverter.GetBytes((ushort)(sizeOfContentsPadded)), 0, containerBytes, position+=2, sizeof(short));
             }
             else
             {
-                containerBytes = new byte[contents.Length + 3];
+                containerBytes = new byte[sizeOfContentsPadded + 4];
                 containerBytes[0] = (byte)(declarationNibble + 0xF);
-                Array.Copy(BitConverter.GetBytes(contents.Length), 1, containerBytes, position += sizeOfU24, sizeOfU24);
+                Array.Copy(BitConverter.GetBytes(sizeOfContentsPadded), 1, containerBytes, position += sizeOfU24, sizeOfU24);
             }
 
             Array.Copy(contents, 0, containerBytes, position, contents.Length);
@@ -48,6 +49,22 @@ namespace GcxEditor
             foreach (Parameter parameter in parameters)
             {
                 parametersBytesLength += parameter.Size;
+                if(parameter.Size < 0xD)
+                {
+                    parametersBytesLength += 1;
+                }
+                else if(parameter.Size > 0xFF)
+                {
+                    parametersBytesLength += 2;
+                }
+                else if(parameter.Size > 0xFFFF)
+                {
+                    parametersBytesLength += 3;
+                }
+                else
+                {
+                    parametersBytesLength += 4;
+                }
             }
 
             byte[] encodedBytes = new byte[argsBytes.Length +  parametersBytesLength];
@@ -58,7 +75,8 @@ namespace GcxEditor
             foreach(Parameter parameter in parameters)
             {
                 byte[] encodedParam = parameter.Encode();
-                Array.Copy(encodedParam, 0, encodedBytes, position += encodedParam.Length, encodedParam.Length);
+                Array.Copy(encodedParam, 0, encodedBytes, position, encodedParam.Length);
+                position += encodedParam.Length;
             }
 
             return encodedBytes;
@@ -78,7 +96,7 @@ namespace GcxEditor
             int position = 3;
             if ((argsBytesLength + 3) < 0x80)
             {
-                declarationSize++;
+                //declarationSize++;
                 encodedBytes = new byte[declarationSize + argsBytesLength];
                 encodedBytes[position++] = (byte)(argsBytesLength);
             }
@@ -115,27 +133,27 @@ namespace GcxEditor
             //TODO: confirm these sizes are accurate
             if (size < 0xD)
             {
-                encodedBytes = new byte[size];
+                encodedBytes = new byte[size + 1];
                 encodedBytes[0] = (byte)(declaringHighNibble + size);
                 position = 1;
             }
             else if(size < 0xFF)
             {
-                encodedBytes = new byte[size + 1];
+                encodedBytes = new byte[size + 2];
                 encodedBytes[0] = (byte)(declaringHighNibble + 0xD);
                 encodedBytes[1] = (byte)size;
                 position = 2;
             }
             else if(0xFF > size && size > 0xFFFF)
             {
-                encodedBytes = new byte[size + 2];
+                encodedBytes = new byte[size + 3];
                 encodedBytes[0] = (byte)(declaringHighNibble + 0xE);
                 Array.Copy(BitConverter.GetBytes((ushort)size),0, encodedBytes, 1, sizeof(ushort));
                 position = 3;
             }
             else 
             {
-                encodedBytes = new byte[size + 3];
+                encodedBytes = new byte[size + 4];
                 encodedBytes[0] = (byte)(declaringHighNibble + 0xF);
                 Array.Copy(BitConverter.GetBytes(size), 1, encodedBytes, 1, sizeOfU24);
                 position = 4;
