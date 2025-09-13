@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 
 namespace GcxEditor
 {
-    public partial interface IProcedureElement
+    public interface IProcedureElement
     {
         public uint Size { get; set; }
         public string Type { get; set; }
@@ -37,8 +37,10 @@ namespace GcxEditor
         [JsonIgnore]
         public uint Order { get; private set; }
         [JsonIgnore]
-        public ushort Size { get; set; }
+        public uint Size { get; set; }
         public string Type { get; set; }
+        [JsonIgnore]
+        public byte[] EncodedContents { get; set; }
         [JsonIgnore]
         public byte[] RawContents { get; set; } //TODO: to be implemented for editing
         public List<dynamic> DecodedContents { get; set; }
@@ -47,7 +49,7 @@ namespace GcxEditor
             Type = GetType().Name;
         }
 
-        public override byte[] Encode()
+        public byte[] Encode()
         {
             //TODO: confirm this works
             //Encode decoded contents, get the size, slap that on?
@@ -61,6 +63,7 @@ namespace GcxEditor
                 encodedContents.Add(encodedContent);
                 sizeOfEncodedContents += encodedContent.Length;
             }
+            sizeOfEncodedContents++; //increase by one to get 00 padding at the end :S
 
             byte[] encodedBytes;
             int position = 0;
@@ -90,7 +93,8 @@ namespace GcxEditor
 
             foreach (byte[] encodedContent in encodedContents)
             {
-                Array.Copy(encodedContent, 0, encodedBytes, position += encodedContent.Length, encodedContent.Length);
+                Array.Copy(encodedContent, 0, encodedBytes, position, encodedContent.Length);
+                position += encodedContent.Length; //i dont know why, but for some reason putting this in the array.copy causes an erroneous overflow error
             }
 
             return encodedBytes;
@@ -128,7 +132,7 @@ namespace GcxEditor
             Type = GetType().Name;
         }
 
-        public override byte[] Encode()
+        public byte[] Encode()
         {
             //TODO: determine if necessary, and implement if so
             throw new NotImplementedException();
@@ -141,7 +145,7 @@ namespace GcxEditor
         public uint Size { get; set; }
         public string Type { get; set; }
         public List<Parameter> Parameters { get; set; } = new List<Parameter>();
-        public List<Argument> Args = new List<Argument>();
+        public List<Term> Args = new List<Term>();
         [JsonIgnore]
         public byte[] EncodedContents { get; set; }
         public Command()
@@ -153,7 +157,7 @@ namespace GcxEditor
         {
             string printedString = $"Args: ";
 
-            foreach (Argument arg in Args)
+            foreach (Term arg in Args)
             {
                 if (Args.Last() != arg)
                     printedString += $"{arg.ToString()}, ";
@@ -183,12 +187,18 @@ namespace GcxEditor
         public Term? Term1 { get; set; }
         public Term? Term2 { get; set; }
         public GcxEditor.Gcx.Operation Operator { get; set; }
+        [JsonIgnore]
+        public uint Size { get; set; }
+        public string Type { get; set; }
+        [JsonIgnore]
+        public byte[] EncodedContents { get; set; }
+
         public Expression()
         {
             Type = GetType().Name;
         }
 
-        public override byte[] Encode()
+        public byte[] Encode()
         {
             //TODO: confirm this works
             List<byte[]> encodedContents = new List<byte[]>();
@@ -261,7 +271,8 @@ namespace GcxEditor
         public override byte[] Encode()
         {
             //TODO: confirm this works
-            return Builder.EncodeCommandWithArgsAndParams(Args, Parameters, new byte[] { 0x86, 0x0D, 0x00 });
+            byte[] contents = Builder.EncodeCommandWithArgsAndParams(Args, Parameters, new byte[] { 0x86, 0x0D, 0x00 });
+            return Builder.BuildContainerElement(0x60, contents);
         }
     }
 
@@ -275,7 +286,8 @@ namespace GcxEditor
         public override byte[] Encode()
         {
             //TODO: confirm this works
-            return Builder.EncodeCommandWithArgsAndParams(Args, Parameters, new byte[] { 0xB5, 0x5D, 0xA6 });
+            byte[] contents = Builder.EncodeCommandWithArgsAndParams(Args, Parameters, new byte[] { 0xB5, 0x5D, 0xA6 });
+            return Builder.BuildContainerElement(0x60, contents);
         }
     }
 
@@ -289,14 +301,15 @@ namespace GcxEditor
         public override byte[] Encode()
         {
             //TODO: implement
-            throw new NotImplementedException();
+            return null;
+            //throw new NotImplementedException();
         }
     }
 
     public class Invoke : Statement
     {
         public Procedure ProcedureInvoked { get; set; } = new Procedure();
-        public List<Argument> Args { get; set; } = new List<Argument>();
+        public List<Term> Args { get; set; } = new List<Term>();
         public Invoke()
         {
             Type = GetType().Name;
@@ -309,7 +322,7 @@ namespace GcxEditor
             int procedureInvokedBytes = 4;
             uint argsBytesLength = 0;
 
-            foreach (Argument argument in Args)
+            foreach (Term argument in Args)
             {
                 argsBytesLength += argument.Size;
             }
@@ -347,7 +360,7 @@ namespace GcxEditor
 
             Array.Copy(BitConverter.GetBytes(ProcedureInvoked.Order), 1, encodedBytes, position += 3, 3);
             
-            foreach (Argument arg in Args)
+            foreach (Term arg in Args)
             {
                 byte[] encodedArg = arg.Encode();
                 Array.Copy(encodedArg, 0, encodedBytes, position, encodedArg.Length);
@@ -363,7 +376,7 @@ namespace GcxEditor
                 @$" - Procedure Invoked: {ProcedureInvoked}" +
                 @$"      - Args on invoke: ";
 
-            foreach (Argument arg in Args)
+            foreach (Term arg in Args)
             {
                 if (Args.Last() != arg)
                     printedString += $"{arg.ToString()}, ";
@@ -375,39 +388,14 @@ namespace GcxEditor
         }
     }
 
-    public partial class Term : IProcedureElement
+    public interface Term : IProcedureElement
     {
-        [JsonIgnore]
-        public uint Size { get; set; }
-        public string Type { get; set; }
-        [JsonIgnore]
-        public byte[] EncodedContents { get; set; }
-        public Term()
-        {
-            Type = GetType().Name;
-        }
-
-        public virtual byte[] Encode()
-        {
-            //TODO: can i take this out?
-            throw new NotImplementedException();
-        }
     }
 
-    public partial class Argument : Term
+    public interface Argument : Term
     {
-        public Term Value { get; set; } = new Term();
-        public Argument()
-        {
-            Type = GetType().Name;
-        }
+        public Term Value { get; set; }
 
-        //Should not need an encode command as we should never have an untyped arg
-
-        public override string ToString()
-        {
-            return Value.ToString();
-        }
     }
 
     public class Return : Statement
@@ -420,7 +408,8 @@ namespace GcxEditor
         public override byte[] Encode()
         {
             //TODO: confirm this works
-            return Builder.EncodeCommandWithOnlyArgs(Args, new byte[] { 0x8B, 0xE3, 0x98 });
+            byte[] contents = Builder.EncodeCommandWithOnlyArgs(Args, new byte[] { 0x8B, 0xE3, 0x98 });
+            return Builder.BuildContainerElement(0x60, contents);
         }
 
         public override string ToString()
@@ -439,7 +428,8 @@ namespace GcxEditor
         public override byte[] Encode()
         {
             //TODO: confirm this works
-            return Builder.EncodeCommandWithOnlyArgs(Args, new byte[] { 0x3B, 0xB2, 0x3A });
+            byte[] contents = Builder.EncodeCommandWithOnlyArgs(Args, new byte[] { 0x3B, 0xB2, 0x3A });
+            return Builder.BuildContainerElement(0x60, contents);
         }
 
         public override string ToString()
@@ -458,7 +448,8 @@ namespace GcxEditor
         public override byte[] Encode()
         {
             //TODO: confirm this works
-            return Builder.EncodeCommandWithOnlyArgs(Args, new byte[] { 0xC7, 0x22, 0x38 });
+            byte[] contents = Builder.EncodeCommandWithOnlyArgs(Args, new byte[] { 0xC7, 0x22, 0x38 });
+            return Builder.BuildContainerElement(0x60, contents);
         }
 
         public override string ToString()
@@ -477,7 +468,8 @@ namespace GcxEditor
         public override byte[] Encode()
         {
             //TODO: confirm this works
-            return Builder.EncodeCommandWithArgsAndParams(Args, Parameters, new byte[] { 0xC9, 0x2B, 0x08 });
+            byte[] contents = Builder.EncodeCommandWithArgsAndParams(Args, Parameters, new byte[] { 0xC9, 0x2B, 0x08 });
+            return Builder.BuildContainerElement(0x60, contents);
         }
 
         public override string ToString()
@@ -497,7 +489,8 @@ namespace GcxEditor
         public override byte[] Encode()
         {
             //TODO: confirm this works
-            return Builder.EncodeCommandWithArgsAndParams(Args, Parameters, new byte[] { 0xA7, 0x92, 0x65 });
+            byte[] contents = Builder.EncodeCommandWithArgsAndParams(Args, Parameters, new byte[] { 0xA7, 0x92, 0x65 });
+            return Builder.BuildContainerElement(0x60, contents);
         }
 
         public override string ToString()
@@ -516,7 +509,8 @@ namespace GcxEditor
         public override byte[] Encode()
         {
             //TODO: confirm this works
-            return Builder.EncodeCommandWithArgsAndParams(Args, Parameters, new byte[] { 0x90, 0xD4, 0x3B });
+            byte[] contents = Builder.EncodeCommandWithArgsAndParams(Args, Parameters, new byte[] { 0x90, 0xD4, 0x3B });
+            return Builder.BuildContainerElement(0x60, contents);
         }
 
         public override string ToString()
@@ -535,7 +529,8 @@ namespace GcxEditor
         public override byte[] Encode()
         {
             //TODO: confirm this works
-            return Builder.EncodeCommandWithOnlyArgs(Args, new byte[] { 0x84, 0xC8, 0x37 });
+            byte[] contents = Builder.EncodeCommandWithOnlyArgs(Args, new byte[] { 0x84, 0xC8, 0x37 });
+            return Builder.BuildContainerElement(0x60, contents);
         }
 
         public override string ToString()
@@ -555,7 +550,8 @@ namespace GcxEditor
         public override byte[] Encode()
         {
             //TODO: confirm this works
-            return Builder.EncodeCommandWithOnlyArgs(Args, new byte[] { 0xF5, 0x3D, 0x8B });
+            byte[] contents = Builder.EncodeCommandWithOnlyArgs(Args, new byte[] { 0xF5, 0x3D, 0x8B });
+            return Builder.BuildContainerElement(0x60, contents);
         }
 
         public override string ToString()
@@ -574,7 +570,8 @@ namespace GcxEditor
         public override byte[] Encode()
         {
             //TODO: implement
-            throw new NotImplementedException();
+            return null;
+            //throw new NotImplementedException();
         }
 
         public override string ToString()
@@ -593,7 +590,8 @@ namespace GcxEditor
         public override byte[] Encode()
         {
             //TODO: confirm this works
-            return Builder.EncodeCommandWithOnlyArgs(Args, new byte[] { 0x05, 0xB0, 0x6B });
+            byte[] contents = Builder.EncodeCommandWithOnlyArgs(Args, new byte[] { 0x05, 0xB0, 0x6B });
+            return Builder.BuildContainerElement(0x60, contents);
         }
 
         public override string ToString()
@@ -616,7 +614,7 @@ namespace GcxEditor
         public char ParamType { get; set; }
         [JsonIgnore]
         public byte[] EncodedContents { get; set; }
-        public List<Argument> Args { get; set; }
+        public List<Term> Args { get; set; }
         public string Type { get; set; } = "Parameter";
 
         public byte[] Encode()
@@ -625,7 +623,7 @@ namespace GcxEditor
             byte[] encodedBytes = Builder.InitializeSize(Size, 0x50, out int position);
             encodedBytes[position] = (byte)ParamType;
             
-            foreach (Argument arg in Args)
+            foreach (Term arg in Args)
             {
                 byte[] encodedArg = arg.Encode();
                 Array.Copy(encodedArg, 0, encodedBytes, position, encodedArg.Length);
@@ -638,7 +636,7 @@ namespace GcxEditor
         public override string ToString()
         {
             string printedString = $"parameter({ParamType}):";
-            foreach(Argument arg in Args)
+            foreach(Term arg in Args)
             {
                 if (Args.Last() != arg)
                     printedString += $"{arg.ToString()}, ";
@@ -652,13 +650,18 @@ namespace GcxEditor
 
     public class Constant : Term
     {
+        [JsonIgnore]
+        public uint Size { get; set; }
+        public string Type { get; set; }
+        [JsonIgnore]
+        public byte[] EncodedContents { get; set; }
         public byte Value { get; set; }
         public Constant()
         {
             Type = GetType().Name;
         }
 
-        public override byte[] Encode()
+        public byte[] Encode()
         {
             return new[] { (byte)(0xC1 + Value) }; 
         }
@@ -671,6 +674,11 @@ namespace GcxEditor
 
     public class Literal : Term
     {
+        [JsonIgnore]
+        public uint Size { get; set; }
+        public string Type { get; set; }
+        [JsonIgnore]
+        public byte[] EncodedContents { get; set; }
         public dynamic Value { get; set; }
         public byte DataTypeByte { get; set; }
         public Gcx.DataType DataType { get; set; }
@@ -679,7 +687,7 @@ namespace GcxEditor
             Type = GetType().Name;
         }
 
-        public override byte[] Encode()
+        public byte[] Encode()
         {
             //TODO: confirm this works
             byte[] encodedBytes;
@@ -695,7 +703,7 @@ namespace GcxEditor
                 encodedBytes = new byte[DataType.Length + 1];
                 encodedBytes[0] = DataTypeByte; //TODO: can we reverse engineer what determines this so we can make a "fresh" file?
                 byte[] dataBytes = BitConverter.GetBytes(Value);
-                Array.Copy(dataBytes, 0, encodedBytes, 1, dataBytes.Length);
+                Array.Copy(dataBytes, 0, encodedBytes, 1, DataType.Length);
             }
 
             return encodedBytes;
@@ -709,13 +717,18 @@ namespace GcxEditor
 
     public class PassedArg : Term
     {
+        [JsonIgnore]
+        public uint Size { get; set; }
+        public string Type { get; set; }
+        [JsonIgnore]
+        public byte[] EncodedContents { get; set; }
         public byte ArgNum { get; set; }
         public PassedArg()
         {
             Type = GetType().Name;
         }
 
-        public override byte[] Encode()
+        public byte[] Encode()
         {
             //TODO: confirm this works
             if(ArgNum < 0xF)
@@ -734,33 +747,31 @@ namespace GcxEditor
         }
     }
 
-    public partial class Variable : Term
+    public interface Variable : Term
     {
         public ushort Id { get; set; }
         public byte LowNibble { get; set; }
-
-        //Should not have an encode, as we should never have an untyped variable
-
-        public override string ToString()
-        {
-            return $"var_0x{BitConverter.ToString(BitConverter.GetBytes(Id).Reverse().ToArray()).Replace("-", "")}";
-        }
     }
 
     public class VariableArray : Term
     {
         //public ushort Size { get; set; } //byte instead?
         //public ushort Index { get; set; } //byte instead?
-        public List<Argument> SizeAndIndex { get; set; }
+        public List<Term> SizeAndIndex { get; set; }
         public ushort Id { get; set; }
         public byte LowNibble { get; set; }
         public byte ArrayType { get; set; }
+        [JsonIgnore]
+        public uint Size { get; set; }
+        public string Type { get; set; }
+        [JsonIgnore]
+        public byte[] EncodedContents { get; set; }
         public VariableArray()
         {
             Type = GetType().Name;
         }
 
-        public VariableArray(ushort id, byte lowNibble, byte arrayType, List<Argument> sizeAndIndex)
+        public VariableArray(ushort id, byte lowNibble, byte arrayType, List<Term> sizeAndIndex)
         {
             Type = GetType().Name;
             Id = id;
@@ -769,12 +780,12 @@ namespace GcxEditor
             SizeAndIndex = sizeAndIndex;
         }
 
-        public override byte[] Encode()
+        public byte[] Encode()
         {
             //TODO: confirm this works
             int idAndTypeDeclarationSize = 4;
             int sizeOfArgs = 0;
-            foreach (Argument argument in SizeAndIndex) 
+            foreach (Term argument in SizeAndIndex) 
             {
                 sizeOfArgs += (int)argument.Size;
             }
@@ -783,7 +794,7 @@ namespace GcxEditor
             encodedBytes[1] = ArrayType;
             Array.Copy(BitConverter.GetBytes(Id), 0, encodedBytes, 2, sizeof(ushort));
             int position = 4;
-            foreach(Argument argument in SizeAndIndex)
+            foreach(Term argument in SizeAndIndex)
             {
                 byte[] encodedArg = argument.Encode();
                 Array.Copy(encodedArg, 0, encodedBytes, position, encodedArg.Length);
@@ -801,6 +812,13 @@ namespace GcxEditor
 
     public class Linkvarbuf : Variable
     {
+        [JsonIgnore]
+        public uint Size { get; set; }
+        public string Type { get; set; }
+        [JsonIgnore]
+        public byte[] EncodedContents { get; set; }
+        public ushort Id { get; set; }
+        public byte LowNibble { get; set; }
         public Linkvarbuf()
         {
             Type = GetType().Name;
@@ -812,7 +830,7 @@ namespace GcxEditor
             Id = id;
         }
 
-        public override byte[] Encode()
+        public byte[] Encode()
         {
             //TODO: confirm this works
             byte[] encodedVarbuf = new byte[4];
@@ -831,7 +849,15 @@ namespace GcxEditor
 
     public class Varbuf : Variable
     {
+        [JsonIgnore]
+        public uint Size { get; set; }
+        public string Type { get; set; }
+        [JsonIgnore]
+        public byte[] EncodedContents { get; set; }
+        public ushort Id { get; set; }
         public byte ByteType { get; set; }
+        public byte LowNibble { get; set; }
+
         public Varbuf()
         {
             Type = GetType().Name;
@@ -843,7 +869,7 @@ namespace GcxEditor
             Id = id;
         }
 
-        public override byte[] Encode()
+        public byte[] Encode()
         {
             //TODO: confirm this works
             byte[] encodedVarbuf = new byte[4];
@@ -862,6 +888,14 @@ namespace GcxEditor
 
     public class Localvarbuf : Variable
     {
+        [JsonIgnore]
+        public uint Size { get; set; }
+        public string Type { get; set; }
+        [JsonIgnore]
+        public byte[] EncodedContents { get; set; }
+        public ushort Id { get; set; }
+        public byte LowNibble { get; set; }
+
         public Localvarbuf()
         {
             Type = GetType().Name;
@@ -873,7 +907,7 @@ namespace GcxEditor
             Id = id;
         }
 
-        public override byte[] Encode()
+        public byte[] Encode()
         {
             //TODO: confirm this works
             byte[] encodedVarbuf = new byte[4];
@@ -892,6 +926,14 @@ namespace GcxEditor
 
     public class LocalVar : Variable
     {
+        [JsonIgnore]
+        public uint Size { get; set; }
+        public string Type { get; set; }
+        [JsonIgnore]
+        public byte[] EncodedContents { get; set; }
+        public ushort Id { get; set; }
+        public byte LowNibble { get; set; } //not used
+
         public LocalVar()
         {
             Type = GetType().Name;
@@ -903,7 +945,7 @@ namespace GcxEditor
             Id = input;
         }
 
-        public override byte[] Encode()
+        public byte[] Encode()
         {
             //TODO: confirm this works
             byte[] idBytes = BitConverter.GetBytes(Id);
