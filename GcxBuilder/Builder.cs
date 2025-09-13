@@ -89,7 +89,9 @@ namespace GcxEditor
 
             foreach (Term argument in args)
             {
-                argsBytesLength += argument.Size;
+                byte[] encodedArg = argument.Encode();
+                //argsBytesLength += argument.Size;
+                argsBytesLength += (uint)encodedArg.Length;
             }
 
             byte[] encodedBytes;

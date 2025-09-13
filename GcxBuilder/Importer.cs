@@ -60,19 +60,23 @@ namespace GcxEditor
                     GcxClasses.Gcx gcx = new GcxClasses.Gcx(fileTable, procedureBlock);
 
                     string formattedContents = "";
-                    
+
+                    Dictionary<Procedure, byte[]> reEncodedProcs = new Dictionary<Procedure, byte[]>();
                     foreach (Procedure procedure in parsedProcedures)
                     {
                         try
                         {
-                            Procedure parsedProc = ProcDecoder.DecodeProc(procedure.RawContents); //raw contents arent getting filled properly?
-                            if(procedure.Name == "6572E6")
+                            if (procedure.Name == "025E89")
                             {
                                 //okay, 5B6127 looks good! ^___^
                                 //7A6AFF looks good now
                                 //6572E6 is correct
-                                byte[] reEncodedBytes = parsedProc.Encode();
+
                             }
+                            Procedure parsedProc = ProcDecoder.DecodeProc(procedure.RawContents); //raw contents arent getting filled properly?
+                            //TODO: i think expressions arent actually getting decoded correctly, it looks like they might always be getting returned as nested?
+                            //byte[] reEncodedBytes = parsedProc.Encode();
+                            //reEncodedProcs.Add(procedure, reEncodedBytes);
                             procedure.DecodedContents = parsedProc.DecodedContents;
                             formattedContents += procedure.ToString();
                         }
@@ -80,6 +84,8 @@ namespace GcxEditor
                         {
                         }
                     }
+
+                    
 
                     File.WriteAllText("formattedOutput.txt", formattedContents);
 

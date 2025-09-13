@@ -157,7 +157,7 @@ namespace GcxEditor
                 expression.Term1 = term1;
                 expression.Term2 = term2;
                 expression.Operator = operation;
-                expression.Size = (ushort)(term1.Size + term2.Size + 1);
+                expression.Size = (ushort)(term1.Size + term2.Size + 1); //+1 to capture operator
                 //TODO: figure out setting encoded contents
 
                 return expression;
@@ -250,18 +250,22 @@ namespace GcxEditor
                 expression.EncodedContents = bytes;
                 byte[] argBytes = bytes.Take(bytes.Length).ToArray();
                 List<Term> args = DecodeArgs(argBytes); //seems to work well enough?
+                uint argsLength = 0;
                 if (args.Count > 1)
                 {
                     expression.Term1 = args[0];
+                    argsLength += args[0].Size;
                     expression.Term2 = args[1];
+                    argsLength += args[1].Size;
                 }
                 else
                 {
                     expression.Term1 = null;
                     expression.Term2 = args[0];
+                    argsLength += args[0].Size;
                 }
-                
-                expression.Operator = DecodeOperator(bytes.Last(x => x != 0x00));
+
+                expression.Operator = DecodeOperator(bytes[argsLength]);
                 expression.Size = (ushort)bytes.Length;
                 return expression;
             }
@@ -437,7 +441,8 @@ namespace GcxEditor
 
                         case 0xB0:
                         case 0xA0:
-                            if (position != bytes.Length - 1)
+                            //if (position != bytes.Length - 1 && currentByte == highNibble)
+                            if((position != bytes.Length - 1) && (bytes[position+1] != 0xA0))
                             {
                                 try
                                 {
@@ -458,7 +463,8 @@ namespace GcxEditor
                             }
                             else
                             {
-                                position++; //this *should* be just the end of the whole expression that got started, so a break might do, but im nervous so sticking with pos++
+                                //position++; //this *should* be just the end of the whole expression that got started, so a break might do, but im nervous so sticking with pos++
+                                return args;
                             }
                             break;
 
@@ -617,7 +623,7 @@ namespace GcxEditor
                                 variable.EncodedContents = TakeRange(bytes, position, position + 4);
 
                                 //args.Add(new Argument { Value = variable, Size = 3 }); //TODO: confirm always 3
-                                variable.Size = 3;
+                                variable.Size = 4;
                                 args.Add(variable);
                                 position += 4;
                             }

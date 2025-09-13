@@ -97,6 +97,8 @@ namespace GcxEditor
                 position += encodedContent.Length; //i dont know why, but for some reason putting this in the array.copy causes an erroneous overflow error
             }
 
+            EncodedContents = encodedBytes;
+
             return encodedBytes;
         }
 
@@ -204,42 +206,47 @@ namespace GcxEditor
             List<byte[]> encodedContents = new List<byte[]>();
 
             int sizeOfEncodedContents = 0;
-            byte[] term1Encoded = Term1.Encode();
-            sizeOfEncodedContents += term1Encoded.Length;
-            encodedContents.Add(term1Encoded);
+            if (Term1 != null)
+            {
+                byte[] term1Encoded = Term1.Encode();
+                sizeOfEncodedContents += term1Encoded.Length;
+                encodedContents.Add(term1Encoded);
+            }
             byte[] term2Encoded = Term2.Encode();
             sizeOfEncodedContents += term2Encoded.Length;
             encodedContents.Add(term2Encoded);
+            sizeOfEncodedContents += 2; //for final operator and end of expression
 
             byte[] encodedBytes;
             int position = 0;
             if (sizeOfEncodedContents < 0xD)
             {
-                encodedBytes = new byte[sizeOfEncodedContents + 3];
-                encodedBytes[position++] = (byte)(0x30 + (byte)sizeOfEncodedContents);
+                encodedBytes = new byte[sizeOfEncodedContents + 1];
+                encodedBytes[position++] = (byte)(0x30 + (byte)sizeOfEncodedContents); //off by 2
             }
             else if (sizeOfEncodedContents < 0xFF)
             {
-                encodedBytes = new byte[sizeOfEncodedContents + 4];
+                encodedBytes = new byte[sizeOfEncodedContents + 2];
                 encodedBytes[position++] = 0x3D;
                 encodedBytes[position++] = (byte)sizeOfEncodedContents;
             }
             else if (sizeOfEncodedContents < 0xFFFF)
             {
-                encodedBytes = new byte[sizeOfEncodedContents + 5];
+                encodedBytes = new byte[sizeOfEncodedContents + 3];
                 encodedBytes[position++] = 0x3E;
                 Array.Copy(BitConverter.GetBytes((ushort)sizeOfEncodedContents), 0, encodedBytes, position += 2, sizeof(ushort));
             }
             else
             {
-                encodedBytes = new byte[sizeOfEncodedContents + 6];
+                encodedBytes = new byte[sizeOfEncodedContents + 4];
                 encodedBytes[position++] = 0x3F;
                 Array.Copy(BitConverter.GetBytes(sizeOfEncodedContents), 1, encodedBytes, position += 3, 3);
             }
 
             foreach (byte[] encodedContent in encodedContents)
             {
-                Array.Copy(encodedContent, 0, encodedBytes, position += encodedContent.Length, encodedContent.Length);
+                Array.Copy(encodedContent, 0, encodedBytes, position, encodedContent.Length);
+                position += encodedContent.Length;
             }
             encodedBytes[encodedBytes.Length - 1] = 0xA0;
             encodedBytes[encodedBytes.Length - 2] = (byte)Operator;
@@ -792,7 +799,7 @@ namespace GcxEditor
             byte[] encodedBytes = new byte[idAndTypeDeclarationSize + sizeOfArgs];
             encodedBytes[0] = (byte)(0x20 + LowNibble);
             encodedBytes[1] = ArrayType;
-            Array.Copy(BitConverter.GetBytes(Id), 0, encodedBytes, 2, sizeof(ushort));
+            Array.Copy(BitConverter.GetBytes(Id).Reverse().ToArray(), 0, encodedBytes, 2, sizeof(ushort));
             int position = 4;
             foreach(Term argument in SizeAndIndex)
             {
@@ -836,7 +843,7 @@ namespace GcxEditor
             byte[] encodedVarbuf = new byte[4];
             encodedVarbuf[0] = (byte)(0x10 + LowNibble);
             encodedVarbuf[1] = 0x80; //is this always correct?
-            Array.Copy(BitConverter.GetBytes(Id), 0, encodedVarbuf, 2, 2);
+            Array.Copy(BitConverter.GetBytes(Id).Reverse().ToArray(), 0, encodedVarbuf, 2, 2);
 
             return encodedVarbuf;
         }
@@ -875,7 +882,7 @@ namespace GcxEditor
             byte[] encodedVarbuf = new byte[4];
             encodedVarbuf[0] = (byte)(0x10 + LowNibble);
             encodedVarbuf[1] = ByteType; 
-            Array.Copy(BitConverter.GetBytes(Id), 0, encodedVarbuf, 2, 2);
+            Array.Copy(BitConverter.GetBytes(Id).Reverse().ToArray(), 0, encodedVarbuf, 2, 2);
 
             return encodedVarbuf;
         }
@@ -913,7 +920,7 @@ namespace GcxEditor
             byte[] encodedVarbuf = new byte[4];
             encodedVarbuf[0] = (byte)(0x10 + LowNibble);
             encodedVarbuf[1] = 0x10; //is this always correct?
-            Array.Copy(BitConverter.GetBytes(Id), 0, encodedVarbuf, 2, 2);
+            Array.Copy(BitConverter.GetBytes(Id).Reverse().ToArray(), 0, encodedVarbuf, 2, 2);
 
             return encodedVarbuf;
         }
