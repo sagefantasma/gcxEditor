@@ -71,7 +71,26 @@ namespace GcxEditor
                             invokeContents = TakeRange(bytes, index, index + size);
                             Invoke invoke = DecodeInvoke(invokeContents);
                             if (invoke != null)
-                                procedure.DecodedContents.Add(invoke);
+                            {
+                                invoke.Size = size;
+                                if(size < 0xD)
+                                {
+                                    invoke.Size++;
+                                }
+                                else if(size < 0xFF)
+                                {
+                                    invoke.Size += 2;
+                                }
+                                else if(size < 0xFFFF)
+                                {
+                                    invoke.Size += 3;
+                                }
+                                else
+                                {
+                                    invoke.Size += 4;
+                                }
+                                procedure.DecodedContents.Add(invoke);   
+                            }
                             index += size;
                             break;
                         case 0x60:
@@ -103,6 +122,23 @@ namespace GcxEditor
                     }
                 } while (index < bytes.Length);
 
+                procedure.Size = (uint) bytes.Length;
+                if (procedure.Size < 0xD)
+                {
+                    procedure.Size++;
+                }
+                else if (procedure.Size < 0xFF)
+                {
+                    procedure.Size += 2;
+                }
+                else if (procedure.Size < 0xFFFF)
+                {
+                    procedure.Size += 3;
+                }
+                else
+                {
+                    procedure.Size += 4;
+                }
                 return procedure;
             }
             catch(Exception e)
@@ -485,26 +521,27 @@ namespace GcxEditor
                             try
                             {
                                 //nested proc
-                                byte[] nestedProcBytes = TakeRange(bytes, position, (uint)(bytes.Length - 1));
+                                //byte[] nestedProcBytes = TakeRange(bytes, position, (uint)(bytes.Length - 1));
+                                byte[] nestedProcBytes = TakeRange(bytes, position, (uint)(bytes.Length));
                                 uint size = DecodeSize(nestedProcBytes, ref position);
-                                if (size < 0xD)
+                                /*if (size < 0xD)
                                 {
                                     size--;
-                                }
+                                }*/
                                 nestedProcBytes = TakeRange(bytes, position, size + position);
                                 //TODO: i'm *pretty sure* this will cause issues if the nested proc is not the final parameter.
                                 GcxEditor.Procedure procedure = DecodeProc(nestedProcBytes);
                                 //args.Add(new Argument { Value = procedure, Size = procedure.Size, EncodedContents = nestedProcBytes });
                                 procedure.EncodedContents = nestedProcBytes;
                                 args.Add(procedure);
-                                if (size < 0xC)
+                                /*if (size < 0xC)
                                 {
                                     if (size == 0)
                                     {
                                         position--;
                                     }
                                     size++;
-                                }
+                                }*/
                                 position += size;
                             }
                             catch (Exception e)
@@ -566,6 +603,7 @@ namespace GcxEditor
                                 variableArray.Id = BitConverter.ToUInt16(id.Reverse().ToArray());
                                 //I *think* lownibble may be indicating var size? maybe?
                                 variableArray.SizeAndIndex = DecodeVarArrayArgs(TakeRange(bytes, position, (uint)bytes.Length), out uint varArraySize);
+                                variableArray.Size = varArraySize + 4;
                                 variableArray.EncodedContents = TakeRange(bytes, position - 4, position + varArraySize);
                                 //21 80 03 3C F1 DE C1 AB
 

@@ -66,12 +66,14 @@ namespace GcxEditor
                     {
                         try
                         {
-                            if (procedure.Name == "025E89")
+                            if (procedure.Name == "096A6A")
                             {
                                 //okay, 5B6127 looks good! ^___^
                                 //7A6AFF looks good now
                                 //6572E6 is correct
-
+                                //092DCE - last one that failed encoding when i was testing that
+                                //096A6A next to check/
+                                //2BAE1D broken on scenerio.gcx
                             }
                             Procedure parsedProc = ProcDecoder.DecodeProc(procedure.RawContents); //raw contents arent getting filled properly?
                             //TODO: i think expressions arent actually getting decoded correctly, it looks like they might always be getting returned as nested?
