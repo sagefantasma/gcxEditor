@@ -36,7 +36,7 @@ namespace GcxEditor
                         int startingIndex = (BitConverter.ToInt32(procedureOffset.Value) & 0xFFFFFF ) + sizeof(uint);
                         //NOTE: I don't understand _why_ the compiler makes the above necessary... but this is what seems to make things work.
                         ushort procedureSize = ParseProcedureSize(procedureData, startingIndex);
-                        int startOffset = procedureSize > 0xFF ? 3 : procedureSize > 0xC ? 2 : 1; //if the function is less than 255 bytes, the data starts 2 bytes after the procedure offset in the table, otherwise it is 3.
+                        int startOffset = procedureSize > 0xFFFF ? 4 : procedureSize > 0xFF ? 3 : procedureSize > 0xC ? 2 : 1; //if the function is less than 255 bytes, the data starts 2 bytes after the procedure offset in the table, otherwise it is 3.
 
                         byte[] procedureBody = TakeRangeFromArray(procedureData, startingIndex + startOffset, startingIndex + procedureSize + startOffset);
                         Procedure parsedProcedure = ParseProcedure(procedureBody, procedureOffset.Key, procedureSize);
@@ -44,8 +44,9 @@ namespace GcxEditor
                     }
 
                     int mainStartOffset = 4;
-                    ushort mainSize = ParseProcedureSize(mainProcedureData, mainStartOffset);                    
-                    byte[] mainBody = TakeRangeFromArray(mainProcedureData, mainStartOffset, mainSize + mainStartOffset);
+                    ushort mainSize = ParseProcedureSize(mainProcedureData, mainStartOffset);
+                    int sizeOffset = mainSize > 0xFFFF ? 4 : mainSize > 0xFF ? 3 : mainSize > 0xC ? 2 : 1;
+                    byte[] mainBody = TakeRangeFromArray(mainProcedureData, mainStartOffset + sizeOffset, mainSize + mainStartOffset + sizeOffset);
                     Procedure mainProcedure = ParseProcedure(mainBody, null, mainSize);
 
                     GcxClasses.FileTable fileTable = new GcxClasses.FileTable();
@@ -66,7 +67,7 @@ namespace GcxEditor
                     {
                         try
                         {
-                            if (procedure.Name == "096A6A")
+                            if (procedure.Name == "1174C7")
                             {
                                 //okay, 5B6127 looks good! ^___^
                                 //7A6AFF looks good now
@@ -74,6 +75,7 @@ namespace GcxEditor
                                 //092DCE - last one that failed encoding when i was testing that
                                 //096A6A next to check/
                                 //2BAE1D broken on scenerio.gcx
+                                //1174C7 broken on w25b.gcx
                             }
                             Procedure parsedProc = ProcDecoder.DecodeProc(procedure.RawContents); //raw contents arent getting filled properly?
                             //TODO: i think expressions arent actually getting decoded correctly, it looks like they might always be getting returned as nested?

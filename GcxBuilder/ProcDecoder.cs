@@ -508,7 +508,7 @@ namespace GcxEditor
                             try
                             {
                                 //args.Add(new Argument { Value = new LocalVar { Id = (byte)(currentByte & 0x0F), EncodedContents = new[] { currentByte } } });
-                                args.Add(new LocalVar { Id = (byte)(currentByte & 0x0F), EncodedContents = new[] { currentByte } });
+                                args.Add(new LocalVar { Id = (byte)(currentByte & 0x0F), EncodedContents = new[] { currentByte }, Size = 1 });
                                 position++;
                             }
                             catch (Exception e)
@@ -913,7 +913,7 @@ namespace GcxEditor
             uint size = bytes[position++];
             if (size >= 0x80)
             {
-                byte highNibble = (byte)(size & 0x0F);
+                byte highNibble = (byte)((size & 0x0F) + ((size & 0xF0)-0x80));
                 byte lowByte = (byte)(bytes[position++]);
                 byte[] sizeBytes = new byte[4] { lowByte, highNibble, 0, 0 };
                 size = BitConverter.ToUInt32(sizeBytes);
