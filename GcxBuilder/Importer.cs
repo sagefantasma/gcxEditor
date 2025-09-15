@@ -67,20 +67,14 @@ namespace GcxEditor
                     {
                         try
                         {
-                            if (procedure.Name == "1174C7")
+                            if (procedure.Name == "025E89")
                             {
-                                //okay, 5B6127 looks good! ^___^
-                                //7A6AFF looks good now
-                                //6572E6 is correct
-                                //092DCE - last one that failed encoding when i was testing that
-                                //096A6A next to check/
-                                //2BAE1D broken on scenerio.gcx
-                                //1174C7 broken on w25b.gcx
+                                //parameter encoding is broken right now, because i'm pulling back from my initial use of parameter.Size, since that
+                                //property won't exist for a file built from json/text like i'm planning to implement in the future.
                             }
                             Procedure parsedProc = ProcDecoder.DecodeProc(procedure.RawContents); //raw contents arent getting filled properly?
-                            //TODO: i think expressions arent actually getting decoded correctly, it looks like they might always be getting returned as nested?
-                            //byte[] reEncodedBytes = parsedProc.Encode();
-                            //reEncodedProcs.Add(procedure, reEncodedBytes);
+                            byte[] reEncodedBytes = parsedProc.Encode();
+                            reEncodedProcs.Add(procedure, reEncodedBytes);
                             procedure.DecodedContents = parsedProc.DecodedContents;
                             formattedContents += procedure.ToString();
                         }

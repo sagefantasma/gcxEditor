@@ -46,25 +46,30 @@ namespace GcxEditor
             byte[] argsBytes = EncodeCommandWithOnlyArgs(args, commandDeclarationBytes);
             uint parametersBytesLength = 0;
 
+            List<byte[]> encodedParams = new List<byte[]>();
             foreach (Parameter parameter in parameters)
             {
-                parametersBytesLength += parameter.Size;
-                if(parameter.Size < 0xD)
+                //parametersBytesLength += parameter.Size;
+                byte[] encodedParam = parameter.Encode();
+                encodedParams.Add(encodedParam);
+                parametersBytesLength += (uint)encodedParam.Length;
+
+                /*if(parameter.Size < 0xD)
                 {
                     parametersBytesLength += 1;
                 }
-                else if(parameter.Size > 0xFF)
+                else if(parameter.Size < 0xFF)
                 {
                     parametersBytesLength += 2;
                 }
-                else if(parameter.Size > 0xFFFF)
+                else if(parameter.Size < 0xFFFF)
                 {
                     parametersBytesLength += 3;
                 }
                 else
                 {
                     parametersBytesLength += 4;
-                }
+                }*/
             }
 
             byte[] encodedBytes = new byte[argsBytes.Length +  parametersBytesLength];
@@ -72,9 +77,8 @@ namespace GcxEditor
             Array.Copy(argsBytes, encodedBytes, argsBytes.Length);
             int position = argsBytes.Length;
 
-            foreach(Parameter parameter in parameters)
+            foreach(byte[] encodedParam in encodedParams)
             {
-                byte[] encodedParam = parameter.Encode();
                 Array.Copy(encodedParam, 0, encodedBytes, position, encodedParam.Length);
                 position += encodedParam.Length;
             }
@@ -146,7 +150,7 @@ namespace GcxEditor
                 encodedBytes[1] = (byte)size;
                 position = 2;
             }
-            else if(0xFF > size && size > 0xFFFF)
+            else if(size < 0xFFFF)
             {
                 encodedBytes = new byte[size + 3];
                 encodedBytes[0] = (byte)(declaringHighNibble + 0xE);

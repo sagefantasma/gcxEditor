@@ -76,19 +76,21 @@ namespace GcxEditor
             {
                 encodedBytes = new byte[sizeOfEncodedContents + 2];
                 encodedBytes[position++] = 0x8D;
-                encodedBytes[position++] = (byte)sizeOfEncodedContents;
+                encodedBytes[position++] = (byte)(sizeOfEncodedContents);
             }
             else if(sizeOfEncodedContents < 0xFFFF)
             {
                 encodedBytes = new byte[sizeOfEncodedContents + 3];
                 encodedBytes[position++] = 0x8E;
-                Array.Copy(BitConverter.GetBytes((ushort)sizeOfEncodedContents), 0, encodedBytes, position+=2, sizeof(ushort));
+                Array.Copy(BitConverter.GetBytes((ushort)sizeOfEncodedContents), 0, encodedBytes, position, sizeof(ushort));
+                position += 2;
             }
             else
             {
                 encodedBytes = new byte[sizeOfEncodedContents + 4];
                 encodedBytes[position++] = 0x8F;
-                Array.Copy(BitConverter.GetBytes(sizeOfEncodedContents), 1, encodedBytes, position += 3, 3);
+                Array.Copy(BitConverter.GetBytes(sizeOfEncodedContents), 1, encodedBytes, position, 3);
+                position += 3;
             }
 
             foreach (byte[] encodedContent in encodedContents)
@@ -98,6 +100,7 @@ namespace GcxEditor
             }
 
             EncodedContents = encodedBytes;
+            Size = (uint)EncodedContents.Length;
 
             return encodedBytes;
         }
@@ -325,7 +328,7 @@ namespace GcxEditor
         public override byte[] Encode()
         {
             //TODO: confirm this works
-            //TODO: does an invoke always end with a 00 buffer?
+            //TODO: does an invoke always end with a 00 buffer? -- i think so
             int procedureInvokedBytes = 4;
             uint argsBytesLength = 0;
 
@@ -334,9 +337,10 @@ namespace GcxEditor
                 argsBytesLength += argument.Size;
             }
 
+            argsBytesLength++; //getting the 00 padding at the end of an invoke
             byte[] encodedBytes;
             int position = 0;
-            if ((argsBytesLength + 3) > 0xD)
+            if ((argsBytesLength + 3) < 0xD)
             {
                 //no change to procedureInvokedBytes
                 encodedBytes = new byte[procedureInvokedBytes + argsBytesLength];
@@ -354,19 +358,22 @@ namespace GcxEditor
                 procedureInvokedBytes += 2;
                 encodedBytes = new byte[procedureInvokedBytes + argsBytesLength];
                 encodedBytes[position++] = 0x7E;
-                Array.Copy(BitConverter.GetBytes((ushort)(argsBytesLength + 3)), 0, encodedBytes, position += sizeof(ushort), sizeof(ushort));
+                Array.Copy(BitConverter.GetBytes((ushort)(argsBytesLength + 3)), 0, encodedBytes, position, sizeof(ushort));
+                position += sizeof(ushort);
             }
             else
             {
                 procedureInvokedBytes += 3;
                 encodedBytes = new byte[procedureInvokedBytes + argsBytesLength];
                 encodedBytes[position++] = 0x7F;
-                Array.Copy(BitConverter.GetBytes(argsBytesLength + 3), 0, encodedBytes, position += 3, 3);
+                Array.Copy(BitConverter.GetBytes(argsBytesLength + 3), 0, encodedBytes, position, 3);
+                position += 3;
             }
 
 
-            Array.Copy(BitConverter.GetBytes(ProcedureInvoked.Order), 1, encodedBytes, position += 3, 3);
-            
+            Array.Copy(BitConverter.GetBytes(ProcedureInvoked.Order), 0, encodedBytes, position, 3);
+            position += 3;
+
             foreach (Term arg in Args)
             {
                 byte[] encodedArg = arg.Encode();
