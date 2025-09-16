@@ -6,6 +6,13 @@ using System.Threading.Tasks;
 
 namespace GcxEditor
 {
+    public class EncodingComparer
+    {
+        public byte[] OriginalBytes;
+        public byte[] ReEncodedBytes;
+        public string Name;
+    }
+
     public static class Importer
     {
         private static int cursor = 0;
@@ -63,17 +70,23 @@ namespace GcxEditor
                     string formattedContents = "";
 
                     Dictionary<Procedure, byte[]> reEncodedProcs = new Dictionary<Procedure, byte[]>();
+                    List<EncodingComparer> misEncodedProcs = new List<EncodingComparer>();
                     foreach (Procedure procedure in parsedProcedures)
                     {
                         try
                         {
-                            if (procedure.Name == "025E89")
+                            if (procedure.Name == "3D8589")
                             {
                                 //parameter encoding is broken right now, because i'm pulling back from my initial use of parameter.Size, since that
                                 //property won't exist for a file built from json/text like i'm planning to implement in the future.
+                                //3D8589 broken now, rest before are maybe okay? maybe?
                             }
                             Procedure parsedProc = ProcDecoder.DecodeProc(procedure.RawContents); //raw contents arent getting filled properly?
                             byte[] reEncodedBytes = parsedProc.Encode();
+                            if (!reEncodedBytes.TakeLast(procedure.RawContents.Length).SequenceEqual(procedure.RawContents))
+                            {
+                                misEncodedProcs.Add(new EncodingComparer { Name = procedure.Name, OriginalBytes = procedure.RawContents, ReEncodedBytes = reEncodedBytes});
+                            }
                             reEncodedProcs.Add(procedure, reEncodedBytes);
                             procedure.DecodedContents = parsedProc.DecodedContents;
                             formattedContents += procedure.ToString();

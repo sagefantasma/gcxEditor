@@ -209,16 +209,22 @@ namespace GcxEditor
             List<byte[]> encodedContents = new List<byte[]>();
 
             int sizeOfEncodedContents = 0;
+            bool skipOperator = false;
             if (Term1 != null)
             {
                 byte[] term1Encoded = Term1.Encode();
                 sizeOfEncodedContents += term1Encoded.Length;
                 encodedContents.Add(term1Encoded);
+                sizeOfEncodedContents++;
+            }
+            else
+            {
+                skipOperator = true;
             }
             byte[] term2Encoded = Term2.Encode();
             sizeOfEncodedContents += term2Encoded.Length;
             encodedContents.Add(term2Encoded);
-            sizeOfEncodedContents += 2; //for final operator and end of expression
+            sizeOfEncodedContents ++; //for final operator and end of expression
 
             byte[] encodedBytes;
             int position = 0;
@@ -252,7 +258,8 @@ namespace GcxEditor
                 position += encodedContent.Length;
             }
             encodedBytes[encodedBytes.Length - 1] = 0xA0;
-            encodedBytes[encodedBytes.Length - 2] = (byte)Operator;
+            if(!skipOperator)
+                encodedBytes[encodedBytes.Length - 2] = (byte)Operator;
 
             return encodedBytes;
         }
@@ -334,29 +341,29 @@ namespace GcxEditor
 
             foreach (Term argument in Args)
             {
-                argsBytesLength += argument.Size;
+                argsBytesLength += argument.Size; //TODO: again, i really dont think i should ever be using these Sizes for encoding.
             }
 
-            argsBytesLength++; //getting the 00 padding at the end of an invoke
+            //argsBytesLength++; //getting the 00 padding at the end of an invoke
             byte[] encodedBytes;
             int position = 0;
             if ((argsBytesLength + 3) < 0xD)
             {
                 //no change to procedureInvokedBytes
-                encodedBytes = new byte[procedureInvokedBytes + argsBytesLength];
+                encodedBytes = new byte[procedureInvokedBytes + argsBytesLength + 1]; //do i need to +1 to get padding here? am i losing my mind?
                 encodedBytes[position++] = (byte)(0x70 + procedureInvokedBytes + argsBytesLength);
             }
             else if((argsBytesLength + 3) < 0xFF)
             {
                 procedureInvokedBytes++;
-                encodedBytes = new byte[procedureInvokedBytes + argsBytesLength];
+                encodedBytes = new byte[procedureInvokedBytes + argsBytesLength + 1];
                 encodedBytes[position++] = 0x7D;
                 encodedBytes[position++] = (byte)(argsBytesLength + 3);
             }
             else if((argsBytesLength + 3) > 0xFF && (argsBytesLength + 3) < 0xFFFF)
             {
                 procedureInvokedBytes += 2;
-                encodedBytes = new byte[procedureInvokedBytes + argsBytesLength];
+                encodedBytes = new byte[procedureInvokedBytes + argsBytesLength + 1];
                 encodedBytes[position++] = 0x7E;
                 Array.Copy(BitConverter.GetBytes((ushort)(argsBytesLength + 3)), 0, encodedBytes, position, sizeof(ushort));
                 position += sizeof(ushort);
@@ -364,7 +371,7 @@ namespace GcxEditor
             else
             {
                 procedureInvokedBytes += 3;
-                encodedBytes = new byte[procedureInvokedBytes + argsBytesLength];
+                encodedBytes = new byte[procedureInvokedBytes + argsBytesLength + 1];
                 encodedBytes[position++] = 0x7F;
                 Array.Copy(BitConverter.GetBytes(argsBytesLength + 3), 0, encodedBytes, position, 3);
                 position += 3;
@@ -634,12 +641,20 @@ namespace GcxEditor
         public byte[] Encode()
         {
             //TODO: confirm this works
-            byte[] encodedBytes = Builder.InitializeSize(Size, 0x50, out int position);
-            encodedBytes[position++] = (byte)ParamType;
-            
+            List<byte[]> encodedArgs = new List<byte[]>();
+            uint size = 0;
             foreach (Term arg in Args)
             {
                 byte[] encodedArg = arg.Encode();
+                size += (uint)encodedArg.Length;
+                encodedArgs.Add(encodedArg);
+            }
+
+            byte[] encodedBytes = Builder.InitializeSize(size, 0x50, out int position);
+            encodedBytes[position++] = (byte)ParamType;
+
+            foreach (byte[] encodedArg in encodedArgs)
+            {
                 Array.Copy(encodedArg, 0, encodedBytes, position, encodedArg.Length);
                 position += encodedArg.Length;
             }
@@ -707,10 +722,10 @@ namespace GcxEditor
             byte[] encodedBytes;
             if(DataType == Gcx.DataType.String)
             {
-                encodedBytes = new byte[(Value as string).Length + 1];
+                encodedBytes = new byte[Value.Length + 2];
                 encodedBytes[0] = 0x07;
-                encodedBytes[1] = Value.Length();
-                Array.Copy(Encoding.Default.GetBytes(Value), 0, encodedBytes, 2, Value.Length);
+                encodedBytes[1] = (byte)Value.Length;
+                Array.Copy(Value, 0, encodedBytes, 2, Value.Length);
             }
             else
             {
@@ -799,18 +814,20 @@ namespace GcxEditor
             //TODO: confirm this works
             int idAndTypeDeclarationSize = 4;
             int sizeOfArgs = 0;
+            List<byte[]> encodedArguments = new List<byte[]>();
             foreach (Term argument in SizeAndIndex) 
             {
-                sizeOfArgs += (int)argument.Size;
+                byte[] encodedArg = argument.Encode();
+                encodedArguments.Add(encodedArg);
+                sizeOfArgs += encodedArg.Length;
             }
             byte[] encodedBytes = new byte[idAndTypeDeclarationSize + sizeOfArgs];
             encodedBytes[0] = (byte)(0x20 + LowNibble);
             encodedBytes[1] = ArrayType;
             Array.Copy(BitConverter.GetBytes(Id).Reverse().ToArray(), 0, encodedBytes, 2, sizeof(ushort));
             int position = 4;
-            foreach(Term argument in SizeAndIndex)
+            foreach(byte[] encodedArg in encodedArguments)
             {
-                byte[] encodedArg = argument.Encode();
                 Array.Copy(encodedArg, 0, encodedBytes, position, encodedArg.Length);
                 position += encodedArg.Length;
             }
