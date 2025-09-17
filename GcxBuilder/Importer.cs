@@ -71,21 +71,28 @@ namespace GcxEditor
 
                     Dictionary<Procedure, byte[]> reEncodedProcs = new Dictionary<Procedure, byte[]>();
                     List<EncodingComparer> misEncodedProcs = new List<EncodingComparer>();
+                    List<EncodingComparer> correctEncoding = new List<EncodingComparer>();
                     foreach (Procedure procedure in parsedProcedures)
                     {
                         try
                         {
-                            if (procedure.Name == "3D8589")
+                            if (procedure.Name == "040DFF")
                             {
                                 //parameter encoding is broken right now, because i'm pulling back from my initial use of parameter.Size, since that
                                 //property won't exist for a file built from json/text like i'm planning to implement in the future.
-                                //3D8589 broken now, rest before are maybe okay? maybe?
+                                //3D8589 broken now, rest before are maybe okay? maybe? (fixed?)
+                                //040DFF is breaking on encoding when starting the if... weird shit happening at the start of it (fixed?)
+                                //looks like either expressions are broken again, or vararrays. not sure which, but im fried.
                             }
                             Procedure parsedProc = ProcDecoder.DecodeProc(procedure.RawContents); //raw contents arent getting filled properly?
                             byte[] reEncodedBytes = parsedProc.Encode();
                             if (!reEncodedBytes.TakeLast(procedure.RawContents.Length).SequenceEqual(procedure.RawContents))
                             {
                                 misEncodedProcs.Add(new EncodingComparer { Name = procedure.Name, OriginalBytes = procedure.RawContents, ReEncodedBytes = reEncodedBytes});
+                            }
+                            else
+                            {
+                                correctEncoding.Add(new EncodingComparer { Name = procedure.Name, OriginalBytes = procedure.RawContents, ReEncodedBytes = reEncodedBytes });
                             }
                             reEncodedProcs.Add(procedure, reEncodedBytes);
                             procedure.DecodedContents = parsedProc.DecodedContents;

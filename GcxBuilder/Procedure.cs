@@ -358,14 +358,14 @@ namespace GcxEditor
                 procedureInvokedBytes++;
                 encodedBytes = new byte[procedureInvokedBytes + argsBytesLength + 1];
                 encodedBytes[position++] = 0x7D;
-                encodedBytes[position++] = (byte)(argsBytesLength + 3);
+                encodedBytes[position++] = (byte)(argsBytesLength + 4);
             }
             else if((argsBytesLength + 3) > 0xFF && (argsBytesLength + 3) < 0xFFFF)
             {
                 procedureInvokedBytes += 2;
                 encodedBytes = new byte[procedureInvokedBytes + argsBytesLength + 1];
                 encodedBytes[position++] = 0x7E;
-                Array.Copy(BitConverter.GetBytes((ushort)(argsBytesLength + 3)), 0, encodedBytes, position, sizeof(ushort));
+                Array.Copy(BitConverter.GetBytes((ushort)(argsBytesLength + 4)), 0, encodedBytes, position, sizeof(ushort));
                 position += sizeof(ushort);
             }
             else
@@ -373,7 +373,7 @@ namespace GcxEditor
                 procedureInvokedBytes += 3;
                 encodedBytes = new byte[procedureInvokedBytes + argsBytesLength + 1];
                 encodedBytes[position++] = 0x7F;
-                Array.Copy(BitConverter.GetBytes(argsBytesLength + 3), 0, encodedBytes, position, 3);
+                Array.Copy(BitConverter.GetBytes(argsBytesLength + 4), 0, encodedBytes, position, 3);
                 position += 3;
             }
 
@@ -649,8 +649,8 @@ namespace GcxEditor
                 size += (uint)encodedArg.Length;
                 encodedArgs.Add(encodedArg);
             }
-
-            byte[] encodedBytes = Builder.InitializeSize(size, 0x50, out int position);
+            
+            byte[] encodedBytes = Builder.InitializeParamSize(size, 0x50, out int position);
             encodedBytes[position++] = (byte)ParamType;
 
             foreach (byte[] encodedArg in encodedArgs)
