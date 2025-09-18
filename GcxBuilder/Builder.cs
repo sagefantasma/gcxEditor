@@ -125,7 +125,8 @@ namespace GcxEditor
                 {
                     //lowNibble is lowNibble of second size byte
                     encodedBytes[position++] = 0x80;
-                    encodedBytes[position++] = (byte)(sizeInBytes[0] & 0x0F);
+                    //encodedBytes[position++] = (byte)(sizeInBytes[0] & 0x0F);
+                    encodedBytes[position++] = (byte)argsBytesLength;
                 }
                 else if(argsBytesLength < 0xFFF)
                 {

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static GcxEditor.GcxClasses;
 
 namespace GcxEditor
 {
@@ -16,6 +17,7 @@ namespace GcxEditor
     public static class Importer
     {
         private static int cursor = 0;
+        private static int positionOfZeroPadding;
         private static Dictionary<string, uint> FileTable = new Dictionary<string, uint>();
 
         public static dynamic ImportGcxFile(string path)
@@ -76,15 +78,11 @@ namespace GcxEditor
                     {
                         try
                         {
-                            if (procedure.Name == "040DFF")
+                            if (procedure.Name == "19F8BB")
                             {
-                                //parameter encoding is broken right now, because i'm pulling back from my initial use of parameter.Size, since that
-                                //property won't exist for a file built from json/text like i'm planning to implement in the future.
-                                //3D8589 broken now, rest before are maybe okay? maybe? (fixed?)
-                                //040DFF is breaking on encoding when starting the if... weird shit happening at the start of it (fixed?)
-                                //looks like either expressions are broken again, or vararrays. not sure which, but im fried.
+                                //no known broken procedures ~o~
                             }
-                            Procedure parsedProc = ProcDecoder.DecodeProc(procedure.RawContents); //raw contents arent getting filled properly?
+                            Procedure parsedProc = ProcDecoder.DecodeProc(procedure.RawContents);
                             byte[] reEncodedBytes = parsedProc.Encode();
                             if (!reEncodedBytes.TakeLast(procedure.RawContents.Length).SequenceEqual(procedure.RawContents))
                             {
@@ -103,6 +101,11 @@ namespace GcxEditor
                         }
                     }
 
+                    /*foreach(EncodingComparer misencodedProc in misEncodedProcs)
+                    {
+                        File.WriteAllBytes($"{misencodedProc.Name}-GOOD.gcxfunc", misencodedProc.OriginalBytes);
+                        File.WriteAllBytes($"{misencodedProc.Name}-BAD.gcxfunc", misencodedProc.ReEncodedBytes.TakeLast(misencodedProc.OriginalBytes.Length).ToArray());
+                    }*/
                     
 
                     File.WriteAllText("formattedOutput.txt", formattedContents);
@@ -113,6 +116,8 @@ namespace GcxEditor
                     main.DecodedContents = decodedMain.DecodedContents;
                     gcx.Main = main;
 
+                    AssembleReencodedFile(fileContents, reEncodedProcs, fileTable, mainProcedureData);
+
                     return gcx;
                 }
 
@@ -122,6 +127,106 @@ namespace GcxEditor
             {
                 throw new NotImplementedException("Failed to import gcx file, no error handling for this case");
             }
+        }
+
+        private static void AssembleReencodedFile(byte[] fileContents, Dictionary<Procedure, byte[]> reEncodedProcs, FileTable fileTable, byte[] mainProcedureData)
+        {
+            byte[] preamble = fileContents.Take(8).ToArray();
+            //proc table
+            int procTableSize = reEncodedProcs.Count * 4 * 2;
+            byte[] constantData = fileContents.Take(new Range(new Index(positionOfZeroPadding - 8), new Index(positionOfZeroPadding + (int)fileTable.ScriptTableOffset))).ToArray();
+            int procCollectionSize = 0;
+            foreach (KeyValuePair<Procedure, byte[]> reEncodedProc in reEncodedProcs)
+            {
+                procCollectionSize += reEncodedProc.Value.Length;
+            }
+            byte[] procTableBytes = new byte[procTableSize];
+            int procTablePosition = 0;
+            int procBodyPosition = 0;
+            byte[] procBodyCollection = new byte[procCollectionSize];
+            foreach (KeyValuePair<Procedure, byte[]> reEncodedProc in reEncodedProcs)
+            {
+                Array.Copy(BitConverter.GetBytes(reEncodedProc.Key.Order), 0, procTableBytes, procTablePosition, 4);
+                procTablePosition += 4;
+                Array.Copy(BitConverter.GetBytes(procBodyPosition), 0, procTableBytes, procTablePosition, 4);
+                procTablePosition += 4;
+                Array.Copy(reEncodedProc.Value, 0, procBodyCollection, procBodyPosition, reEncodedProc.Value.Length);
+                procBodyPosition += reEncodedProc.Value.Length;
+            }
+
+            byte[] wholeFileReencoded = new byte[preamble.Length + procTableSize + constantData.Length + procBodyCollection.Length + 4 + mainProcedureData.Length];
+            int position = 0;
+            Array.Copy(preamble, 0, wholeFileReencoded, position, preamble.Length);
+            position += preamble.Length;
+            Array.Copy(procTableBytes, 0, wholeFileReencoded, position, procTableBytes.Length);
+            position += procTableBytes.Length;
+            Array.Copy(constantData, 0, wholeFileReencoded, position, constantData.Length);
+            position += constantData.Length;
+            Array.Copy(BitConverter.GetBytes(procCollectionSize), 0, wholeFileReencoded, position, 4);
+            position += 4;
+            Array.Copy(procBodyCollection, 0, wholeFileReencoded, position, procCollectionSize);
+            position += procCollectionSize;
+            Array.Copy(mainProcedureData, 0, wholeFileReencoded, position, mainProcedureData.Length);
+
+            File.WriteAllBytes("reencodedGcxAttempt2.gcx", wholeFileReencoded);
+        }
+
+        private static void ReencodeFileTake1()
+        {/*
+            int preambleSize = 8;
+            int procTableSize = reEncodedProcs.Count * 4 * 2;
+            int endOfTablePadding = 8;
+            int fileTableSize = FileTable.Count * 4;
+            int sizeOfProcCollection = 4;
+            int procCollection = 0;
+            foreach (KeyValuePair<Procedure, byte[]> reEncodedProc in reEncodedProcs)
+            {
+                procCollection += reEncodedProc.Value.Length;
+            }
+            byte[] wholeFileReEncodedBytes = new byte[preambleSize + procTableSize + endOfTablePadding + fileTableSize +
+                sizeOfProcCollection + procCollection + mainProcedureData.Length + resourceData.Length + stringData.Length + fontData.Length];
+
+            int position = 0;
+            Array.Copy(signature, 0, wholeFileReEncodedBytes, position, signature.Length);
+            position += signature.Length;
+            Array.Copy(timestamp, 0, wholeFileReEncodedBytes, position, timestamp.Length);
+            position += timestamp.Length;
+            byte[] procTableBytes = new byte[procTableSize];
+            int procTablePosition = 0;
+            int procBodyPosition = 0;
+            byte[] procBodyCollection = new byte[procCollection];
+            foreach (KeyValuePair<Procedure, byte[]> reEncodedProc in reEncodedProcs)
+            {
+                Array.Copy(BitConverter.GetBytes(reEncodedProc.Key.Order), 0, procTableBytes, procTablePosition, 4);
+                procTablePosition += 4;
+                Array.Copy(BitConverter.GetBytes(procBodyPosition), 0, procTableBytes, procTablePosition, 4);
+                procTablePosition += 4;
+                Array.Copy(reEncodedProc.Value, 0, procBodyCollection, procBodyPosition, reEncodedProc.Value.Length);
+                procBodyPosition += reEncodedProc.Value.Length;
+            }
+            Array.Copy(procTableBytes, 0, wholeFileReEncodedBytes, position, procTableBytes.Length);
+            position += procTableBytes.Length;
+            Array.Copy(new byte[] { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, }, 0, wholeFileReEncodedBytes, position, endOfTablePadding);
+            position += endOfTablePadding;
+            foreach (KeyValuePair<string, uint> entry in FileTable)
+            {
+                Array.Copy(BitConverter.GetBytes(entry.Value), 0, wholeFileReEncodedBytes, position, 4);
+                position += 4;
+            }
+            Array.Copy(resourceData, 0, wholeFileReEncodedBytes, position, resourceData.Length);
+            position += resourceData.Length;
+            Array.Copy(stringData, 0, wholeFileReEncodedBytes, position, stringData.Length);
+            position += stringData.Length;
+            Array.Copy(fontData, 0, wholeFileReEncodedBytes, position, fontData.Length);
+            position += fontData.Length;
+            Array.Copy(BitConverter.GetBytes(procCollection), 0, wholeFileReEncodedBytes, position, 4);
+            position += 4;
+            Array.Copy(procBodyCollection, 0, wholeFileReEncodedBytes, position, procBodyCollection.Length);
+            position += procBodyCollection.Length;
+            Array.Copy(mainProcedureData, 0, wholeFileReEncodedBytes, position, mainProcedureData.Length);
+
+            File.WriteAllBytes("reEncodedFile.gcx", wholeFileReEncodedBytes);
+            */
         }
 
         private static byte[] TakeRangeFromArray(byte[] array, int start, int end)
@@ -164,6 +269,7 @@ namespace GcxEditor
                 { "key", BitConverter.ToUInt32(TakeAndAdvance4Bytes(gcxContents)) }
             };
             cursor -= 20; //need to back up to the start of the file table to get contents
+            positionOfZeroPadding = cursor;
             return fileTable;
         }
 

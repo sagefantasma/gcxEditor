@@ -213,6 +213,26 @@ namespace GcxEditor
             if (Term1 != null)
             {
                 byte[] term1Encoded = Term1.Encode();
+                if(Term1 is Expression)
+                {
+                    //remove declaration, size, and end of expression operator
+                    if (term1Encoded[0] < 0x3D)
+                    {
+                        term1Encoded = term1Encoded.Take(new Range(new Index(1), new Index(term1Encoded.Length - 1))).ToArray();
+                    }
+                    else if (term1Encoded[0] == 0x3D)
+                    {
+                        term1Encoded = term1Encoded.Take(new Range(new Index(2), new Index(term1Encoded.Length - 1))).ToArray();
+                    }
+                    else if (term1Encoded[0] == 0x3E)
+                    {
+                        term1Encoded = term1Encoded.Take(new Range(new Index(3), new Index(term1Encoded.Length - 1))).ToArray();
+                    }
+                    else if (term1Encoded[0] == 0x3F)
+                    {
+                        term1Encoded = term1Encoded.Take(new Range(new Index(4), new Index(term1Encoded.Length - 1))).ToArray();
+                    }
+                }
                 sizeOfEncodedContents += term1Encoded.Length;
                 encodedContents.Add(term1Encoded);
                 sizeOfEncodedContents++;
@@ -222,6 +242,26 @@ namespace GcxEditor
                 skipOperator = true;
             }
             byte[] term2Encoded = Term2.Encode();
+            if (Term2 is Expression)
+            {
+                //remove declaration, size, and end of expression operator
+                if (term2Encoded[0] < 0x3D)
+                {
+                    term2Encoded = term2Encoded.Take(new Range(new Index(1), new Index(term2Encoded.Length - 1))).ToArray();
+                }
+                else if (term2Encoded[0] == 0x3D)
+                {
+                    term2Encoded = term2Encoded.Take(new Range(new Index(2), new Index(term2Encoded.Length - 1))).ToArray();
+                }
+                else if (term2Encoded[0] == 0x3E)
+                {
+                    term2Encoded = term2Encoded.Take(new Range(new Index(3), new Index(term2Encoded.Length - 1))).ToArray();
+                }
+                else if (term2Encoded[0] == 0x3F)
+                {
+                    term2Encoded = term2Encoded.Take(new Range(new Index(4), new Index(term2Encoded.Length - 1))).ToArray();
+                }
+            }
             sizeOfEncodedContents += term2Encoded.Length;
             encodedContents.Add(term2Encoded);
             sizeOfEncodedContents ++; //for final operator and end of expression
@@ -429,7 +469,7 @@ namespace GcxEditor
         public override byte[] Encode()
         {
             //TODO: confirm this works
-            byte[] contents = Builder.EncodeCommandWithOnlyArgs(Args, new byte[] { 0x8B, 0xE3, 0x98 });
+            byte[] contents = Builder.EncodeCommandWithOnlyArgs(Args, new byte[] { 0x98, 0xE3, 0x8B });
             return Builder.BuildContainerElement(0x60, contents);
         }
 
