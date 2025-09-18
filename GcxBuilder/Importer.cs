@@ -78,9 +78,10 @@ namespace GcxEditor
                     {
                         try
                         {
-                            if (procedure.Name == "19F8BB")
+                            if (procedure.Name == "26F1A0")
                             {
                                 //no known broken procedures ~o~
+                                //able to go through ALL native gcx files and decode and reencode without throwing any exceptions!
                             }
                             Procedure parsedProc = ProcDecoder.DecodeProc(procedure.RawContents);
                             byte[] reEncodedBytes = parsedProc.Encode();
@@ -107,7 +108,7 @@ namespace GcxEditor
                         File.WriteAllBytes($"{misencodedProc.Name}-BAD.gcxfunc", misencodedProc.ReEncodedBytes.TakeLast(misencodedProc.OriginalBytes.Length).ToArray());
                     }*/
                     
-
+                    
                     File.WriteAllText("formattedOutput.txt", formattedContents);
 
                     Procedure decodedMain = ProcDecoder.DecodeProc(mainProcedure.RawContents);
@@ -117,7 +118,7 @@ namespace GcxEditor
                     gcx.Main = main;
 
                     AssembleReencodedFile(fileContents, reEncodedProcs, fileTable, mainProcedureData);
-
+                    
                     return gcx;
                 }
 

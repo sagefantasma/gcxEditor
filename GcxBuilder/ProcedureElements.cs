@@ -379,9 +379,12 @@ namespace GcxEditor
             int procedureInvokedBytes = 4;
             uint argsBytesLength = 0;
 
+            List<byte[]> encodedArgs = new List<byte[]>();
             foreach (Term argument in Args)
             {
-                argsBytesLength += argument.Size; //TODO: again, i really dont think i should ever be using these Sizes for encoding.
+                byte[] encodedArg = argument.Encode();
+                argsBytesLength += (uint)encodedArg.Length;
+                encodedArgs.Add(encodedArg);
             }
 
             //argsBytesLength++; //getting the 00 padding at the end of an invoke
@@ -421,9 +424,8 @@ namespace GcxEditor
             Array.Copy(BitConverter.GetBytes(ProcedureInvoked.Order), 0, encodedBytes, position, 3);
             position += 3;
 
-            foreach (Term arg in Args)
+            foreach (byte[] encodedArg in encodedArgs)
             {
-                byte[] encodedArg = arg.Encode();
                 Array.Copy(encodedArg, 0, encodedBytes, position, encodedArg.Length);
                 position += encodedArg.Length;
             }
