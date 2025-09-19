@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -19,6 +20,70 @@ namespace GcxEditor
         private static int cursor = 0;
         private static int positionOfZeroPadding;
         private static Dictionary<string, uint> FileTable = new Dictionary<string, uint>();
+
+        public static Dictionary<Procedure, byte[]> ImportJsonFile(string path)
+        {
+            string fileContents = File.ReadAllText(path);
+            GcxClasses.Gcx deserializedGcx = JsonConvert.DeserializeObject<GcxClasses.Gcx>(fileContents);
+            return EncodeProcsFromJson(deserializedGcx.ProcBlock.Procedures);
+            
+        }
+
+        public static Dictionary<Procedure, byte[]> EncodeProcsFromJson(List<Procedure> jsonProcedures)
+        {
+            Dictionary<Procedure, byte[]> encodedProcs = new Dictionary<Procedure, byte[]>();
+            //TODO: running into an issue where, when pulling from json, nested objects aren't getting created as the correct objects,
+            //but instead as jobjects... how can i fix this?
+            foreach (Procedure procedure in jsonProcedures)
+            {
+                try
+                {
+                    byte[] encodedBytes = procedure.Encode();
+                    encodedProcs.Add(procedure, encodedBytes);
+                }
+                catch(Exception e)
+                {
+
+                }
+            }
+
+            return encodedProcs;
+        }
+
+        public static Dictionary<Procedure, byte[]> EncodeProcsFromRawGcx(List<Procedure> parsedProcedures)
+        {
+            Dictionary<Procedure, byte[]> reEncodedProcs = new Dictionary<Procedure, byte[]>();
+            List<EncodingComparer> misEncodedProcs = new List<EncodingComparer>();
+            List<EncodingComparer> correctEncoding = new List<EncodingComparer>();
+            foreach (Procedure procedure in parsedProcedures)
+            {
+                try
+                {
+                    if (procedure.Name == "26F1A0")
+                    {
+                        //no known broken procedures ~o~
+                        //able to go through ALL native gcx files and decode and reencode without throwing any exceptions!
+                    }
+                    Procedure parsedProc = ProcDecoder.DecodeProc(procedure.RawContents);
+                    byte[] reEncodedBytes = parsedProc.Encode();
+                    if (!reEncodedBytes.TakeLast(procedure.RawContents.Length).SequenceEqual(procedure.RawContents))
+                    {
+                        misEncodedProcs.Add(new EncodingComparer { Name = procedure.Name, OriginalBytes = procedure.RawContents, ReEncodedBytes = reEncodedBytes });
+                    }
+                    else
+                    {
+                        correctEncoding.Add(new EncodingComparer { Name = procedure.Name, OriginalBytes = procedure.RawContents, ReEncodedBytes = reEncodedBytes });
+                    }
+                    reEncodedProcs.Add(procedure, reEncodedBytes);
+                    procedure.DecodedContents = parsedProc.DecodedContents;
+                }
+                catch (Exception ex)
+                {
+                }
+            }
+
+            return reEncodedProcs;
+        }
 
         public static dynamic ImportGcxFile(string path)
         {
@@ -68,56 +133,14 @@ namespace GcxEditor
                     procedureBlock.Procedures = parsedProcedures;
                     procedureBlock.Main = mainProcedure;
                     GcxClasses.Gcx gcx = new GcxClasses.Gcx(fileTable, procedureBlock);
-
-                    string formattedContents = "";
-
-                    Dictionary<Procedure, byte[]> reEncodedProcs = new Dictionary<Procedure, byte[]>();
-                    List<EncodingComparer> misEncodedProcs = new List<EncodingComparer>();
-                    List<EncodingComparer> correctEncoding = new List<EncodingComparer>();
-                    foreach (Procedure procedure in parsedProcedures)
-                    {
-                        try
-                        {
-                            if (procedure.Name == "26F1A0")
-                            {
-                                //no known broken procedures ~o~
-                                //able to go through ALL native gcx files and decode and reencode without throwing any exceptions!
-                            }
-                            Procedure parsedProc = ProcDecoder.DecodeProc(procedure.RawContents);
-                            byte[] reEncodedBytes = parsedProc.Encode();
-                            if (!reEncodedBytes.TakeLast(procedure.RawContents.Length).SequenceEqual(procedure.RawContents))
-                            {
-                                misEncodedProcs.Add(new EncodingComparer { Name = procedure.Name, OriginalBytes = procedure.RawContents, ReEncodedBytes = reEncodedBytes});
-                            }
-                            else
-                            {
-                                correctEncoding.Add(new EncodingComparer { Name = procedure.Name, OriginalBytes = procedure.RawContents, ReEncodedBytes = reEncodedBytes });
-                            }
-                            reEncodedProcs.Add(procedure, reEncodedBytes);
-                            procedure.DecodedContents = parsedProc.DecodedContents;
-                            formattedContents += procedure.ToString();
-                        }
-                        catch (Exception ex)
-                        {
-                        }
-                    }
-
-                    /*foreach(EncodingComparer misencodedProc in misEncodedProcs)
-                    {
-                        File.WriteAllBytes($"{misencodedProc.Name}-GOOD.gcxfunc", misencodedProc.OriginalBytes);
-                        File.WriteAllBytes($"{misencodedProc.Name}-BAD.gcxfunc", misencodedProc.ReEncodedBytes.TakeLast(misencodedProc.OriginalBytes.Length).ToArray());
-                    }*/
-                    
-                    
-                    File.WriteAllText("formattedOutput.txt", formattedContents);
+                    gcx.FileContents = fileContents;
+                    gcx.FileTable = fileTable;
 
                     Procedure decodedMain = ProcDecoder.DecodeProc(mainProcedure.RawContents);
                     Main main = new Main();
                     main.EncodedContents = mainProcedure.RawContents;
                     main.DecodedContents = decodedMain.DecodedContents;
                     gcx.Main = main;
-
-                    AssembleReencodedFile(fileContents, reEncodedProcs, fileTable, mainProcedureData);
                     
                     return gcx;
                 }
@@ -130,8 +153,12 @@ namespace GcxEditor
             }
         }
 
-        private static void AssembleReencodedFile(byte[] fileContents, Dictionary<Procedure, byte[]> reEncodedProcs, FileTable fileTable, byte[] mainProcedureData)
+        public static void AssembleReencodedFile(GcxClasses.Gcx gcx, Dictionary<Procedure, byte[]> reEncodedProcs)
         {
+            byte[] fileContents = gcx.FileContents;
+            FileTable fileTable = gcx.FileTable;
+            byte[] procedureData = GetProcedureData(fileContents);
+            byte[] mainProcedureData = GetMainData(procedureData);
             byte[] preamble = fileContents.Take(8).ToArray();
             //proc table
             int procTableSize = reEncodedProcs.Count * 4 * 2;

@@ -31,7 +31,10 @@ namespace GcxEditor
             }
             set
             {
-                Order = uint.Parse(value);
+                if (value.ToLower() != "main")
+                    Order = uint.Parse(value, System.Globalization.NumberStyles.HexNumber);
+                else
+                    Order = 0;
             }
         }
         [JsonIgnore]
@@ -51,9 +54,6 @@ namespace GcxEditor
 
         public byte[] Encode()
         {
-            //TODO: confirm this works
-            //Encode decoded contents, get the size, slap that on?
-
             List<byte[]> encodedContents = new List<byte[]>();
 
             int sizeOfEncodedContents = 0;
@@ -205,7 +205,6 @@ namespace GcxEditor
 
         public byte[] Encode()
         {
-            //TODO: confirm this works
             List<byte[]> encodedContents = new List<byte[]>();
 
             int sizeOfEncodedContents = 0;
@@ -327,7 +326,6 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            //TODO: confirm this works
             byte[] contents = Builder.EncodeCommandWithArgsAndParams(Args, Parameters, new byte[] { 0x86, 0x0D, 0x00 });
             return Builder.BuildContainerElement(0x60, contents);
         }
@@ -374,8 +372,6 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            //TODO: confirm this works
-            //TODO: does an invoke always end with a 00 buffer? -- i think so
             int procedureInvokedBytes = 4;
             uint argsBytesLength = 0;
 
@@ -470,7 +466,6 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            //TODO: confirm this works
             byte[] contents = Builder.EncodeCommandWithOnlyArgs(Args, new byte[] { 0x98, 0xE3, 0x8B });
             return Builder.BuildContainerElement(0x60, contents);
         }
@@ -490,7 +485,6 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            //TODO: confirm this works
             byte[] contents = Builder.EncodeCommandWithOnlyArgs(Args, new byte[] { 0x3B, 0xB2, 0x3A });
             return Builder.BuildContainerElement(0x60, contents);
         }
@@ -510,7 +504,6 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            //TODO: confirm this works
             byte[] contents = Builder.EncodeCommandWithOnlyArgs(Args, new byte[] { 0xC7, 0x22, 0x38 });
             return Builder.BuildContainerElement(0x60, contents);
         }
@@ -530,7 +523,6 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            //TODO: confirm this works
             byte[] contents = Builder.EncodeCommandWithArgsAndParams(Args, Parameters, new byte[] { 0xC9, 0x2B, 0x08 });
             return Builder.BuildContainerElement(0x60, contents);
         }
@@ -551,7 +543,6 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            //TODO: confirm this works
             byte[] contents = Builder.EncodeCommandWithArgsAndParams(Args, Parameters, new byte[] { 0xA7, 0x92, 0x65 });
             return Builder.BuildContainerElement(0x60, contents);
         }
@@ -571,7 +562,6 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            //TODO: confirm this works
             byte[] contents = Builder.EncodeCommandWithArgsAndParams(Args, Parameters, new byte[] { 0x90, 0xD4, 0x3B });
             return Builder.BuildContainerElement(0x60, contents);
         }
@@ -591,7 +581,6 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            //TODO: confirm this works
             byte[] contents = Builder.EncodeCommandWithOnlyArgs(Args, new byte[] { 0x84, 0xC8, 0x37 });
             return Builder.BuildContainerElement(0x60, contents);
         }
@@ -612,7 +601,6 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            //TODO: confirm this works
             byte[] contents = Builder.EncodeCommandWithOnlyArgs(Args, new byte[] { 0xF5, 0x3D, 0x8B });
             return Builder.BuildContainerElement(0x60, contents);
         }
@@ -652,7 +640,6 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            //TODO: confirm this works
             byte[] contents = Builder.EncodeCommandWithOnlyArgs(Args, new byte[] { 0x05, 0xB0, 0x6B });
             return Builder.BuildContainerElement(0x60, contents);
         }
@@ -682,7 +669,6 @@ namespace GcxEditor
 
         public byte[] Encode()
         {
-            //TODO: confirm this works
             List<byte[]> encodedArgs = new List<byte[]>();
             uint size = 0;
             foreach (Term arg in Args)
@@ -760,7 +746,6 @@ namespace GcxEditor
 
         public byte[] Encode()
         {
-            //TODO: confirm this works
             byte[] encodedBytes;
             if(DataType == Gcx.DataType.String)
             {
@@ -801,7 +786,6 @@ namespace GcxEditor
 
         public byte[] Encode()
         {
-            //TODO: confirm this works
             if(ArgNum < 0xF)
             {
                 return new[] { (byte)(0x40 + ArgNum) };
@@ -853,7 +837,6 @@ namespace GcxEditor
 
         public byte[] Encode()
         {
-            //TODO: confirm this works
             int idAndTypeDeclarationSize = 4;
             int sizeOfArgs = 0;
             List<byte[]> encodedArguments = new List<byte[]>();
@@ -905,7 +888,6 @@ namespace GcxEditor
 
         public byte[] Encode()
         {
-            //TODO: confirm this works
             byte[] encodedVarbuf = new byte[4];
             encodedVarbuf[0] = (byte)(0x10 + LowNibble);
             encodedVarbuf[1] = 0x80; //is this always correct?
@@ -944,7 +926,6 @@ namespace GcxEditor
 
         public byte[] Encode()
         {
-            //TODO: confirm this works
             byte[] encodedVarbuf = new byte[4];
             encodedVarbuf[0] = (byte)(0x10 + LowNibble);
             encodedVarbuf[1] = ByteType; 
@@ -982,7 +963,6 @@ namespace GcxEditor
 
         public byte[] Encode()
         {
-            //TODO: confirm this works
             byte[] encodedVarbuf = new byte[4];
             encodedVarbuf[0] = (byte)(0x10 + LowNibble);
             encodedVarbuf[1] = 0x10; //is this always correct?
@@ -1020,7 +1000,6 @@ namespace GcxEditor
 
         public byte[] Encode()
         {
-            //TODO: confirm this works
             byte[] idBytes = BitConverter.GetBytes(Id);
             byte highNibble = 0x90;
             return new[] { (byte)(highNibble + idBytes.FirstOrDefault()) };

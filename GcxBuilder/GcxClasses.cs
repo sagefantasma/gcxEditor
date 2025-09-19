@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace GcxEditor
@@ -12,9 +13,11 @@ namespace GcxEditor
     {
         public class Gcx
         {
+            [JsonIgnore]
+            public byte[] FileContents { get; set; }
             public uint Signature { get; set; }
             public uint Timestamp { get; set; }
-            private FileTable FileTable { get; set; }
+            public FileTable FileTable { get; set; }
             public ProcedureBlock ProcBlock { get; set; }
             public Main Main { get; set; }
 
