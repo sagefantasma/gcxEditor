@@ -38,7 +38,7 @@ namespace GcxEditor
                 uint index = 0;
                 int nestedLevel = 0; //how important is this?
                 GcxEditor.Procedure procedure = new Procedure();
-                procedure.DecodedContents = new List<dynamic>();
+                procedure.DecodedContents = new List<IProcedureElement>();
                 if (bytes.Length == 0)
                 {
                     return procedure;

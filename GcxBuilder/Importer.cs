@@ -136,6 +136,8 @@ namespace GcxEditor
                     gcx.FileContents = fileContents;
                     gcx.FileTable = fileTable;
 
+                    EncodeProcsFromRawGcx(procedureBlock.Procedures);
+
                     Procedure decodedMain = ProcDecoder.DecodeProc(mainProcedure.RawContents);
                     Main main = new Main();
                     main.EncodedContents = mainProcedure.RawContents;

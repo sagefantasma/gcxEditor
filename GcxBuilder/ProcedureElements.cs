@@ -7,13 +7,16 @@ using Newtonsoft.Json;
 
 namespace GcxEditor
 {
-    public interface IProcedureElement
+    public class IProcedureElement
     {
         public uint Size { get; set; }
         public string Type { get; set; }
         public byte[] EncodedContents { get; set; }
 
-        public byte[] Encode();
+        public byte[] Encode() 
+        {
+            return new byte[] { };
+        }
     }
 
     public class Procedure : Term
@@ -41,12 +44,12 @@ namespace GcxEditor
         public uint Order { get; private set; }
         [JsonIgnore]
         public uint Size { get; set; }
-        public string Type { get; set; }
+        public string Type { get; set; } = "Procedure";
         [JsonIgnore]
         public byte[] EncodedContents { get; set; }
         [JsonIgnore]
         public byte[] RawContents { get; set; } //TODO: to be implemented for editing
-        public List<dynamic> DecodedContents { get; set; }
+        public List<IProcedureElement> DecodedContents { get; set; } = null;
         public Procedure()
         {
             Type = GetType().Name;
@@ -57,11 +60,14 @@ namespace GcxEditor
             List<byte[]> encodedContents = new List<byte[]>();
 
             int sizeOfEncodedContents = 0;
-            foreach(dynamic decodedContent in DecodedContents)
+            if (DecodedContents != null)
             {
-                byte[] encodedContent = decodedContent.Encode();
-                encodedContents.Add(encodedContent);
-                sizeOfEncodedContents += encodedContent.Length;
+                foreach (IProcedureElement decodedContent in DecodedContents)
+                {
+                    byte[] encodedContent = decodedContent.Encode();
+                    encodedContents.Add(encodedContent);
+                    sizeOfEncodedContents += encodedContent.Length;
+                }
             }
             sizeOfEncodedContents++; //increase by one to get 00 padding at the end :S
 
@@ -115,7 +121,7 @@ namespace GcxEditor
 
             if (DecodedContents != null)
             {
-                foreach (dynamic item in DecodedContents)
+                foreach (IProcedureElement item in DecodedContents)
                 {
                     printedString += @$"{Environment.NewLine}     {item.ToString()}";
                 }
@@ -148,7 +154,7 @@ namespace GcxEditor
     {
         [JsonIgnore]
         public uint Size { get; set; }
-        public string Type { get; set; }
+        public string Type { get; set; } = "Command";
         public List<Parameter> Parameters { get; set; } = new List<Parameter>();
         public List<Term> Args = new List<Term>();
         [JsonIgnore]
@@ -194,7 +200,7 @@ namespace GcxEditor
         public GcxEditor.Gcx.Operation Operator { get; set; }
         [JsonIgnore]
         public uint Size { get; set; }
-        public string Type { get; set; }
+        public string Type { get; set; } = "Expression";
         [JsonIgnore]
         public byte[] EncodedContents { get; set; }
 
@@ -319,6 +325,7 @@ namespace GcxEditor
 
     public class IfBlock : Statement
     {
+        public new string Type { get; set; } = "IfBlock";
         public IfBlock()
         {
             Type = GetType().Name;
@@ -333,6 +340,7 @@ namespace GcxEditor
 
     public class SwitchBlock : Statement
     {
+        public new string Type { get; set; } = "SwitchBlock";
         public SwitchBlock()
         {
             Type = GetType().Name;
@@ -365,6 +373,7 @@ namespace GcxEditor
     {
         public Procedure ProcedureInvoked { get; set; } = new Procedure();
         public List<Term> Args { get; set; } = new List<Term>();
+        public new string Type { get; set; } = "Invoke";
         public Invoke()
         {
             Type = GetType().Name;
@@ -447,11 +456,11 @@ namespace GcxEditor
         }
     }
 
-    public interface Term : IProcedureElement
+    public class Term : IProcedureElement
     {
     }
 
-    public interface Argument : Term
+    public class Argument : Term
     {
         public Term Value { get; set; }
 
@@ -459,6 +468,7 @@ namespace GcxEditor
 
     public class Return : Statement
     {
+        public new string Type { get; set; } = "Return";
         public Return()
         {
             Type = GetType().Name;
@@ -478,6 +488,7 @@ namespace GcxEditor
 
     public class Print : Statement
     {
+        public new string Type { get; set; } = "Print";
         public Print()
         {
             Type = GetType().Name;
@@ -497,6 +508,7 @@ namespace GcxEditor
 
     public class Msg : Command
     {
+        public new string Type { get; set; } = "Msg";
         public Msg()
         {
             Type = GetType().Name;
@@ -516,6 +528,7 @@ namespace GcxEditor
 
     public class GameCommand : Command
     {
+        public new string Type { get; set; } = "GameCommand";
         public GameCommand()
         {
             Type = GetType().Name;
@@ -536,6 +549,7 @@ namespace GcxEditor
     public class Chara : Command
     {
         //0x6592A7
+        public new string Type { get; set; } = "Chara";
         public Chara()
         {
             Type = GetType().Name;
@@ -555,6 +569,7 @@ namespace GcxEditor
 
     public class Trap : Command
     {
+        public new string Type { get; set; } = "Trap";
         public Trap()
         {
             Type = GetType().Name;
@@ -574,6 +589,7 @@ namespace GcxEditor
 
     public class Load : Command
     {
+        public new string Type { get; set; } = "Load";
         public Load()
         {
             Type = GetType().Name;
@@ -593,6 +609,7 @@ namespace GcxEditor
 
     public class UnknownCommand : Command
     {
+        public new string Type { get; set; } = "UnknownCommand";
         //0x8B3DF5 -- from gcx analysis, this looks like a warping function? maybe related to the notification that pops up when you transition screens?
         public UnknownCommand()
         {
@@ -633,6 +650,7 @@ namespace GcxEditor
 
     public class Restart : Command
     {
+        public new string Type { get; set; } = "Restart";
         public Restart()
         {
             Type = GetType().Name;
@@ -802,7 +820,7 @@ namespace GcxEditor
         }
     }
 
-    public interface Variable : Term
+    public class Variable : Term
     {
         public ushort Id { get; set; }
         public byte LowNibble { get; set; }
