@@ -9,10 +9,10 @@ namespace GcxEditor
 {
     public class IProcedureElement
     {
-        public uint Size { get; set; }
+        /*public uint Size { get; set; }
         public string Type { get; set; }
         public byte[] EncodedContents { get; set; }
-
+        */
         public byte[] Encode() 
         {
             return new byte[] { };
@@ -43,7 +43,13 @@ namespace GcxEditor
         [JsonIgnore]
         public uint Order { get; private set; }
         [JsonIgnore]
-        public uint Size { get; set; }
+        public new uint Size {
+            get { return base.Size; }
+            set
+            {
+                base.Size = value;
+            }
+        }
         public string Type { get; set; } = "Procedure";
         [JsonIgnore]
         public byte[] EncodedContents { get; set; }
@@ -55,7 +61,7 @@ namespace GcxEditor
             Type = GetType().Name;
         }
 
-        public byte[] Encode()
+        public new byte[] Encode()
         {
             List<byte[]> encodedContents = new List<byte[]>();
 
@@ -143,7 +149,7 @@ namespace GcxEditor
             Type = GetType().Name;
         }
 
-        public byte[] Encode()
+        public new byte[] Encode()
         {
             //TODO: determine if necessary, and implement if so
             throw new NotImplementedException();
@@ -190,16 +196,22 @@ namespace GcxEditor
             return printedString;
         }
 
-        public abstract byte[] Encode();
+        public new abstract byte[] Encode();
     }
 
     public class Expression : Term
     {
         public Term? Term1 { get; set; }
         public Term? Term2 { get; set; }
-        public GcxEditor.Gcx.Operation Operator { get; set; }
+        public Gcx.Operation Operator { get; set; }
         [JsonIgnore]
-        public uint Size { get; set; }
+        public new uint Size {
+            get { return base.Size; }
+            set
+            {
+                base.Size = value;
+            }
+        }
         public string Type { get; set; } = "Expression";
         [JsonIgnore]
         public byte[] EncodedContents { get; set; }
@@ -209,7 +221,7 @@ namespace GcxEditor
             Type = GetType().Name;
         }
 
-        public byte[] Encode()
+        public new byte[] Encode()
         {
             List<byte[]> encodedContents = new List<byte[]>();
 
@@ -372,7 +384,7 @@ namespace GcxEditor
     public class Invoke : Statement
     {
         public Procedure ProcedureInvoked { get; set; } = new Procedure();
-        public List<Term> Args { get; set; } = new List<Term>();
+        public new List<Term> Args { get; set; } = new List<Term>();
         public new string Type { get; set; } = "Invoke";
         public Invoke()
         {
@@ -456,8 +468,9 @@ namespace GcxEditor
         }
     }
 
-    public class Term : IProcedureElement
+    public partial class Term : IProcedureElement
     {
+        public uint Size { get; set; }
     }
 
     public class Argument : Term
@@ -685,7 +698,7 @@ namespace GcxEditor
         public List<Term> Args { get; set; }
         public string Type { get; set; } = "Parameter";
 
-        public byte[] Encode()
+        public new byte[] Encode()
         {
             List<byte[]> encodedArgs = new List<byte[]>();
             uint size = 0;
@@ -726,7 +739,13 @@ namespace GcxEditor
     public class Constant : Term
     {
         [JsonIgnore]
-        public uint Size { get; set; }
+        public new uint Size {
+            get { return base.Size; }
+            set
+            {
+                base.Size = value;
+            }
+        }
         public string Type { get; set; }
         [JsonIgnore]
         public byte[] EncodedContents { get; set; }
@@ -736,7 +755,7 @@ namespace GcxEditor
             Type = GetType().Name;
         }
 
-        public byte[] Encode()
+        public new byte[] Encode()
         {
             return new[] { (byte)(0xC1 + Value) }; 
         }
@@ -750,7 +769,13 @@ namespace GcxEditor
     public class Literal : Term
     {
         [JsonIgnore]
-        public uint Size { get; set; }
+        public new uint Size {
+            get { return base.Size; }
+            set
+            {
+                base.Size = value;
+            }
+        }
         public string Type { get; set; }
         [JsonIgnore]
         public byte[] EncodedContents { get; set; }
@@ -762,7 +787,7 @@ namespace GcxEditor
             Type = GetType().Name;
         }
 
-        public byte[] Encode()
+        public new byte[] Encode()
         {
             byte[] encodedBytes;
             if(DataType == Gcx.DataType.String)
@@ -792,7 +817,14 @@ namespace GcxEditor
     public class PassedArg : Term
     {
         [JsonIgnore]
-        public uint Size { get; set; }
+        public new uint Size
+        {
+            get { return base.Size; }
+            set
+            {
+                base.Size = value;
+            }
+        }
         public string Type { get; set; }
         [JsonIgnore]
         public byte[] EncodedContents { get; set; }
@@ -802,7 +834,7 @@ namespace GcxEditor
             Type = GetType().Name;
         }
 
-        public byte[] Encode()
+        public new byte[] Encode()
         {
             if(ArgNum < 0xF)
             {
@@ -824,6 +856,8 @@ namespace GcxEditor
     {
         public ushort Id { get; set; }
         public byte LowNibble { get; set; }
+        [JsonIgnore]
+        public byte[] EncodedContents { get; set; }
     }
 
     public class VariableArray : Term
@@ -835,7 +869,13 @@ namespace GcxEditor
         public byte LowNibble { get; set; }
         public byte ArrayType { get; set; }
         [JsonIgnore]
-        public uint Size { get; set; }
+        public new uint Size {
+            get { return base.Size; }
+            set
+            {
+                base.Size = value;
+            }
+        }
         public string Type { get; set; }
         [JsonIgnore]
         public byte[] EncodedContents { get; set; }
@@ -853,7 +893,7 @@ namespace GcxEditor
             SizeAndIndex = sizeAndIndex;
         }
 
-        public byte[] Encode()
+        public new byte[] Encode()
         {
             int idAndTypeDeclarationSize = 4;
             int sizeOfArgs = 0;
@@ -887,12 +927,18 @@ namespace GcxEditor
     public class Linkvarbuf : Variable
     {
         [JsonIgnore]
-        public uint Size { get; set; }
+        public new uint Size {
+            get { return base.Size; }
+            set
+            {
+                base.Size = value;
+            }
+        }
         public string Type { get; set; }
         [JsonIgnore]
-        public byte[] EncodedContents { get; set; }
-        public ushort Id { get; set; }
-        public byte LowNibble { get; set; }
+        public new byte[] EncodedContents { get; set; }
+        public new ushort Id { get; set; }
+        public new byte LowNibble { get; set; }
         public Linkvarbuf()
         {
             Type = GetType().Name;
@@ -904,7 +950,7 @@ namespace GcxEditor
             Id = id;
         }
 
-        public byte[] Encode()
+        public new byte[] Encode()
         {
             byte[] encodedVarbuf = new byte[4];
             encodedVarbuf[0] = (byte)(0x10 + LowNibble);
@@ -923,13 +969,19 @@ namespace GcxEditor
     public class Varbuf : Variable
     {
         [JsonIgnore]
-        public uint Size { get; set; }
+        public new uint Size {
+            get { return base.Size; }
+            set
+            {
+                base.Size = value;
+            }
+        }
         public string Type { get; set; }
         [JsonIgnore]
-        public byte[] EncodedContents { get; set; }
-        public ushort Id { get; set; }
+        public new byte[] EncodedContents { get; set; }
+        public new ushort Id { get; set; }
         public byte ByteType { get; set; }
-        public byte LowNibble { get; set; }
+        public new byte LowNibble { get; set; }
 
         public Varbuf()
         {
@@ -942,7 +994,7 @@ namespace GcxEditor
             Id = id;
         }
 
-        public byte[] Encode()
+        public new byte[] Encode()
         {
             byte[] encodedVarbuf = new byte[4];
             encodedVarbuf[0] = (byte)(0x10 + LowNibble);
@@ -961,12 +1013,18 @@ namespace GcxEditor
     public class Localvarbuf : Variable
     {
         [JsonIgnore]
-        public uint Size { get; set; }
+        public new uint Size {
+            get { return base.Size; }
+            set
+            {
+                base.Size = value;
+            }
+        }
         public string Type { get; set; }
         [JsonIgnore]
-        public byte[] EncodedContents { get; set; }
-        public ushort Id { get; set; }
-        public byte LowNibble { get; set; }
+        public new byte[] EncodedContents { get; set; }
+        public new ushort Id { get; set; }
+        public new byte LowNibble { get; set; }
 
         public Localvarbuf()
         {
@@ -979,7 +1037,7 @@ namespace GcxEditor
             Id = id;
         }
 
-        public byte[] Encode()
+        public new byte[] Encode()
         {
             byte[] encodedVarbuf = new byte[4];
             encodedVarbuf[0] = (byte)(0x10 + LowNibble);
@@ -998,12 +1056,18 @@ namespace GcxEditor
     public class LocalVar : Variable
     {
         [JsonIgnore]
-        public uint Size { get; set; }
+        public new uint Size {
+            get { return base.Size; }
+            set
+            {
+                base.Size = value;
+            }
+        }
         public string Type { get; set; }
         [JsonIgnore]
-        public byte[] EncodedContents { get; set; }
-        public ushort Id { get; set; }
-        public byte LowNibble { get; set; } //not used
+        public new byte[] EncodedContents { get; set; }
+        public new ushort Id { get; set; }
+        public new byte LowNibble { get; set; } //not used
 
         public LocalVar()
         {
@@ -1016,7 +1080,7 @@ namespace GcxEditor
             Id = input;
         }
 
-        public byte[] Encode()
+        public new byte[] Encode()
         {
             byte[] idBytes = BitConverter.GetBytes(Id);
             byte highNibble = 0x90;

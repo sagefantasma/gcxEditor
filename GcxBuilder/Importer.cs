@@ -59,7 +59,7 @@ namespace GcxEditor
             {
                 try
                 {
-                    if (procedure.Name == "26F1A0")
+                    if (procedure.Name == "547619")
                     {
                         //no known broken procedures ~o~
                         //able to go through ALL native gcx files and decode and reencode without throwing any exceptions!
