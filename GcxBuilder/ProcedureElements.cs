@@ -11,7 +11,7 @@ namespace GcxEditor
 {
     public interface IProcedureElement
     {
-        /*public uint Size { get; set; }
+        public uint Size { get; set; }
         public string Type { get; set; }
         public byte[] EncodedContents { get; set; }
 
@@ -465,7 +465,6 @@ namespace GcxEditor
 
     public interface Term : IProcedureElement
     {
-        public uint Size { get; set; }
     }
 
     public class Return : Statement
@@ -720,13 +719,7 @@ namespace GcxEditor
     public class Constant : Term
     {
         [JsonIgnore]
-        public new uint Size {
-            get { return base.Size; }
-            set
-            {
-                base.Size = value;
-            }
-        }
+        public uint Size { get; set; }
         public string Type { get; set; }
         [JsonIgnore]
         public byte[] EncodedContents { get; set; }
@@ -750,13 +743,7 @@ namespace GcxEditor
     public class Literal : Term
     {
         [JsonIgnore]
-        public new uint Size {
-            get { return base.Size; }
-            set
-            {
-                base.Size = value;
-            }
-        }
+        public uint Size { get; set; }
         public string Type { get; set; }
         [JsonIgnore]
         public byte[] EncodedContents { get; set; }
@@ -812,14 +799,7 @@ namespace GcxEditor
     public class PassedArg : Term
     {
         [JsonIgnore]
-        public new uint Size
-        {
-            get { return base.Size; }
-            set
-            {
-                base.Size = value;
-            }
-        }
+        public uint Size { get; set; }
         public string Type { get; set; }
         [JsonIgnore]
         public byte[] EncodedContents { get; set; }
@@ -865,13 +845,7 @@ namespace GcxEditor
         public byte LowNibble { get; set; }
         public byte ArrayType { get; set; }
         [JsonIgnore]
-        public new uint Size {
-            get { return base.Size; }
-            set
-            {
-                base.Size = value;
-            }
-        }
+        public uint Size { get; set; }
         public string Type { get; set; }
         [JsonIgnore]
         public byte[] EncodedContents { get; set; }
@@ -923,13 +897,7 @@ namespace GcxEditor
     public class Linkvarbuf : Variable
     {
         [JsonIgnore]
-        public new uint Size {
-            get { return base.Size; }
-            set
-            {
-                base.Size = value;
-            }
-        }
+        public uint Size { get; set; }
         public string Type { get; set; }
         [JsonIgnore]
         public new byte[] EncodedContents { get; set; }
@@ -965,13 +933,7 @@ namespace GcxEditor
     public class Varbuf : Variable
     {
         [JsonIgnore]
-        public new uint Size {
-            get { return base.Size; }
-            set
-            {
-                base.Size = value;
-            }
-        }
+        public uint Size { get; set; }
         public string Type { get; set; }
         [JsonIgnore]
         public new byte[] EncodedContents { get; set; }
@@ -1009,13 +971,7 @@ namespace GcxEditor
     public class Localvarbuf : Variable
     {
         [JsonIgnore]
-        public new uint Size {
-            get { return base.Size; }
-            set
-            {
-                base.Size = value;
-            }
-        }
+        public uint Size { get; set; }
         public string Type { get; set; }
         [JsonIgnore]
         public new byte[] EncodedContents { get; set; }
@@ -1052,13 +1008,7 @@ namespace GcxEditor
     public class LocalVar : Variable
     {
         [JsonIgnore]
-        public new uint Size {
-            get { return base.Size; }
-            set
-            {
-                base.Size = value;
-            }
-        }
+        public uint Size { get; set; }
         public string Type { get; set; }
         [JsonIgnore]
         public new byte[] EncodedContents { get; set; }
