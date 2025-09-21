@@ -50,10 +50,12 @@
             // 
             // menuStrip1
             // 
+            menuStrip1.ImageScalingSize = new Size(24, 24);
             menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, editToolStripMenuItem, searchToolStripMenuItem, viewToolStripMenuItem });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
-            menuStrip1.Size = new Size(1264, 24);
+            menuStrip1.Padding = new Padding(9, 3, 0, 3);
+            menuStrip1.Size = new Size(1806, 35);
             menuStrip1.TabIndex = 0;
             menuStrip1.Text = "menuStrip1";
             // 
@@ -61,54 +63,56 @@
             // 
             fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { loadgcxToolStripMenuItem, savejsonToolStripMenuItem, exportModifiedgcxToolStripMenuItem, exitToolStripMenuItem });
             fileToolStripMenuItem.Name = "fileToolStripMenuItem";
-            fileToolStripMenuItem.Size = new Size(37, 20);
+            fileToolStripMenuItem.Size = new Size(54, 29);
             fileToolStripMenuItem.Text = "File";
             // 
             // loadgcxToolStripMenuItem
             // 
             loadgcxToolStripMenuItem.Name = "loadgcxToolStripMenuItem";
-            loadgcxToolStripMenuItem.Size = new Size(184, 22);
+            loadgcxToolStripMenuItem.Size = new Size(278, 34);
             loadgcxToolStripMenuItem.Text = "Load .gcx";
             loadgcxToolStripMenuItem.Click += loadgcxToolStripMenuItem_Click;
             // 
             // savejsonToolStripMenuItem
             // 
+            savejsonToolStripMenuItem.Enabled = false;
             savejsonToolStripMenuItem.Name = "savejsonToolStripMenuItem";
-            savejsonToolStripMenuItem.Size = new Size(184, 22);
+            savejsonToolStripMenuItem.Size = new Size(278, 34);
             savejsonToolStripMenuItem.Text = "Save .json";
             savejsonToolStripMenuItem.Click += savejsonToolStripMenuItem_Click;
             // 
             // exportModifiedgcxToolStripMenuItem
             // 
+            exportModifiedgcxToolStripMenuItem.Enabled = false;
             exportModifiedgcxToolStripMenuItem.Name = "exportModifiedgcxToolStripMenuItem";
-            exportModifiedgcxToolStripMenuItem.Size = new Size(184, 22);
+            exportModifiedgcxToolStripMenuItem.Size = new Size(278, 34);
             exportModifiedgcxToolStripMenuItem.Text = "Export modified .gcx";
             exportModifiedgcxToolStripMenuItem.Click += exportModifiedgcxToolStripMenuItem_Click;
             // 
             // exitToolStripMenuItem
             // 
             exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            exitToolStripMenuItem.Size = new Size(184, 22);
+            exitToolStripMenuItem.Size = new Size(278, 34);
             exitToolStripMenuItem.Text = "Exit";
             exitToolStripMenuItem.Click += exitToolStripMenuItem_Click;
             // 
             // editToolStripMenuItem
             // 
             editToolStripMenuItem.Name = "editToolStripMenuItem";
-            editToolStripMenuItem.Size = new Size(39, 20);
+            editToolStripMenuItem.Size = new Size(58, 29);
             editToolStripMenuItem.Text = "Edit";
             // 
             // searchToolStripMenuItem
             // 
             searchToolStripMenuItem.Name = "searchToolStripMenuItem";
-            searchToolStripMenuItem.Size = new Size(54, 20);
+            searchToolStripMenuItem.Size = new Size(80, 29);
             searchToolStripMenuItem.Text = "Search";
             // 
             // viewToolStripMenuItem
             // 
             viewToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { jSONEditorToolStripMenuItem, interactiveEditorToolStripMenuItem });
             viewToolStripMenuItem.Name = "viewToolStripMenuItem";
-            viewToolStripMenuItem.Size = new Size(44, 20);
+            viewToolStripMenuItem.Size = new Size(65, 29);
             viewToolStripMenuItem.Text = "View";
             // 
             // jSONEditorToolStripMenuItem
@@ -116,23 +120,24 @@
             jSONEditorToolStripMenuItem.Checked = true;
             jSONEditorToolStripMenuItem.CheckState = CheckState.Checked;
             jSONEditorToolStripMenuItem.Name = "jSONEditorToolStripMenuItem";
-            jSONEditorToolStripMenuItem.Size = new Size(163, 22);
+            jSONEditorToolStripMenuItem.Size = new Size(247, 34);
             jSONEditorToolStripMenuItem.Text = "JSON Editor";
             // 
             // interactiveEditorToolStripMenuItem
             // 
             interactiveEditorToolStripMenuItem.Enabled = false;
             interactiveEditorToolStripMenuItem.Name = "interactiveEditorToolStripMenuItem";
-            interactiveEditorToolStripMenuItem.Size = new Size(163, 22);
+            interactiveEditorToolStripMenuItem.Size = new Size(247, 34);
             interactiveEditorToolStripMenuItem.Text = "Interactive Editor";
             // 
             // mainPanel
             // 
             mainPanel.Controls.Add(tableLayoutPanel);
             mainPanel.Dock = DockStyle.Fill;
-            mainPanel.Location = new Point(0, 24);
+            mainPanel.Location = new Point(0, 35);
+            mainPanel.Margin = new Padding(4, 5, 4, 5);
             mainPanel.Name = "mainPanel";
-            mainPanel.Size = new Size(1264, 657);
+            mainPanel.Size = new Size(1806, 1100);
             mainPanel.TabIndex = 1;
             // 
             // tableLayoutPanel
@@ -144,20 +149,22 @@
             tableLayoutPanel.Controls.Add(richTextBox, 1, 0);
             tableLayoutPanel.Dock = DockStyle.Fill;
             tableLayoutPanel.Location = new Point(0, 0);
+            tableLayoutPanel.Margin = new Padding(4, 5, 4, 5);
             tableLayoutPanel.Name = "tableLayoutPanel";
             tableLayoutPanel.RowCount = 1;
             tableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            tableLayoutPanel.Size = new Size(1264, 657);
+            tableLayoutPanel.Size = new Size(1806, 1100);
             tableLayoutPanel.TabIndex = 0;
             // 
             // procedureListBox
             // 
             procedureListBox.Dock = DockStyle.Fill;
             procedureListBox.FormattingEnabled = true;
-            procedureListBox.ItemHeight = 15;
-            procedureListBox.Location = new Point(3, 3);
+            procedureListBox.ItemHeight = 25;
+            procedureListBox.Location = new Point(4, 5);
+            procedureListBox.Margin = new Padding(4, 5, 4, 5);
             procedureListBox.Name = "procedureListBox";
-            procedureListBox.Size = new Size(246, 651);
+            procedureListBox.Size = new Size(353, 1090);
             procedureListBox.TabIndex = 0;
             procedureListBox.SelectedIndexChanged += procedureListBox_SelectedIndexChanged;
             // 
@@ -166,20 +173,23 @@
             richTextBox.DetectUrls = false;
             richTextBox.Dock = DockStyle.Fill;
             richTextBox.Enabled = false;
-            richTextBox.Location = new Point(255, 3);
+            richTextBox.Location = new Point(365, 5);
+            richTextBox.Margin = new Padding(4, 5, 4, 5);
             richTextBox.Name = "richTextBox";
-            richTextBox.Size = new Size(1006, 651);
+            richTextBox.Size = new Size(1437, 1090);
             richTextBox.TabIndex = 1;
             richTextBox.Text = "";
+            richTextBox.SelectionChanged += richTextBox_SelectionChanged;
             // 
             // GcxEditorGUI
             // 
-            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleDimensions = new SizeF(10F, 25F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1264, 681);
+            ClientSize = new Size(1806, 1135);
             Controls.Add(mainPanel);
             Controls.Add(menuStrip1);
             MainMenuStrip = menuStrip1;
+            Margin = new Padding(4, 5, 4, 5);
             Name = "GcxEditorGUI";
             Text = "GCX Editor";
             menuStrip1.ResumeLayout(false);
