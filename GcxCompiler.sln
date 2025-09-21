@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GcxEditor", "GcxBuilder\Gcx
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibraryTester", "LibraryTester\LibraryTester.csproj", "{FFD317FA-87D8-43E4-A22A-1E25F898B8F8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GcxEditorGUI", "GcxEditorGUI\GcxEditorGUI.csproj", "{260BA302-B1E0-486A-A88D-5B83E67E1BCF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{FFD317FA-87D8-43E4-A22A-1E25F898B8F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FFD317FA-87D8-43E4-A22A-1E25F898B8F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FFD317FA-87D8-43E4-A22A-1E25F898B8F8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{260BA302-B1E0-486A-A88D-5B83E67E1BCF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{260BA302-B1E0-486A-A88D-5B83E67E1BCF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{260BA302-B1E0-486A-A88D-5B83E67E1BCF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{260BA302-B1E0-486A-A88D-5B83E67E1BCF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

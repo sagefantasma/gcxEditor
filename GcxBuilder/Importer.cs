@@ -163,7 +163,7 @@ namespace GcxEditor
             }
         }
 
-        public static void AssembleReencodedFile(GcxClasses.Gcx gcx, Dictionary<Procedure, byte[]> reEncodedProcs)
+        public static void AssembleReencodedFile(GcxClasses.Gcx gcx, Dictionary<Procedure, byte[]> reEncodedProcs, string outputFile = "lastModifiedGcx.gcx")
         {
             byte[] fileContents = gcx.FileContents;
             FileTable fileTable = gcx.FileTable;
@@ -210,7 +210,7 @@ namespace GcxEditor
             position += procCollectionSize;
             Array.Copy(mainProcedureData, 0, wholeFileReencoded, position, mainProcedureData.Length);
 
-            File.WriteAllBytes("reencodedGcxAttempt2.gcx", wholeFileReencoded);
+            File.WriteAllBytes(outputFile, wholeFileReencoded);
         }
 
         private static void ReencodeFileTake1()

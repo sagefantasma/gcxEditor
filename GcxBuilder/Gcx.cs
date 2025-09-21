@@ -89,12 +89,12 @@ namespace GcxEditor
         {
             public int Length;
             private readonly byte[] _values;
-            public string Name { get; set; }
+            public string DataTypeName { get; set; }
 
             [JsonConstructor]
             private DataType(string name, byte[] values, int length)
             {
-                Name = name;
+                DataTypeName = name;
                 _values = values;
                 Length = length;
             }
@@ -166,7 +166,7 @@ namespace GcxEditor
 
             public override string ToString()
             {
-                return Name;
+                return DataTypeName;
             }
         }
 

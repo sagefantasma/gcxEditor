@@ -758,7 +758,7 @@ namespace GcxEditor
         public new byte[] Encode()
         {
             byte[] encodedBytes;
-            if(DataType.Name == Gcx.DataType.String.Name)
+            if(DataType.DataTypeName == Gcx.DataType.String.DataTypeName)
             {
                 if (Value is byte[])
                 {
