@@ -24,18 +24,26 @@ namespace GcxEditor
         public static Dictionary<Procedure, byte[]> ImportJsonFile(string path)
         {
             string fileContents = File.ReadAllText(path);
-            GcxClasses.Gcx deserializedGcx = JsonConvert.DeserializeObject<GcxClasses.Gcx>(fileContents);
+            Procedure procedure = new Procedure();
+            JsonSerializerSettings settings = new JsonSerializerSettings
+            {
+                MaxDepth = 128,
+                TypeNameHandling = TypeNameHandling.All
+            };
+            GcxClasses.Gcx deserializedGcx = JsonConvert.DeserializeObject<GcxClasses.Gcx>(fileContents, settings);
             return EncodeProcsFromJson(deserializedGcx.ProcBlock.Procedures);
-            
         }
 
         public static Dictionary<Procedure, byte[]> EncodeProcsFromJson(List<Procedure> jsonProcedures)
         {
             Dictionary<Procedure, byte[]> encodedProcs = new Dictionary<Procedure, byte[]>();
-            //TODO: running into an issue where, when pulling from json, nested objects aren't getting created as the correct objects,
-            //but instead as jobjects... how can i fix this?
             foreach (Procedure procedure in jsonProcedures)
             {
+                if(procedure.Name == "259029")
+                {
+
+                }
+                //259029 throwing error related to "System.BitConverter.GetBytes(bool)"... that shouldn't be a thing tho. why is it happening?
                 try
                 {
                     byte[] encodedBytes = procedure.Encode();
@@ -59,11 +67,11 @@ namespace GcxEditor
             {
                 try
                 {
-                    if (procedure.Name == "547619")
+                    /*if (procedure.Name.Contains("259029"))
                     {
                         //no known broken procedures ~o~
                         //able to go through ALL native gcx files and decode and reencode without throwing any exceptions!
-                    }
+                    }*/
                     Procedure parsedProc = ProcDecoder.DecodeProc(procedure.RawContents);
                     byte[] reEncodedBytes = parsedProc.Encode();
                     if (!reEncodedBytes.TakeLast(procedure.RawContents.Length).SequenceEqual(procedure.RawContents))
@@ -136,6 +144,8 @@ namespace GcxEditor
                     gcx.FileContents = fileContents;
                     gcx.FileTable = fileTable;
 
+                    EncodeProcsFromRawGcx(procedureBlock.Procedures);
+
                     Procedure decodedMain = ProcDecoder.DecodeProc(mainProcedure.RawContents);
                     Main main = new Main();
                     main.EncodedContents = mainProcedure.RawContents;
@@ -174,6 +184,10 @@ namespace GcxEditor
             byte[] procBodyCollection = new byte[procCollectionSize];
             foreach (KeyValuePair<Procedure, byte[]> reEncodedProc in reEncodedProcs)
             {
+                if (reEncodedProc.Key.Name.Contains("AE6DC"))
+                {
+
+                }
                 Array.Copy(BitConverter.GetBytes(reEncodedProc.Key.Order), 0, procTableBytes, procTablePosition, 4);
                 procTablePosition += 4;
                 Array.Copy(BitConverter.GetBytes(procBodyPosition), 0, procTableBytes, procTablePosition, 4);
@@ -352,7 +366,7 @@ namespace GcxEditor
                 {
                     Size = size,
                     RawContents = procContents,
-                    Name = BitConverter.ToUInt32(name).ToString()
+                    Name = BitConverter.ToString(name.Reverse().ToArray().TakeLast(3).ToArray()).Replace("-","")
                 };
             }
             else

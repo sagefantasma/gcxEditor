@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using GcxEditor;
+using Newtonsoft.Json;
 using System.Text.Json.Serialization;
 
 namespace LibraryTester
@@ -27,8 +28,10 @@ namespace LibraryTester
             }*/
 
             Dictionary<GcxEditor.Procedure, byte[]> reEncodedProcs = GcxEditor.Importer.ImportJsonFile("C:\\Users\\yonan\\Source\\Repos\\gcxEditor\\LibraryTester\\bin\\Debug\\net8.0\\gcxOutput.json");
-            GcxEditor.GcxClasses.Gcx gcxFile = GcxEditor.Importer.ImportGcxFile("C:\\Users\\yonan\\Documents\\Pinned Folders\\C Drive Steam Games\\MGS2\\assets\\gcx\\eu\\_bp\\scenerio_stage_w00a.gcx");
+            GcxEditor.GcxClasses.Gcx gcxFile = GcxEditor.Importer.ImportGcxFile("C:\\Users\\yonan\\Documents\\Pinned Folders\\C Drive Steam Games\\MGS2\\assets\\gcx\\eu\\_bp\\scenerio_stage_w01a.gcx");
+            Dictionary<Procedure, byte[]> rawReEncodes = Importer.EncodeProcsFromRawGcx(gcxFile.ProcBlock.Procedures);
             GcxEditor.Importer.AssembleReencodedFile(gcxFile, reEncodedProcs);
+            //Importer.AssembleReencodedFile(gcxFile, rawReEncodes);
             Task serializeTask = SerializeIt(gcxFile);
             while (!serializeTask.IsCompleted)
             {
@@ -38,7 +41,12 @@ namespace LibraryTester
 
         static async Task SerializeIt(GcxEditor.GcxClasses.Gcx gcxFile)
         {
-            File.WriteAllText("gcxOutput.json", JsonConvert.SerializeObject(gcxFile, Formatting.Indented));
+            JsonSerializerSettings jsonSerializerSettings = new JsonSerializerSettings
+            {
+                //TypeNameHandling = TypeNameHandling.All,
+                Formatting = Formatting.Indented
+            };
+            File.WriteAllText("gcxOutput.json", JsonConvert.SerializeObject(gcxFile, jsonSerializerSettings));
         }
     }
 }

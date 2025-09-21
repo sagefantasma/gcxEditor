@@ -1,4 +1,6 @@
-﻿namespace GcxEditor
+﻿using Newtonsoft.Json;
+
+namespace GcxEditor
 {
     public class Gcx
     {
@@ -87,94 +89,33 @@
         {
             public int Length;
             private readonly byte[] _values;
-            private readonly string _name;
-            private readonly Action _action;
+            public string Name { get; set; }
 
-            private DataType(string name, byte[] values, Action action, int length)
+            [JsonConstructor]
+            private DataType(string name, byte[] values, int length)
             {
-                _name = name;
+                Name = name;
                 _values = values;
-                _action = action;
                 Length = length;
             }
 
-            private static void GetNumericValue()
-            {
-                throw new NotImplementedException();
-            }
-
-            private static void GetString()
-            {
-                throw new NotImplementedException();
-            }
-
-            private static void GetStringResource()
-            {
-                throw new NotImplementedException();
-            }
-
-            private static void BuildVariable()
-            {
-                throw new NotImplementedException();
-            }
-
-            private static void BuildExpression()
-            {
-                throw new NotImplementedException();
-            }
-
-            private static void BuildArgs()
-            {
-                throw new NotImplementedException();
-            }
-
-            private static void BuildParam()
-            {
-                throw new NotImplementedException();
-            }
-
-            private static void BuildCommand()
-            {
-                throw new NotImplementedException();
-            }
-
-            private static void BuildCall()
-            {
-                throw new NotImplementedException();
-            }
-
-            private static void BuildProc()
-            {
-                throw new NotImplementedException();
-            }
-
-            private static void BuildLocal()
-            {
-                throw new NotImplementedException();
-            }
-
-            private static void BuildNum()
-            {
-                throw new NotImplementedException();
-            }
-
-            public static DataType End = new DataType("End", [0x00], null, 0); //TODO: confirm
-            public static DataType Short = new DataType("Short", [0x01], GetNumericValue, 2); //TODO: confirm
-            public static DataType Byte = new DataType("Byte", [0x02, 0x03, 0x04], GetNumericValue, 1); //TODO: confirm
-            public static DataType StrCode = new DataType("StrCode", [0x06, 0x08], GetNumericValue, 3); //TODO: confirm 8 also results in 3 bytes
-            public static DataType String = new DataType("String", [0x07], GetString, 0); //TODO: get real value
-            public static DataType Long = new DataType("Long", [0x09, 0x0A, 0x0D], GetNumericValue, 4); //TODO: confirm
-            public static DataType StringResource = new DataType("StringResource", [0x0E], GetStringResource, 2); //TODO: get real value
-            public static DataType Var = new DataType("Var", [0x10], BuildVariable, 0); //TODO: get real value
-            public static DataType VarArray = new DataType("VarArray", [0x20], BuildVariable, 0); //TODO: get real value
-            public static DataType Expr = new DataType("Expr", [0x30], BuildExpression, 0); //TODO: get real value
-            public static DataType Args = new DataType("Args", [0x40], BuildArgs, 0); //TODO: get real value
-            public static DataType Param = new DataType("Param", [0x50], BuildParam, 0); //TODO: get real value
-            public static DataType Command = new DataType("Command", [0x60], BuildCommand, 0); //TODO: get real value
-            public static DataType Call = new DataType("Call", [0x70], BuildCall, 0); //TODO: get real value
-            public static DataType Proc = new DataType("Proc", [0x80], BuildProc, 0); //TODO: get real value
-            public static DataType Local = new DataType("Local", [0x90], BuildLocal, 0); //TODO: get real value
-            public static DataType Num = new DataType("Num", [0xC0], BuildNum, 0); //TODO: get real value
+            public static DataType End = new DataType("End", [0x00], 0); //TODO: confirm
+            public static DataType Short = new DataType("Short", [0x01], 2); //TODO: confirm
+            public static DataType Byte = new DataType("Byte", [0x02, 0x03, 0x04], 1); //TODO: confirm
+            public static DataType StrCode = new DataType("StrCode", [0x06, 0x08], 3); //TODO: confirm 8 also results in 3 bytes
+            public static DataType String = new DataType("String", [0x07], 0); //TODO: get real value
+            public static DataType Long = new DataType("Long", [0x09, 0x0A, 0x0D], 4); //TODO: confirm
+            public static DataType StringResource = new DataType("StringResource", [0x0E], 2); //TODO: get real value
+            public static DataType Var = new DataType("Var", [0x10], 0); //TODO: get real value
+            public static DataType VarArray = new DataType("VarArray", [0x20], 0); //TODO: get real value
+            public static DataType Expr = new DataType("Expr", [0x30], 0); //TODO: get real value
+            public static DataType Args = new DataType("Args", [0x40], 0); //TODO: get real value
+            public static DataType Param = new DataType("Param", [0x50], 0); //TODO: get real value
+            public static DataType Command = new DataType("Command", [0x60], 0); //TODO: get real value
+            public static DataType Call = new DataType("Call", [0x70], 0); //TODO: get real value
+            public static DataType Proc = new DataType("Proc", [0x80], 0); //TODO: get real value
+            public static DataType Local = new DataType("Local", [0x90], 0); //TODO: get real value
+            public static DataType Num = new DataType("Num", [0xC0], 0); //TODO: get real value
             public static DataType FromCode(byte code)
             {
                 switch (code)
@@ -225,7 +166,7 @@
 
             public override string ToString()
             {
-                return _name;
+                return Name;
             }
         }
 

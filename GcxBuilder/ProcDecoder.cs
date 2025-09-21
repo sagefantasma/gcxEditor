@@ -38,7 +38,7 @@ namespace GcxEditor
                 uint index = 0;
                 int nestedLevel = 0; //how important is this?
                 GcxEditor.Procedure procedure = new Procedure();
-                procedure.DecodedContents = new List<dynamic>();
+                procedure.DecodedContents = new List<IProcedureElement>();
                 if (bytes.Length == 0)
                 {
                     return procedure;
@@ -376,7 +376,8 @@ namespace GcxEditor
                 invoke.EncodedContents = bytes;
                 byte[] procedureName = new byte[4]; //TODO: confirm if this is 100% always the case. i havent SEEN a 4byte proc name, but i won't say its impossible.
                 Array.Copy(bytes.Take(3).ToArray(), procedureName, 3);
-                invoke.ProcedureInvoked = new Procedure { Name = BitConverter.ToUInt32(procedureName).ToString() };
+                //invoke.ProcedureInvoked = new Procedure { Name = BitConverter.ToUInt32(procedureName).ToString() };
+                invoke.ProcedureInvoked = new Procedure { Name = BitConverter.ToString(procedureName.Reverse().ToArray().TakeLast(3).ToArray()).Replace("-", "") };
                 invoke.Args = DecodeArgs(bytes.Take(new Range(new Index(3), new Index(bytes.Length))).ToArray());
                 return invoke;
             }

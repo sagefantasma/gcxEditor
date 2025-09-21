@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Buffers.Text;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace GcxEditor
 {
@@ -31,8 +33,16 @@ namespace GcxEditor
             }
             set
             {
+                //TODO: this is getting pulled in and handled differently between raw gcx handling
+                //and json editing. i need to fix that.
                 if (value.ToLower() != "main")
-                    Order = uint.Parse(value, System.Globalization.NumberStyles.HexNumber);
+                {
+                    //take in each 2 charas as one byte, make order from that
+                    byte[] bytes = new byte[4];
+                    byte[] convertedBytes = Convert.FromHexString(value);
+                    Array.Copy(convertedBytes.Reverse().ToArray(), bytes, 3);
+                    Order = BitConverter.ToUInt32(bytes);
+                }
                 else
                     Order = 0;
             }
@@ -46,7 +56,9 @@ namespace GcxEditor
         public byte[] EncodedContents { get; set; }
         [JsonIgnore]
         public byte[] RawContents { get; set; } //TODO: to be implemented for editing
-        public List<dynamic> DecodedContents { get; set; }
+        [JsonConverter(typeof(ProcedureConverter))]
+        public List<IProcedureElement> DecodedContents { get; set; }
+
         public Procedure()
         {
             Type = GetType().Name;
@@ -150,6 +162,7 @@ namespace GcxEditor
         public uint Size { get; set; }
         public string Type { get; set; }
         public List<Parameter> Parameters { get; set; } = new List<Parameter>();
+        [JsonConverter(typeof(TermConverter))]
         public List<Term> Args = new List<Term>();
         [JsonIgnore]
         public byte[] EncodedContents { get; set; }
@@ -189,7 +202,9 @@ namespace GcxEditor
 
     public class Expression : Term
     {
+        [JsonConverter(typeof(TermConverter))]
         public Term? Term1 { get; set; }
+        [JsonConverter(typeof(TermConverter))]
         public Term? Term2 { get; set; }
         public Gcx.Operation Operator { get; set; }
         [JsonIgnore]
@@ -364,6 +379,7 @@ namespace GcxEditor
     public class Invoke : Statement
     {
         public Procedure ProcedureInvoked { get; set; } = new Procedure();
+        [JsonConverter(typeof(TermConverter))]
         public List<Term> Args { get; set; } = new List<Term>();
         public Invoke()
         {
@@ -417,7 +433,7 @@ namespace GcxEditor
             }
 
 
-            Array.Copy(BitConverter.GetBytes(ProcedureInvoked.Order), 0, encodedBytes, position, 3);
+            Array.Copy(BitConverter.GetBytes(ProcedureInvoked.Order), 0, encodedBytes, position, 3); //Is this correct?
             position += 3;
 
             foreach (byte[] encodedArg in encodedArgs)
@@ -450,12 +466,6 @@ namespace GcxEditor
     public interface Term : IProcedureElement
     {
         public uint Size { get; set; }
-    }
-
-    public interface Argument : Term
-    {
-        public Term Value { get; set; }
-
     }
 
     public class Return : Statement
@@ -665,6 +675,7 @@ namespace GcxEditor
         public char ParamType { get; set; }
         [JsonIgnore]
         public byte[] EncodedContents { get; set; }
+        [JsonConverter(typeof(TermConverter))]
         public List<Term> Args { get; set; }
         public string Type { get; set; } = "Parameter";
 
@@ -760,12 +771,26 @@ namespace GcxEditor
         public new byte[] Encode()
         {
             byte[] encodedBytes;
-            if(DataType == Gcx.DataType.String)
+            if(DataType.Name == Gcx.DataType.String.Name)
             {
-                encodedBytes = new byte[Value.Length + 2];
-                encodedBytes[0] = 0x07;
-                encodedBytes[1] = (byte)Value.Length;
-                Array.Copy(Value, 0, encodedBytes, 2, Value.Length);
+                if (Value is byte[])
+                {
+                    encodedBytes = new byte[Value.Length + 2];
+                    encodedBytes[0] = 0x07;
+                    encodedBytes[1] = (byte)Value.Length;
+                    Array.Copy(Value, 0, encodedBytes, 2, Value.Length);
+                    //Value = Encoding.UTF8.GetString(encodedBytes);
+                }
+                else
+                {
+                    //byte[] bytes = Encoding.Default.GetBytes(Value);
+                    byte[] bytes = Convert.FromBase64String(Value);
+                    //byte[] bytes = Value as byte[];
+                    encodedBytes = new byte[bytes.Length + 2];
+                    encodedBytes[0] = 0x07;
+                    encodedBytes[1] = (byte)bytes.Length;
+                    Array.Copy(bytes, 0, encodedBytes, 2, bytes.Length);
+                }
             }
             else
             {
@@ -834,6 +859,7 @@ namespace GcxEditor
     {
         //public ushort Size { get; set; } //byte instead?
         //public ushort Index { get; set; } //byte instead?
+        [JsonConverter(typeof(TermConverter))]
         public List<Term> SizeAndIndex { get; set; }
         public ushort Id { get; set; }
         public byte LowNibble { get; set; }
