@@ -33,8 +33,6 @@ namespace GcxEditor
             }
             set
             {
-                //TODO: this is getting pulled in and handled differently between raw gcx handling
-                //and json editing. i need to fix that.
                 if (value.ToLower() != "main")
                 {
                     //take in each 2 charas as one byte, make order from that
@@ -56,7 +54,7 @@ namespace GcxEditor
         public byte[] EncodedContents { get; set; }
         [JsonIgnore]
         public byte[] RawContents { get; set; } //TODO: to be implemented for editing
-        [JsonConverter(typeof(ProcedureConverter))]
+        [JsonConverter(typeof(ProcedureElementConverter))]
         public List<IProcedureElement> DecodedContents { get; set; }
 
         public Procedure()
@@ -139,20 +137,10 @@ namespace GcxEditor
 
     public class Main : Procedure
     {
-        [JsonIgnore]
-        public new uint Order { get; set; }
-        public new string Name { get; set; }
         public Main()
         {
             Name = "main";
-            Order = 0;
             Type = GetType().Name;
-        }
-
-        public new byte[] Encode()
-        {
-            //TODO: determine if necessary, and implement if so
-            throw new NotImplementedException();
         }
     }
 
@@ -402,20 +390,20 @@ namespace GcxEditor
             //argsBytesLength++; //getting the 00 padding at the end of an invoke
             byte[] encodedBytes;
             int position = 0;
-            if ((argsBytesLength + 3) < 0xD)
+            if ((argsBytesLength + 4) < 0xD)
             {
                 //no change to procedureInvokedBytes
                 encodedBytes = new byte[procedureInvokedBytes + argsBytesLength + 1]; //do i need to +1 to get padding here? am i losing my mind?
                 encodedBytes[position++] = (byte)(0x70 + procedureInvokedBytes + argsBytesLength);
             }
-            else if((argsBytesLength + 3) < 0xFF)
+            else if((argsBytesLength + 4) < 0xFF)
             {
                 procedureInvokedBytes++;
                 encodedBytes = new byte[procedureInvokedBytes + argsBytesLength + 1];
                 encodedBytes[position++] = 0x7D;
                 encodedBytes[position++] = (byte)(argsBytesLength + 4);
             }
-            else if((argsBytesLength + 3) > 0xFF && (argsBytesLength + 3) < 0xFFFF)
+            else if((argsBytesLength + 4) > 0xFF && (argsBytesLength + 3) < 0xFFFF)
             {
                 procedureInvokedBytes += 2;
                 encodedBytes = new byte[procedureInvokedBytes + argsBytesLength + 1];

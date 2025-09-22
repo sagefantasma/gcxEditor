@@ -79,7 +79,6 @@ namespace GcxEditor
                     procedures = value;
                 }
             }
-            public Procedure Main { get; set; } = new Procedure();
         }
     }
 }

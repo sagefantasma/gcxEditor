@@ -31,7 +31,9 @@ namespace GcxEditor
                 TypeNameHandling = TypeNameHandling.All
             };
             GcxClasses.Gcx deserializedGcx = JsonConvert.DeserializeObject<GcxClasses.Gcx>(fileContents, settings);
-            return EncodeProcsFromJson(deserializedGcx.ProcBlock.Procedures);
+            List<Procedure> proceduresToEncode = deserializedGcx.ProcBlock.Procedures;
+            proceduresToEncode.Add(deserializedGcx.Main);
+            return EncodeProcsFromJson(proceduresToEncode);
         }
 
         public static Dictionary<Procedure, byte[]> EncodeProcsFromJson(List<Procedure> jsonProcedures)
@@ -39,11 +41,6 @@ namespace GcxEditor
             Dictionary<Procedure, byte[]> encodedProcs = new Dictionary<Procedure, byte[]>();
             foreach (Procedure procedure in jsonProcedures)
             {
-                if(procedure.Name == "259029")
-                {
-
-                }
-                //259029 throwing error related to "System.BitConverter.GetBytes(bool)"... that shouldn't be a thing tho. why is it happening?
                 try
                 {
                     byte[] encodedBytes = procedure.Encode();
@@ -58,6 +55,15 @@ namespace GcxEditor
             return encodedProcs;
         }
 
+        public static void DecodeProcsFromRawGcx(List<Procedure> parsedProcedures)
+        {
+            foreach (Procedure procedure in parsedProcedures)
+            {
+                Procedure parsedProc = ProcDecoder.DecodeProc(procedure.RawContents);
+                procedure.DecodedContents = parsedProc.DecodedContents;
+            }
+        }
+
         public static Dictionary<Procedure, byte[]> EncodeProcsFromRawGcx(List<Procedure> parsedProcedures)
         {
             Dictionary<Procedure, byte[]> reEncodedProcs = new Dictionary<Procedure, byte[]>();
@@ -67,11 +73,6 @@ namespace GcxEditor
             {
                 try
                 {
-                    /*if (procedure.Name.Contains("259029"))
-                    {
-                        //no known broken procedures ~o~
-                        //able to go through ALL native gcx files and decode and reencode without throwing any exceptions!
-                    }*/
                     Procedure parsedProc = ProcDecoder.DecodeProc(procedure.RawContents);
                     byte[] reEncodedBytes = parsedProc.Encode();
                     if (!reEncodedBytes.TakeLast(procedure.RawContents.Length).SequenceEqual(procedure.RawContents))
@@ -131,20 +132,19 @@ namespace GcxEditor
                     byte[] mainBody = TakeRangeFromArray(mainProcedureData, mainStartOffset + sizeOffset, mainSize + mainStartOffset + sizeOffset);
                     Procedure mainProcedure = ParseProcedure(mainBody, null, mainSize);
 
-                    GcxClasses.FileTable fileTable = new GcxClasses.FileTable();
+                    FileTable fileTable = new FileTable();
                     fileTable.ScriptTableOffset = FileTable["scriptOffset"];
                     fileTable.ResourceTableOffset = FileTable["resourceOffset"];
                     fileTable.StringTableOffset = FileTable["stringsOffset"];
                     fileTable.FontDataOffset = FileTable["fontOffset"];
                     fileTable.Key = FileTable["key"];
-                    GcxClasses.ProcedureBlock procedureBlock = new GcxClasses.ProcedureBlock();
+                    ProcedureBlock procedureBlock = new ProcedureBlock();
                     procedureBlock.Procedures = parsedProcedures;
-                    procedureBlock.Main = mainProcedure;
                     GcxClasses.Gcx gcx = new GcxClasses.Gcx(fileTable, procedureBlock);
                     gcx.FileContents = fileContents;
                     gcx.FileTable = fileTable;
 
-                    EncodeProcsFromRawGcx(procedureBlock.Procedures);
+                    DecodeProcsFromRawGcx(procedureBlock.Procedures);
 
                     Procedure decodedMain = ProcDecoder.DecodeProc(mainProcedure.RawContents);
                     Main main = new Main();
@@ -165,10 +165,13 @@ namespace GcxEditor
 
         public static void AssembleReencodedFile(GcxClasses.Gcx gcx, Dictionary<Procedure, byte[]> reEncodedProcs, string outputFile = "lastModifiedGcx.gcx")
         {
+            KeyValuePair<Procedure, byte[]> mainProc = reEncodedProcs.Last();
+            byte[] customMain = mainProc.Value;
+            byte[] mainSize = BitConverter.GetBytes((uint)customMain.Length);
+            reEncodedProcs.Remove(mainProc.Key);
+
             byte[] fileContents = gcx.FileContents;
             FileTable fileTable = gcx.FileTable;
-            byte[] procedureData = GetProcedureData(fileContents);
-            byte[] mainProcedureData = GetMainData(procedureData);
             byte[] preamble = fileContents.Take(8).ToArray();
             //proc table
             int procTableSize = reEncodedProcs.Count * 4 * 2;
@@ -196,7 +199,7 @@ namespace GcxEditor
                 procBodyPosition += reEncodedProc.Value.Length;
             }
 
-            byte[] wholeFileReencoded = new byte[preamble.Length + procTableSize + constantData.Length + procBodyCollection.Length + 4 + mainProcedureData.Length];
+            byte[] wholeFileReencoded = new byte[preamble.Length + procTableSize + constantData.Length + procBodyCollection.Length + 8 + customMain.Length];
             int position = 0;
             Array.Copy(preamble, 0, wholeFileReencoded, position, preamble.Length);
             position += preamble.Length;
@@ -208,67 +211,11 @@ namespace GcxEditor
             position += 4;
             Array.Copy(procBodyCollection, 0, wholeFileReencoded, position, procCollectionSize);
             position += procCollectionSize;
-            Array.Copy(mainProcedureData, 0, wholeFileReencoded, position, mainProcedureData.Length);
+            Array.Copy(mainSize, 0, wholeFileReencoded, position, 4);
+            position += 4;
+            Array.Copy(customMain, 0, wholeFileReencoded, position, customMain.Length);
 
             File.WriteAllBytes(outputFile, wholeFileReencoded);
-        }
-
-        private static void ReencodeFileTake1()
-        {/*
-            int preambleSize = 8;
-            int procTableSize = reEncodedProcs.Count * 4 * 2;
-            int endOfTablePadding = 8;
-            int fileTableSize = FileTable.Count * 4;
-            int sizeOfProcCollection = 4;
-            int procCollection = 0;
-            foreach (KeyValuePair<Procedure, byte[]> reEncodedProc in reEncodedProcs)
-            {
-                procCollection += reEncodedProc.Value.Length;
-            }
-            byte[] wholeFileReEncodedBytes = new byte[preambleSize + procTableSize + endOfTablePadding + fileTableSize +
-                sizeOfProcCollection + procCollection + mainProcedureData.Length + resourceData.Length + stringData.Length + fontData.Length];
-
-            int position = 0;
-            Array.Copy(signature, 0, wholeFileReEncodedBytes, position, signature.Length);
-            position += signature.Length;
-            Array.Copy(timestamp, 0, wholeFileReEncodedBytes, position, timestamp.Length);
-            position += timestamp.Length;
-            byte[] procTableBytes = new byte[procTableSize];
-            int procTablePosition = 0;
-            int procBodyPosition = 0;
-            byte[] procBodyCollection = new byte[procCollection];
-            foreach (KeyValuePair<Procedure, byte[]> reEncodedProc in reEncodedProcs)
-            {
-                Array.Copy(BitConverter.GetBytes(reEncodedProc.Key.Order), 0, procTableBytes, procTablePosition, 4);
-                procTablePosition += 4;
-                Array.Copy(BitConverter.GetBytes(procBodyPosition), 0, procTableBytes, procTablePosition, 4);
-                procTablePosition += 4;
-                Array.Copy(reEncodedProc.Value, 0, procBodyCollection, procBodyPosition, reEncodedProc.Value.Length);
-                procBodyPosition += reEncodedProc.Value.Length;
-            }
-            Array.Copy(procTableBytes, 0, wholeFileReEncodedBytes, position, procTableBytes.Length);
-            position += procTableBytes.Length;
-            Array.Copy(new byte[] { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, }, 0, wholeFileReEncodedBytes, position, endOfTablePadding);
-            position += endOfTablePadding;
-            foreach (KeyValuePair<string, uint> entry in FileTable)
-            {
-                Array.Copy(BitConverter.GetBytes(entry.Value), 0, wholeFileReEncodedBytes, position, 4);
-                position += 4;
-            }
-            Array.Copy(resourceData, 0, wholeFileReEncodedBytes, position, resourceData.Length);
-            position += resourceData.Length;
-            Array.Copy(stringData, 0, wholeFileReEncodedBytes, position, stringData.Length);
-            position += stringData.Length;
-            Array.Copy(fontData, 0, wholeFileReEncodedBytes, position, fontData.Length);
-            position += fontData.Length;
-            Array.Copy(BitConverter.GetBytes(procCollection), 0, wholeFileReEncodedBytes, position, 4);
-            position += 4;
-            Array.Copy(procBodyCollection, 0, wholeFileReEncodedBytes, position, procBodyCollection.Length);
-            position += procBodyCollection.Length;
-            Array.Copy(mainProcedureData, 0, wholeFileReEncodedBytes, position, mainProcedureData.Length);
-
-            File.WriteAllBytes("reEncodedFile.gcx", wholeFileReEncodedBytes);
-            */
         }
 
         private static byte[] TakeRangeFromArray(byte[] array, int start, int end)

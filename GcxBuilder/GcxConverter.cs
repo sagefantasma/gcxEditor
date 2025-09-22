@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace GcxEditor
 {
-    public class ProcedureConverter : JsonConverter
+    public class ProcedureElementConverter : JsonConverter
     {
         public override bool CanConvert(Type objectType) => objectType == typeof(IProcedureElement);
 

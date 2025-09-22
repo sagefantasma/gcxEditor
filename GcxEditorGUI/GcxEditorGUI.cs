@@ -1,6 +1,5 @@
 using GcxEditor;
 using Newtonsoft.Json;
-using System.Text.RegularExpressions;
 
 namespace GcxEditorGUI
 {
@@ -22,8 +21,18 @@ namespace GcxEditorGUI
         {
             if (_loadedGcx != null)
             {
-                _displayedProcedure = _loadedGcx.ProcBlock.Procedures.FirstOrDefault(proc => (procedureListBox.SelectedItem as string)!.Contains(proc.Name))!;
-                int location = richTextBox.Find($"\"Name\": \"{_displayedProcedure.Name}\"", richTextBox.SelectionStart + 1, -1, richTextBoxFinds);
+                int location;
+                if ((procedureListBox.SelectedItem as string)!.ToLower() != "main")
+                {
+                    _displayedProcedure = _loadedGcx.ProcBlock.Procedures.FirstOrDefault(proc => (procedureListBox.SelectedItem as string)!.Contains(proc.Name))!;
+                    location = richTextBox.Find($"\"Name\": \"{_displayedProcedure.Name}\"", richTextBox.SelectionStart + 1, -1, richTextBoxFinds);
+                }
+                else
+                {
+                    _displayedProcedure = _loadedGcx.Main;
+                    location = richTextBox.Find($"\"Type\": \"Main\"", richTextBox.SelectionStart + 1, -1, richTextBoxFinds);
+                }
+                 
                 if (location == -1)
                 {
                     richTextBox.Find($"\"Name\": \"{_displayedProcedure.Name}\"", richTextBoxFinds);
@@ -40,6 +49,7 @@ namespace GcxEditorGUI
                 DefaultExt = "gcx",
                 Title = "Select a GCX file to edit"
             };
+            toolStripStatusLabel.Text = "Waiting for a .gcx to be selected...";
             DialogResult dialogResult = openFileDialog.ShowDialog();
             if (dialogResult == DialogResult.OK)
             {
@@ -68,6 +78,7 @@ namespace GcxEditorGUI
 
                 savejsonToolStripMenuItem.Enabled = true;
                 exportModifiedgcxToolStripMenuItem.Enabled = true;
+                toolStripStatusLabel.Text = ".gcx loaded!";
             }
         }
 
@@ -86,7 +97,7 @@ namespace GcxEditorGUI
                 }
             }
 
-            //procedureListBox.Items.Add(gcxFile.Main.Name); //TODO: add support for main as well :)
+            procedureListBox.Items.Add("main");
         }
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
@@ -96,10 +107,11 @@ namespace GcxEditorGUI
 
         private void exportModifiedgcxToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            toolStripStatusLabel.Text = "Exporting new .gcx with json edits...";
             SaveActiveJsonFile();
             Dictionary<Procedure, byte[]> reEncodedProcs = Importer.ImportJsonFile(_loadedJson!);
-            Dictionary<Procedure, byte[]> rawReEncodes = Importer.EncodeProcsFromRawGcx(_loadedGcx!.ProcBlock.Procedures); //is this necessary?
-            Importer.AssembleReencodedFile(_loadedGcx, reEncodedProcs, $"{_loadedJson!.Split(".")[0]}.gcx");
+            Importer.AssembleReencodedFile(_loadedGcx!, reEncodedProcs, $"{_loadedJson!.Split(".")[0]}.gcx");
+            toolStripStatusLabel.Text = ".gcx successfully exported!";
         }
 
         private void savejsonToolStripMenuItem_Click(object sender, EventArgs e)
