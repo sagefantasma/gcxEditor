@@ -51,27 +51,9 @@ namespace GcxEditor
             List<byte[]> encodedParams = new List<byte[]>();
             foreach (Parameter parameter in parameters)
             {
-                //parametersBytesLength += parameter.Size;
                 byte[] encodedParam = parameter.Encode();
                 encodedParams.Add(encodedParam);
                 parametersBytesLength += (uint)encodedParam.Length;
-
-                /*if(parameter.Size < 0xD)
-                {
-                    parametersBytesLength += 1;
-                }
-                else if(parameter.Size < 0xFF)
-                {
-                    parametersBytesLength += 2;
-                }
-                else if(parameter.Size < 0xFFFF)
-                {
-                    parametersBytesLength += 3;
-                }
-                else
-                {
-                    parametersBytesLength += 4;
-                }*/
             }
 
             byte[] encodedBytes = new byte[argsBytes.Length +  parametersBytesLength];
@@ -96,48 +78,37 @@ namespace GcxEditor
             foreach (Term argument in args)
             {
                 byte[] encodedArg = argument.Encode();
-                //argsBytesLength += argument.Size;
                 argsBytesLength += (uint)encodedArg.Length;
             }
 
             byte[] encodedBytes;
             int position = 3;
-            //if ((argsBytesLength + 3) < 0x80)
             if ((argsBytesLength) < 0x80)
             {
-                //declarationSize++;
                 encodedBytes = new byte[declarationSize + argsBytesLength];
                 encodedBytes[position++] = (byte)(argsBytesLength);
             }
             else
             {
-                //size = C4;
-                //BitConverted => C4;
-                //highNibble = (C0) + (04-80==-7B?) == 44???
-                /*
-                 * In the compiled gcx, a size might look something like this: C4 01
-                 * This size would be equal to 0x441(?)
-                 */
                 declarationSize++;
                 encodedBytes = new byte[declarationSize + argsBytesLength];
                 byte[] sizeInBytes = BitConverter.GetBytes(argsBytesLength);
                 if (argsBytesLength < 0xFF)
                 {
-                    //lowNibble is lowNibble of second size byte
+                    //byte after 0x80 is size
                     encodedBytes[position++] = 0x80;
-                    //encodedBytes[position++] = (byte)(sizeInBytes[0] & 0x0F);
                     encodedBytes[position++] = (byte)argsBytesLength;
                 }
                 else if(argsBytesLength < 0xFFF)
                 {
-                    //lowByte is second size byte
+                    //lowNibble of 0x8? is the highest nibble of the u24 size
                     encodedBytes[position++] = (byte)(0x80 + sizeInBytes[1]);
                     encodedBytes[position++] = sizeInBytes[0];
                 }
                 else if(argsBytesLength < 0xFFFF)
                 {
                     //TODO: confirm
-                    //lowByte is second sizeByte and lowNibble is lowNibble of first size byte
+                    //0x?? is the highByte of the u32 size once subtracted by 0x80, second byte is lowByte of u32
                     byte highNibble = (byte)((sizeInBytes[0] & 0x0F) + (sizeInBytes[0] & 0xF0 - 0x80));
                     byte lowNibble = (byte)(sizeInBytes[0] & 0x0F);
                     encodedBytes[position++] = (byte)(highNibble + lowNibble);
@@ -145,34 +116,12 @@ namespace GcxEditor
                 }
                 else
                 {
-
+                    //TODO: is this even a case?
                 }
 
-
-                    //if < FF
-                    //elseif < FFF
-                    //else?
-                    //byte lowByte = sizeInBytes[1];//need to figure out how to get the last byte of the size 100% of the time when it can be up to a u24...
-                //encodedBytes[position++] = (byte)(declarationSize + argsBytesLength - 0x80);
             }
-                /*else if ((argsBytesLength + 3) > 0xFF && (argsBytesLength + 3) < 0xFFFF) //this is hecked somehow
-                {
-                    declarationSize += 2;
-                    encodedBytes = new byte[declarationSize + argsBytesLength];
-                    encodedBytes[position++] = 0x7E;
-                    Array.Copy(BitConverter.GetBytes((ushort)(argsBytesLength)), 0, encodedBytes, position, sizeof(ushort));
-                    position += sizeof(ushort);
-                }
-                else
-                {
-                    declarationSize += 3;
-                    encodedBytes = new byte[declarationSize + argsBytesLength];
-                    encodedBytes[position++] = 0x7F;
-                    Array.Copy(BitConverter.GetBytes(argsBytesLength), 0, encodedBytes, position, 3);
-                    position += 3;
-                }*/
 
-                Array.Copy(commandDeclarationBytes, encodedBytes, commandDeclarationBytes.Length);
+            Array.Copy(commandDeclarationBytes, encodedBytes, commandDeclarationBytes.Length);
 
             foreach (Term arg in args)
             {

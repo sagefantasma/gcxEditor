@@ -53,7 +53,7 @@ namespace GcxEditor
         [JsonIgnore]
         public byte[] EncodedContents { get; set; }
         [JsonIgnore]
-        public byte[] RawContents { get; set; } //TODO: to be implemented for editing
+        public byte[] RawContents { get; set; }
         [JsonConverter(typeof(ProcedureElementConverter))]
         public List<IProcedureElement> DecodedContents { get; set; }
 
@@ -106,7 +106,7 @@ namespace GcxEditor
             foreach (byte[] encodedContent in encodedContents)
             {
                 Array.Copy(encodedContent, 0, encodedBytes, position, encodedContent.Length);
-                position += encodedContent.Length; //i dont know why, but for some reason putting this in the array.copy causes an erroneous overflow error
+                position += encodedContent.Length;
             }
 
             EncodedContents = encodedBytes;
@@ -194,7 +194,7 @@ namespace GcxEditor
         public Term? Term1 { get; set; }
         [JsonConverter(typeof(TermConverter))]
         public Term? Term2 { get; set; }
-        public Gcx.Operation Operator { get; set; }
+        public ExpressionElements.Operation Operator { get; set; }
         [JsonIgnore]
         public uint Size { get; set; }
         public string Type { get; set; }
@@ -273,7 +273,7 @@ namespace GcxEditor
             if (sizeOfEncodedContents < 0xD)
             {
                 encodedBytes = new byte[sizeOfEncodedContents + 1];
-                encodedBytes[position++] = (byte)(0x30 + (byte)sizeOfEncodedContents); //off by 2
+                encodedBytes[position++] = (byte)(0x30 + (byte)sizeOfEncodedContents);
             }
             else if (sizeOfEncodedContents < 0xFF)
             {
@@ -308,7 +308,7 @@ namespace GcxEditor
 
         public override string ToString()
         {
-            return $"{Term1}{Gcx.OperationToString(Operator)}{Term2}";
+            return $"{Term1}{ExpressionElements.OperationToString(Operator)}{Term2}";
         }
     }
 
@@ -343,7 +343,6 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            //TODO: confirm this works
             byte[] contents = Builder.EncodeCommandWithArgsAndParams(Args, Parameters, new byte[] { 0xB5, 0x5D, 0xA6 });
             return Builder.BuildContainerElement(0x60, contents);
         }
@@ -387,13 +386,12 @@ namespace GcxEditor
                 encodedArgs.Add(encodedArg);
             }
 
-            //argsBytesLength++; //getting the 00 padding at the end of an invoke
             byte[] encodedBytes;
             int position = 0;
             if ((argsBytesLength + 4) < 0xD)
             {
                 //no change to procedureInvokedBytes
-                encodedBytes = new byte[procedureInvokedBytes + argsBytesLength + 1]; //do i need to +1 to get padding here? am i losing my mind?
+                encodedBytes = new byte[procedureInvokedBytes + argsBytesLength + 1];
                 encodedBytes[position++] = (byte)(0x70 + procedureInvokedBytes + argsBytesLength);
             }
             else if((argsBytesLength + 4) < 0xFF)
@@ -421,7 +419,7 @@ namespace GcxEditor
             }
 
 
-            Array.Copy(BitConverter.GetBytes(ProcedureInvoked.Order), 0, encodedBytes, position, 3); //Is this correct?
+            Array.Copy(BitConverter.GetBytes(ProcedureInvoked.Order), 0, encodedBytes, position, 3); 
             position += 3;
 
             foreach (byte[] encodedArg in encodedArgs)
@@ -533,7 +531,6 @@ namespace GcxEditor
 
     public class Chara : Command
     {
-        //0x6592A7
         public Chara()
         {
             Type = GetType().Name;
@@ -737,7 +734,7 @@ namespace GcxEditor
         public byte[] EncodedContents { get; set; }
         public dynamic Value { get; set; }
         public byte DataTypeByte { get; set; }
-        public Gcx.DataType DataType { get; set; }
+        public ExpressionElements.DataType DataType { get; set; }
         public Literal()
         {
             Type = GetType().Name;
@@ -746,7 +743,7 @@ namespace GcxEditor
         public new byte[] Encode()
         {
             byte[] encodedBytes;
-            if(DataType.DataTypeName == Gcx.DataType.String.DataTypeName)
+            if(DataType.DataTypeName == ExpressionElements.DataType.String.DataTypeName)
             {
                 if (Value is byte[])
                 {
@@ -825,8 +822,6 @@ namespace GcxEditor
 
     public class VariableArray : Term
     {
-        //public ushort Size { get; set; } //byte instead?
-        //public ushort Index { get; set; } //byte instead?
         [JsonConverter(typeof(TermConverter))]
         public List<Term> SizeAndIndex { get; set; }
         public ushort Id { get; set; }

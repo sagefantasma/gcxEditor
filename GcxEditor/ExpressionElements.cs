@@ -2,7 +2,7 @@
 
 namespace GcxEditor
 {
-    public class Gcx
+    public class ExpressionElements
     {
         public static string OperationToString(Operation operation)
         {
@@ -100,22 +100,13 @@ namespace GcxEditor
             }
 
             public static DataType End = new DataType("End", [0x00], 0); //TODO: confirm
-            public static DataType Short = new DataType("Short", [0x01], 2); //TODO: confirm
-            public static DataType Byte = new DataType("Byte", [0x02, 0x03, 0x04], 1); //TODO: confirm
+            public static DataType Short = new DataType("Short", [0x01], 2); 
+            public static DataType Byte = new DataType("Byte", [0x02, 0x03, 0x04], 1); 
             public static DataType StrCode = new DataType("StrCode", [0x06, 0x08], 3); //TODO: confirm 8 also results in 3 bytes
-            public static DataType String = new DataType("String", [0x07], 0); //TODO: get real value
-            public static DataType Long = new DataType("Long", [0x09, 0x0A, 0x0D], 4); //TODO: confirm
-            public static DataType StringResource = new DataType("StringResource", [0x0E], 2); //TODO: get real value
-            public static DataType Var = new DataType("Var", [0x10], 0); //TODO: get real value
-            public static DataType VarArray = new DataType("VarArray", [0x20], 0); //TODO: get real value
-            public static DataType Expr = new DataType("Expr", [0x30], 0); //TODO: get real value
-            public static DataType Args = new DataType("Args", [0x40], 0); //TODO: get real value
-            public static DataType Param = new DataType("Param", [0x50], 0); //TODO: get real value
-            public static DataType Command = new DataType("Command", [0x60], 0); //TODO: get real value
-            public static DataType Call = new DataType("Call", [0x70], 0); //TODO: get real value
-            public static DataType Proc = new DataType("Proc", [0x80], 0); //TODO: get real value
-            public static DataType Local = new DataType("Local", [0x90], 0); //TODO: get real value
-            public static DataType Num = new DataType("Num", [0xC0], 0); //TODO: get real value
+            public static DataType String = new DataType("String", [0x07], 0); //determined by byte following string designation
+            public static DataType Long = new DataType("Long", [0x09, 0x0A, 0x0D], 4);
+            public static DataType StringResource = new DataType("StringResource", [0x0E], 2); //TODO: confirm
+
             public static DataType FromCode(byte code)
             {
                 switch (code)
@@ -139,26 +130,6 @@ namespace GcxEditor
                         return Long;
                     case 0xE:
                         return StringResource;
-                    case 0x10:
-                        return Var;
-                    case 0x20:
-                        return VarArray;
-                    case 0x30:
-                        return Expr;
-                    case 0x40:
-                        return Args;
-                    case 0x50:
-                        return Param;
-                    case 0x60:
-                        return Command;
-                    case 0x70:
-                        return Call;
-                    case 0x80:
-                        return Proc;
-                    case 0x90:
-                        return Local;
-                    case 0xC0:
-                        return Num;
                     default:
                         throw new InvalidDataException($"Byte: \"{code}\" is an invalid Datatype!");
                 }
@@ -168,28 +139,6 @@ namespace GcxEditor
             {
                 return DataTypeName;
             }
-        }
-
-        public enum Statement
-        {
-            If = 0x0D86,
-            Switch = 0xA65DB5,
-            Eval = 0x34648C,
-            Call = 0x3311EC,
-            Return = 0x8BE398,
-            Print = 0x3AB23B
-        }
-
-        public enum Command
-        {
-            Message = 0x3822C7,
-            Command = 0x082BC9,
-            Chara = 0x6592A7,
-            Trap = 0x3BD490,
-            Load = 0x37C884,
-            Map = 0x01C090,
-            Restart = 0x6BB005,
-            Unknown = 0x8B3DF5
         }
     }
 }

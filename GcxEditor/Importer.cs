@@ -187,10 +187,6 @@ namespace GcxEditor
             byte[] procBodyCollection = new byte[procCollectionSize];
             foreach (KeyValuePair<Procedure, byte[]> reEncodedProc in reEncodedProcs)
             {
-                if (reEncodedProc.Key.Name.Contains("AE6DC"))
-                {
-
-                }
                 Array.Copy(BitConverter.GetBytes(reEncodedProc.Key.Order), 0, procTableBytes, procTablePosition, 4);
                 procTablePosition += 4;
                 Array.Copy(BitConverter.GetBytes(procBodyPosition), 0, procTableBytes, procTablePosition, 4);

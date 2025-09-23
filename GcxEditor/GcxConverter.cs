@@ -30,70 +30,69 @@ namespace GcxEditor
             return ConvertElement(token as JObject, serializer);
         }
 
-        private IProcedureElement ConvertElement(JObject jo, JsonSerializer serializer)
+        private IProcedureElement ConvertElement(JObject jObject, JsonSerializer serializer)
         {
-            //JObject jo = JObject.Load(reader);
-            if (jo == null)
+            if (jObject == null)
                 return null;
-            string type = jo["Type"]?.ToString();
+            string type = jObject["Type"]?.ToString();
 
             IProcedureElement procedure = null;
             switch (type)
             {
                 case "Expression":
-                    var expression = JsonConvert.DeserializeObject<Expression>(jo.ToString());
+                    var expression = JsonConvert.DeserializeObject<Expression>(jObject.ToString());
                     procedure = expression;
                     break;
                 case "Procedure":
-                    var subprocedure = JsonConvert.DeserializeObject<Procedure>(jo.ToString());
+                    var subprocedure = JsonConvert.DeserializeObject<Procedure>(jObject.ToString());
                     procedure = subprocedure;
                     break;
                 case "Invoke":
-                    var invoke = JsonConvert.DeserializeObject<Invoke>(jo.ToString());
+                    var invoke = JsonConvert.DeserializeObject<Invoke>(jObject.ToString());
                     procedure = invoke;
                     break;
                 case "GameCommand":
-                    var command = JsonConvert.DeserializeObject<GameCommand>(jo.ToString());
+                    var command = JsonConvert.DeserializeObject<GameCommand>(jObject.ToString());
                     procedure = command;
                     break;
                 case "Msg":
-                    var msg = JsonConvert.DeserializeObject<Msg>(jo.ToString());
+                    var msg = JsonConvert.DeserializeObject<Msg>(jObject.ToString());
                     procedure = msg;
                     break;
                 case "Chara":
-                    var chara = JsonConvert.DeserializeObject<Chara>(jo.ToString());
+                    var chara = JsonConvert.DeserializeObject<Chara>(jObject.ToString());
                     procedure = chara;
                     break;
                 case "Trap":
-                    var trap = JsonConvert.DeserializeObject<Trap>(jo.ToString());
+                    var trap = JsonConvert.DeserializeObject<Trap>(jObject.ToString());
                     procedure = trap;
                     break;
                 case "Load":
-                    var load = JsonConvert.DeserializeObject<Load>(jo.ToString());
+                    var load = JsonConvert.DeserializeObject<Load>(jObject.ToString());
                     procedure = load;
                     break;
                 case "UnknownCommand":
-                    var unknownCommand = JsonConvert.DeserializeObject<UnknownCommand>(jo.ToString());
+                    var unknownCommand = JsonConvert.DeserializeObject<UnknownCommand>(jObject.ToString());
                     procedure = unknownCommand;
                     break;
                 case "Restart":
-                    var restart = JsonConvert.DeserializeObject<Restart>(jo.ToString());
+                    var restart = JsonConvert.DeserializeObject<Restart>(jObject.ToString());
                     procedure = restart;
                     break;
                 case "IfBlock":
-                    var ifBlock = JsonConvert.DeserializeObject<IfBlock>(jo.ToString());
+                    var ifBlock = JsonConvert.DeserializeObject<IfBlock>(jObject.ToString());
                     procedure = ifBlock;
                     break;
                 case "SwitchBlock":
-                    var switchBlock = JsonConvert.DeserializeObject<SwitchBlock>(jo.ToString());
+                    var switchBlock = JsonConvert.DeserializeObject<SwitchBlock>(jObject.ToString());
                     procedure = switchBlock;
                     break;
                 case "Print":
-                    var print = JsonConvert.DeserializeObject<Print>(jo.ToString());
+                    var print = JsonConvert.DeserializeObject<Print>(jObject.ToString());
                     procedure = print;
                     break;
                 case "Return":
-                    var returnStatement = JsonConvert.DeserializeObject<Return>(jo.ToString());
+                    var returnStatement = JsonConvert.DeserializeObject<Return>(jObject.ToString());
                     procedure = returnStatement;
                     break;
                 default:
@@ -102,13 +101,6 @@ namespace GcxEditor
 
             return procedure;
         }
-
-        /*public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer)
-        {
-            JObject jo = JObject.FromObject(value, serializer);
-
-            jo.WriteTo(writer);
-        }*/
 
         public override bool CanWrite { get { return false; } }
 
@@ -139,54 +131,53 @@ namespace GcxEditor
             return ConvertElement(token as JObject, serializer);
         }
 
-        private Term ConvertElement(JObject jo, JsonSerializer serializer)
+        private Term ConvertElement(JObject jObject, JsonSerializer serializer)
         {
-            //JObject jo = JObject.Load(reader);
-            if (jo == null)
+            if (jObject == null)
                 return null;
-            string type = jo["Type"]?.ToString();
+            string type = jObject["Type"]?.ToString();
 
             Term? procedure = null;
             switch (type)
             {
                 case "Varbuf":
-                    var varbuf = JsonConvert.DeserializeObject<Varbuf>(jo.ToString());
+                    var varbuf = JsonConvert.DeserializeObject<Varbuf>(jObject.ToString());
                     procedure = varbuf;
                     break;
                 case "Constant":
-                    var constant = JsonConvert.DeserializeObject<Constant>(jo.ToString());
+                    var constant = JsonConvert.DeserializeObject<Constant>(jObject.ToString());
                     procedure = constant;
                     break;
                 case "Literal":
-                    var literal = JsonConvert.DeserializeObject<Literal>(jo.ToString());
+                    var literal = JsonConvert.DeserializeObject<Literal>(jObject.ToString());
                     procedure = literal;
                     break;
                 case "PassedArg":
-                    var passedArg = JsonConvert.DeserializeObject<PassedArg>(jo.ToString());
+                    var passedArg = JsonConvert.DeserializeObject<PassedArg>(jObject.ToString());
                     procedure = passedArg;
                     break;
                 case "VariableArray":
-                    var varArray = JsonConvert.DeserializeObject<VariableArray>(jo.ToString());
+                    var varArray = JsonConvert.DeserializeObject<VariableArray>(jObject.ToString());
                     procedure = varArray;
                     break;
                 case "Linkvarbuf":
-                    var linkvarbuf = JsonConvert.DeserializeObject<Linkvarbuf>(jo.ToString());
+                    var linkvarbuf = JsonConvert.DeserializeObject<Linkvarbuf>(jObject.ToString());
                     procedure = linkvarbuf;
                     break;
                 case "Localvarbuf":
-                    var localVarbuf = JsonConvert.DeserializeObject<Localvarbuf>(jo.ToString());
+                    var localVarbuf = JsonConvert.DeserializeObject<Localvarbuf>(jObject.ToString());
                     procedure = localVarbuf;
                     break;
                 case "LocalVar":
-                    var localVar = JsonConvert.DeserializeObject<LocalVar>(jo.ToString());
+                    var localVar = JsonConvert.DeserializeObject<LocalVar>(jObject.ToString());
                     procedure = localVar;
                     break;
                 case "Procedure":
-                    var subProcedure = JsonConvert.DeserializeObject<Procedure>(jo.ToString());
+                    var subProcedure = JsonConvert.DeserializeObject<Procedure>(jObject.ToString());
                     procedure = subProcedure;
                     break;
                 case "Expression":
-                    var expression = JsonConvert.DeserializeObject<Expression>(jo.ToString()); //TODO: breaks on null Term1 >:C (fixed, i think?)
+                    var expression = JsonConvert.DeserializeObject<Expression>(jObject.ToString()); //TODO: breaks on null Term1 >:C (fixed, i think?)
                     procedure = expression;
                     break;
                 default:
@@ -195,13 +186,6 @@ namespace GcxEditor
 
             return procedure;
         }
-
-        /*public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer)
-        {
-            JObject jo = JObject.FromObject(value, serializer);
-
-            jo.WriteTo(writer);
-        }*/
 
         public override bool CanWrite { get { return false; } }
 
