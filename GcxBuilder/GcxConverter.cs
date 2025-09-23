@@ -97,8 +97,7 @@ namespace GcxEditor
                     procedure = returnStatement;
                     break;
                 default:
-
-                    break;
+                    throw new InvalidDataException("Invalid procedure element supplied in json");
             }
 
             return procedure;
@@ -187,12 +186,11 @@ namespace GcxEditor
                     procedure = subProcedure;
                     break;
                 case "Expression":
-                    var expression = JsonConvert.DeserializeObject<Expression>(jo.ToString()); //TODO: breaks on null Term1 >:C
+                    var expression = JsonConvert.DeserializeObject<Expression>(jo.ToString()); //TODO: breaks on null Term1 >:C (fixed, i think?)
                     procedure = expression;
                     break;
                 default:
-
-                    break;
+                    throw new InvalidDataException("Invalid term supplied in json");
             }
 
             return procedure;

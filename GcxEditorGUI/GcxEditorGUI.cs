@@ -119,9 +119,28 @@ namespace GcxEditorGUI
             SaveActiveJsonFile();
         }
 
+        private bool VerifyJson()
+        {
+            bool isValid = false;
+
+            try
+            {
+                GcxClasses.Gcx currentState = JsonConvert.DeserializeObject<GcxClasses.Gcx>(richTextBox.Text);
+                Dictionary<Procedure, byte[]> procs = Importer.EncodeProcsFromJson(currentState.ProcBlock.Procedures);
+                isValid = true;
+            }
+            catch(Exception e)
+            {
+                MessageBox.Show($"Invalid gcx json: {e}");
+            }
+
+            return isValid;
+        }
+
         private void SaveActiveJsonFile()
         {
-            File.WriteAllText(_loadedJson!, richTextBox.Text);
+            if(VerifyJson())
+                File.WriteAllText(_loadedJson!, richTextBox.Text);
         }
 
         CancellationTokenSource searchCancelTokenSource = new CancellationTokenSource();
