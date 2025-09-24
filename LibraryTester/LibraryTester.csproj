@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\GcxBuilder\GcxEditor.csproj" />
+    <ProjectReference Include="..\GcxEditor\GcxEditor.csproj" />
   </ItemGroup>
 
 </Project>

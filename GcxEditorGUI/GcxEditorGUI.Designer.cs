@@ -28,11 +28,14 @@
         /// </summary>
         private void InitializeComponent()
         {
-            menuStrip1 = new MenuStrip();
+            menuStrip = new MenuStrip();
             fileToolStripMenuItem = new ToolStripMenuItem();
             loadgcxToolStripMenuItem = new ToolStripMenuItem();
             savejsonToolStripMenuItem = new ToolStripMenuItem();
             exportModifiedgcxToolStripMenuItem = new ToolStripMenuItem();
+            replaceOpenedFileOnExportToolStripMenuItem = new ToolStripMenuItem();
+            chooseLocationToolStripMenuItem = new ToolStripMenuItem();
+            exportToolStripMenuItem = new ToolStripMenuItem();
             exitToolStripMenuItem = new ToolStripMenuItem();
             editToolStripMenuItem = new ToolStripMenuItem();
             searchToolStripMenuItem = new ToolStripMenuItem();
@@ -44,22 +47,23 @@
             procedureListBox = new ListBox();
             richTextBox = new RichTextBox();
             statusStrip = new StatusStrip();
+            toolStripProgressBar = new ToolStripProgressBar();
             toolStripStatusLabel = new ToolStripStatusLabel();
-            menuStrip1.SuspendLayout();
+            menuStrip.SuspendLayout();
             mainPanel.SuspendLayout();
             tableLayoutPanel.SuspendLayout();
             statusStrip.SuspendLayout();
             SuspendLayout();
             // 
-            // menuStrip1
+            // menuStrip
             // 
-            menuStrip1.ImageScalingSize = new Size(24, 24);
-            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, editToolStripMenuItem, searchToolStripMenuItem, viewToolStripMenuItem });
-            menuStrip1.Location = new Point(0, 0);
-            menuStrip1.Name = "menuStrip1";
-            menuStrip1.Size = new Size(1264, 24);
-            menuStrip1.TabIndex = 0;
-            menuStrip1.Text = "menuStrip1";
+            menuStrip.ImageScalingSize = new Size(24, 24);
+            menuStrip.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, editToolStripMenuItem, searchToolStripMenuItem, viewToolStripMenuItem });
+            menuStrip.Location = new Point(0, 0);
+            menuStrip.Name = "menuStrip";
+            menuStrip.Size = new Size(1264, 24);
+            menuStrip.TabIndex = 0;
+            menuStrip.Text = "menuStrip1";
             // 
             // fileToolStripMenuItem
             // 
@@ -71,29 +75,57 @@
             // loadgcxToolStripMenuItem
             // 
             loadgcxToolStripMenuItem.Name = "loadgcxToolStripMenuItem";
+            loadgcxToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.O;
             loadgcxToolStripMenuItem.Size = new Size(184, 22);
-            loadgcxToolStripMenuItem.Text = "Load .gcx";
+            loadgcxToolStripMenuItem.Text = "Load .gcx...";
             loadgcxToolStripMenuItem.Click += loadgcxToolStripMenuItem_Click;
             // 
             // savejsonToolStripMenuItem
             // 
             savejsonToolStripMenuItem.Enabled = false;
             savejsonToolStripMenuItem.Name = "savejsonToolStripMenuItem";
+            savejsonToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.S;
             savejsonToolStripMenuItem.Size = new Size(184, 22);
             savejsonToolStripMenuItem.Text = "Save .json";
             savejsonToolStripMenuItem.Click += savejsonToolStripMenuItem_Click;
             // 
             // exportModifiedgcxToolStripMenuItem
             // 
+            exportModifiedgcxToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { replaceOpenedFileOnExportToolStripMenuItem, chooseLocationToolStripMenuItem, exportToolStripMenuItem });
             exportModifiedgcxToolStripMenuItem.Enabled = false;
             exportModifiedgcxToolStripMenuItem.Name = "exportModifiedgcxToolStripMenuItem";
             exportModifiedgcxToolStripMenuItem.Size = new Size(184, 22);
             exportModifiedgcxToolStripMenuItem.Text = "Export modified .gcx";
-            exportModifiedgcxToolStripMenuItem.Click += exportModifiedgcxToolStripMenuItem_Click;
+            // 
+            // replaceOpenedFileOnExportToolStripMenuItem
+            // 
+            replaceOpenedFileOnExportToolStripMenuItem.CheckOnClick = true;
+            replaceOpenedFileOnExportToolStripMenuItem.Name = "replaceOpenedFileOnExportToolStripMenuItem";
+            replaceOpenedFileOnExportToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.Shift | Keys.R;
+            replaceOpenedFileOnExportToolStripMenuItem.Size = new Size(315, 22);
+            replaceOpenedFileOnExportToolStripMenuItem.Text = "Replace Opened File On Export?";
+            replaceOpenedFileOnExportToolStripMenuItem.Click += replaceOpenedFileOnExportToolStripMenuItem_Click;
+            // 
+            // chooseLocationToolStripMenuItem
+            // 
+            chooseLocationToolStripMenuItem.Name = "chooseLocationToolStripMenuItem";
+            chooseLocationToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.Alt | Keys.Shift | Keys.E;
+            chooseLocationToolStripMenuItem.Size = new Size(301, 22);
+            chooseLocationToolStripMenuItem.Text = "Choose export location...";
+            chooseLocationToolStripMenuItem.Click += chooseLocationToolStripMenuItem_Click;
+            // 
+            // exportToolStripMenuItem
+            // 
+            exportToolStripMenuItem.Name = "exportToolStripMenuItem";
+            exportToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.Shift | Keys.E;
+            exportToolStripMenuItem.Size = new Size(301, 22);
+            exportToolStripMenuItem.Text = "Export";
+            exportToolStripMenuItem.Click += exportToolStripMenuItem_Click;
             // 
             // exitToolStripMenuItem
             // 
             exitToolStripMenuItem.Name = "exitToolStripMenuItem";
+            exitToolStripMenuItem.ShortcutKeys = Keys.Alt | Keys.F4;
             exitToolStripMenuItem.Size = new Size(184, 22);
             exitToolStripMenuItem.Text = "Exit";
             exitToolStripMenuItem.Click += exitToolStripMenuItem_Click;
@@ -122,6 +154,7 @@
             // jSONEditorToolStripMenuItem
             // 
             jSONEditorToolStripMenuItem.Checked = true;
+            jSONEditorToolStripMenuItem.CheckOnClick = true;
             jSONEditorToolStripMenuItem.CheckState = CheckState.Checked;
             jSONEditorToolStripMenuItem.Name = "jSONEditorToolStripMenuItem";
             jSONEditorToolStripMenuItem.Size = new Size(163, 22);
@@ -184,12 +217,17 @@
             // 
             // statusStrip
             // 
-            statusStrip.Items.AddRange(new ToolStripItem[] { toolStripStatusLabel });
+            statusStrip.Items.AddRange(new ToolStripItem[] { toolStripProgressBar, toolStripStatusLabel });
             statusStrip.Location = new Point(0, 635);
             statusStrip.Name = "statusStrip";
             statusStrip.Size = new Size(1264, 22);
             statusStrip.TabIndex = 2;
             statusStrip.Text = "statusStrip";
+            // 
+            // toolStripProgressBar
+            // 
+            toolStripProgressBar.Name = "toolStripProgressBar";
+            toolStripProgressBar.Size = new Size(100, 16);
             // 
             // toolStripStatusLabel
             // 
@@ -202,12 +240,12 @@
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1264, 681);
             Controls.Add(mainPanel);
-            Controls.Add(menuStrip1);
-            MainMenuStrip = menuStrip1;
+            Controls.Add(menuStrip);
+            MainMenuStrip = menuStrip;
             Name = "GcxEditorGUI";
             Text = "GCX Editor";
-            menuStrip1.ResumeLayout(false);
-            menuStrip1.PerformLayout();
+            menuStrip.ResumeLayout(false);
+            menuStrip.PerformLayout();
             mainPanel.ResumeLayout(false);
             mainPanel.PerformLayout();
             tableLayoutPanel.ResumeLayout(false);
@@ -219,7 +257,7 @@
 
         #endregion
 
-        private MenuStrip menuStrip1;
+        private MenuStrip menuStrip;
         private ToolStripMenuItem fileToolStripMenuItem;
         private ToolStripMenuItem editToolStripMenuItem;
         private ToolStripMenuItem searchToolStripMenuItem;
@@ -236,5 +274,9 @@
         private RichTextBox richTextBox;
         private StatusStrip statusStrip;
         private ToolStripStatusLabel toolStripStatusLabel;
+        private ToolStripMenuItem replaceOpenedFileOnExportToolStripMenuItem;
+        private ToolStripMenuItem chooseLocationToolStripMenuItem;
+        private ToolStripProgressBar toolStripProgressBar;
+        private ToolStripMenuItem exportToolStripMenuItem;
     }
 }
