@@ -99,13 +99,13 @@ namespace GcxEditor
                 Length = length;
             }
 
-            public static DataType End = new DataType("End", [0x00], 0); //TODO: confirm
-            public static DataType Short = new DataType("Short", [0x01], 2); 
-            public static DataType Byte = new DataType("Byte", [0x02, 0x03, 0x04], 1); 
-            public static DataType StrCode = new DataType("StrCode", [0x06, 0x08], 3); //TODO: confirm 8 also results in 3 bytes
-            public static DataType String = new DataType("String", [0x07], 0); //determined by byte following string designation
-            public static DataType Long = new DataType("Long", [0x09, 0x0A, 0x0D], 4);
-            public static DataType StringResource = new DataType("StringResource", [0x0E], 2); //TODO: confirm
+            public static DataType End = new("End", [0x00], 0); //TODO: confirm
+            public static DataType Short = new("Short", [0x01], 2); 
+            public static DataType Byte = new("Byte", [0x02, 0x03, 0x04], 1); 
+            public static DataType StrCode = new("StrCode", [0x06, 0x08], 3); //TODO: confirm 8 also results in 3 bytes
+            public static DataType String = new("String", [0x07], 0); //determined by byte following string designation
+            public static DataType Long = new("Long", [0x09, 0x0A, 0x0D], 4);
+            public static DataType StringResource = new("StringResource", [0x0E], 2); //TODO: confirm
 
             public static DataType FromCode(byte code)
             {

@@ -14,12 +14,12 @@ namespace GcxEditor
         public class Gcx
         {
             [JsonIgnore]
-            public byte[] FileContents { get; set; }
+            public required byte[] FileContents { get; set; }
             public uint Signature { get; set; }
             public uint Timestamp { get; set; }
             public FileTable FileTable { get; set; }
             public ProcedureBlock ProcBlock { get; set; }
-            public Main Main { get; set; }
+            public Main? Main { get; set; }
 
             private const uint IntPadding = 0x00000000;
             private const ulong LongPadding = 0x0000000000000000;
@@ -35,11 +35,11 @@ namespace GcxEditor
 
         
 
-        private class ResourceData { byte[] Data { get; set; } } //TODO: to be implemented for editing
+        private class ResourceData { byte[]? Data { get; set; } } //TODO: to be implemented for editing
 
-        private class StringData { byte[] Data { get; set; } } //TODO: to be implemented for editing
+        private class StringData { byte[]? Data { get; set; } } //TODO: to be implemented for editing
 
-        private class FontData { byte[] Data { get; set; } } //TODO: to be implemented for editing
+        private class FontData { byte[]? Data { get; set; } } //TODO: to be implemented for editing
 
         public class FileTable
         {
@@ -56,7 +56,7 @@ namespace GcxEditor
 
             public void Recalculate()
             {
-                List<Procedure> procedureOrder = Procedures.OrderBy(proc => proc.Key.Order).Select(x=>x.Key).ToList(); //this is a requirement for the gcx format
+                List<Procedure> procedureOrder = Procedures.OrderBy(proc => proc.Key.Order).Select(x => x.Key).ToList(); //this is a requirement for the gcx format
 
                 Procedures.Clear();
 
@@ -71,7 +71,7 @@ namespace GcxEditor
 
         public class ProcedureBlock
         {
-            private List<Procedure> procedures = new List<Procedure>();
+            private List<Procedure> procedures = new();
             public List<Procedure> Procedures { 
                 get { return procedures; } 
                 set

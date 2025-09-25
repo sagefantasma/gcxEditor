@@ -6,10 +6,22 @@ using System.Threading.Tasks;
 
 namespace GcxEditor
 {
-    public class ParserException : Exception
+    public class ParserException(string message) : Exception(message)
     {
-        public ParserException(string message) : base(message)
-        { 
+    }
+
+    public class EncoderException : Exception
+    {
+        public EncoderException(string message) : base(message)
+        {
         }
+
+        public EncoderException(string message,  Exception innerException) : base(message, innerException) { }
+    }
+
+    public class JsonImporterException : Exception
+    {
+        public JsonImporterException(string message) : base(message) { }
+        public JsonImporterException(string message, Exception innerException) : base(message, innerException) { }
     }
 }

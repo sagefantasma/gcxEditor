@@ -5,13 +5,13 @@ namespace GcxEditorGUI
 {
     public partial class GcxEditorGUI : Form
     {
-        private GcxClasses.Gcx? _loadedGcx;
-        private string _loadedGcxLocation;
-        private string? _loadedJson;
-        private string _exportLocation;
-        private Procedure? _displayedProcedure;
-        private static RichTextBoxFinds richTextBoxFinds = RichTextBoxFinds.None;
-        private List<DictionaryEntry>? dictionaryEntries = new List<DictionaryEntry>();
+        private GcxClasses.Gcx? LoadedGcx { get; set; }
+        private string? LoadedGcxLocation { get; set; }
+        private string? LoadedJson { get; set; }
+        private string? ExportLocation { get; set; }
+        private Procedure? DisplayedProcedure { get; set; }
+        private readonly static RichTextBoxFinds richTextBoxFinds = RichTextBoxFinds.None;
+        private readonly List<DictionaryEntry>? dictionaryEntries = new();
         private bool _overwriteLoadedGcx = false;
 
         public GcxEditorGUI()
@@ -20,33 +20,33 @@ namespace GcxEditorGUI
             dictionaryEntries = JsonConvert.DeserializeObject<List<DictionaryEntry>>(File.ReadAllText("dictionary.json"));
         }
 
-        private void procedureListBox_SelectedIndexChanged(object sender, EventArgs e)
+        private void ProcedureListBox_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (_loadedGcx != null)
+            if (LoadedGcx != null)
             {
                 int location;
-                if ((procedureListBox.SelectedItem as string)!.ToLower() != "main")
+                if (string.Equals((procedureListBox.SelectedItem as string)!.ToLower(), "main"))
                 {
-                    _displayedProcedure = _loadedGcx.ProcBlock.Procedures.FirstOrDefault(proc => (procedureListBox.SelectedItem as string)!.Contains(proc.Name))!;
-                    location = richTextBox.Find($"\"Name\": \"{_displayedProcedure.Name}\"", richTextBox.SelectionStart + 1, -1, richTextBoxFinds);
+                    DisplayedProcedure = LoadedGcx.ProcBlock.Procedures.FirstOrDefault(proc => (procedureListBox.SelectedItem as string)!.Contains(proc.Name))!;
+                    location = richTextBox.Find($"\"Name\": \"{DisplayedProcedure.Name}\"", richTextBox.SelectionStart + 1, -1, richTextBoxFinds);
                 }
                 else
                 {
-                    _displayedProcedure = _loadedGcx.Main;
+                    DisplayedProcedure = LoadedGcx.Main;
                     location = richTextBox.Find($"\"Type\": \"Main\"", richTextBox.SelectionStart + 1, -1, richTextBoxFinds);
                 }
 
                 if (location == -1)
                 {
-                    richTextBox.Find($"\"Name\": \"{_displayedProcedure.Name}\"", richTextBoxFinds);
+                    richTextBox.Find($"\"Name\": \"{DisplayedProcedure!.Name}\"", richTextBoxFinds);
                 }
                 richTextBox.ScrollToCaret();
             }
         }
 
-        private void loadgcxToolStripMenuItem_Click(object sender, EventArgs e)
+        private void LoadGcxToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            OpenFileDialog openFileDialog = new OpenFileDialog()
+            OpenFileDialog openFileDialog = new()
             {
                 Multiselect = false,
                 DefaultExt = "gcx",
@@ -56,28 +56,28 @@ namespace GcxEditorGUI
             DialogResult dialogResult = openFileDialog.ShowDialog();
             if (dialogResult == DialogResult.OK)
             {
-                _loadedGcxLocation = openFileDialog.FileName;
-                FileInfo fileInfo = new FileInfo(_loadedGcxLocation);
-                _loadedGcx = Importer.ImportGcxFile(_loadedGcxLocation);
+                LoadedGcxLocation = openFileDialog.FileName;
+                FileInfo fileInfo = new(LoadedGcxLocation);
+                LoadedGcx = Importer.ImportGcxFile(LoadedGcxLocation);
                 richTextBox.Enabled = true;
 
-                JsonSerializerSettings jsonSerializerSettings = new JsonSerializerSettings
+                JsonSerializerSettings jsonSerializerSettings = new()
                 {
                     Formatting = Formatting.Indented
                 };
-                _loadedJson = $"{fileInfo.Name}.json";
-                if (File.Exists(_loadedJson))
+                LoadedJson = $"{fileInfo.Name}.json";
+                if (File.Exists(LoadedJson))
                 {
-                    string jsonText = File.ReadAllText(_loadedJson);
+                    string jsonText = File.ReadAllText(LoadedJson);
                     richTextBox.Text = jsonText;
                 }
                 else
                 {
-                    string jsonText = JsonConvert.SerializeObject(_loadedGcx, jsonSerializerSettings);
+                    string jsonText = JsonConvert.SerializeObject(LoadedGcx, jsonSerializerSettings);
                     richTextBox.Text = jsonText;
-                    File.WriteAllText(_loadedJson, jsonText);
+                    File.WriteAllText(LoadedJson, jsonText);
                 }
-                LoadProcedureList(_loadedGcx);
+                LoadProcedureList(LoadedGcx);
 
                 savejsonToolStripMenuItem.Enabled = true;
                 exportModifiedgcxToolStripMenuItem.Enabled = true;
@@ -106,31 +106,31 @@ namespace GcxEditorGUI
             procedureListBox.Items.Add("main");
         }
 
-        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
+        private void ExitToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Close();
         }
 
         private void ExportNewGcx(string fileLocation)
         {
-            _exportLocation = fileLocation;
+            ExportLocation = fileLocation;
             SaveActiveJsonFile();
-            Dictionary<Procedure, byte[]> reEncodedProcs = Importer.ImportJsonFile(_loadedJson!);
-            Importer.AssembleReencodedFile(_loadedGcx!, reEncodedProcs, fileLocation);
+            Dictionary<Procedure, byte[]> reEncodedProcs = Importer.ImportJsonFile(LoadedJson!);
+            Importer.AssembleReencodedFile(LoadedGcx!, reEncodedProcs, fileLocation);
         }
 
-        private void savejsonToolStripMenuItem_Click(object sender, EventArgs e)
+        private void SaveJsonToolStripMenuItem_Click(object sender, EventArgs e)
         {
             SaveActiveJsonFile();
         }
 
-        private bool VerifyJson(string textToVerify)
+        private static bool VerifyJson(string textToVerify)
         {
             bool isValid = false;
 
             try
             {
-                GcxClasses.Gcx currentState = JsonConvert.DeserializeObject<GcxClasses.Gcx>(textToVerify);
+                GcxClasses.Gcx currentState = JsonConvert.DeserializeObject<GcxClasses.Gcx>(textToVerify)!;
                 Dictionary<Procedure, byte[]> procs = Importer.EncodeProcsFromJson(currentState.ProcBlock.Procedures);
                 isValid = true;
             }
@@ -174,37 +174,15 @@ namespace GcxEditorGUI
         {
             string unDictionariedString = ReplaceDictionaryValues(false, richTextBox.Text);
             if (VerifyJson(unDictionariedString))
-                File.WriteAllText(_loadedJson!, unDictionariedString);
+                File.WriteAllText(LoadedJson!, unDictionariedString);
         }
 
-        CancellationTokenSource searchCancelTokenSource = new CancellationTokenSource();
-
-        private void richTextBox_SelectionChanged(object sender, EventArgs e)
+        private void RichTextBox_SelectionChanged(object sender, EventArgs e)
         {
-            //The goal with this function will be to display a tooltip/textbox near the selectedtext
-            //to inform the user as to what, if anything, the selected strcode corresponds to
-            if (richTextBox.SelectedText.Length > 2)
-            {
-                searchCancelTokenSource.Cancel();
-                searchCancelTokenSource = new CancellationTokenSource();
-                string selectedText = new string(richTextBox.SelectedText);
-                //TODO: hand SearchDictionaryForStrCode a delegate to a tooltip or textbox?
-                ToolTip strCodeToolTip = new ToolTip();
-                strCodeToolTip.OwnerDraw = false;
-                Task searchTask = Task.Run(() => SearchDictionaryForStrCode(selectedText), searchCancelTokenSource.Token);
-            }
+            
         }
 
-        private void SearchDictionaryForStrCode(string strCode)
-        {
-            DictionaryEntry? dictEntry = dictionaryEntries?.FirstOrDefault(entry => entry.StrCode.ToString("X") == strCode);
-            if (dictEntry != null)
-            {
-
-            }
-        }
-
-        private void replaceOpenedFileOnExportToolStripMenuItem_Click(object sender, EventArgs e)
+        private void ReplaceOpenedFileOnExportToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (replaceOpenedFileOnExportToolStripMenuItem.Checked)
             {
@@ -216,11 +194,13 @@ namespace GcxEditorGUI
             }
         }
 
-        private void chooseLocationToolStripMenuItem_Click(object sender, EventArgs e)
+        private void ChooseLocationToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            SaveFileDialog saveFileDialog = new SaveFileDialog();
-            saveFileDialog.DefaultExt = ".gcx";
-            saveFileDialog.OverwritePrompt = true;
+            SaveFileDialog saveFileDialog = new()
+            {
+                DefaultExt = ".gcx",
+                OverwritePrompt = true
+            };
             DialogResult dialogResult = saveFileDialog.ShowDialog();
             if (dialogResult == DialogResult.OK)
             {
@@ -228,19 +208,19 @@ namespace GcxEditorGUI
             }
         }
 
-        private void exportToolStripMenuItem_Click(object sender, EventArgs e)
+        private void ExportToolStripMenuItem_Click(object sender, EventArgs e)
         {
             toolStripStatusLabel.Text = "Exporting new .gcx with json edits...";
             Application.DoEvents();
             if (!_overwriteLoadedGcx)
             {
-                if (string.IsNullOrEmpty(_exportLocation))
-                    ExportNewGcx($"{_loadedJson!.Split(".")[0]}.gcx");
+                if (string.IsNullOrEmpty(ExportLocation))
+                    ExportNewGcx($"{LoadedJson!.Split(".")[0]}.gcx");
                 else
-                    ExportNewGcx(_exportLocation);
+                    ExportNewGcx(ExportLocation);
             }
             else
-                ExportNewGcx(_loadedGcxLocation);
+                ExportNewGcx(LoadedGcxLocation!);
             toolStripStatusLabel.Text = ".gcx successfully exported!";
         }
     }

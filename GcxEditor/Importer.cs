@@ -19,26 +19,32 @@ namespace GcxEditor
     {
         private static int cursor = 0;
         private static int positionOfZeroPadding;
-        private static Dictionary<string, uint> FileTable = new Dictionary<string, uint>();
+        private static Dictionary<string, uint> FileTable = new();
 
         public static Dictionary<Procedure, byte[]> ImportJsonFile(string path)
         {
-            string fileContents = File.ReadAllText(path);
-            Procedure procedure = new Procedure();
-            JsonSerializerSettings settings = new JsonSerializerSettings
+            try
             {
-                MaxDepth = 128,
-                TypeNameHandling = TypeNameHandling.All
-            };
-            GcxClasses.Gcx deserializedGcx = JsonConvert.DeserializeObject<GcxClasses.Gcx>(fileContents, settings);
-            List<Procedure> proceduresToEncode = deserializedGcx.ProcBlock.Procedures;
-            proceduresToEncode.Add(deserializedGcx.Main);
-            return EncodeProcsFromJson(proceduresToEncode);
+                string fileContents = File.ReadAllText(path);
+                JsonSerializerSettings settings = new()
+                {
+                    MaxDepth = 128,
+                    TypeNameHandling = TypeNameHandling.All
+                };
+                Gcx deserializedGcx = JsonConvert.DeserializeObject<Gcx>(fileContents, settings)!;
+                List<Procedure> proceduresToEncode = deserializedGcx.ProcBlock.Procedures;
+                proceduresToEncode.Add(deserializedGcx.Main!);
+                return EncodeProcsFromJson(proceduresToEncode);
+            }
+            catch (Exception ex)
+            {
+                throw new JsonImporterException("Failed to import JSON file", ex);
+            }
         }
 
         public static Dictionary<Procedure, byte[]> EncodeProcsFromJson(List<Procedure> jsonProcedures)
         {
-            Dictionary<Procedure, byte[]> encodedProcs = new Dictionary<Procedure, byte[]>();
+            Dictionary<Procedure, byte[]> encodedProcs = new();
             foreach (Procedure procedure in jsonProcedures)
             {
                 try
@@ -48,7 +54,7 @@ namespace GcxEditor
                 }
                 catch(Exception e)
                 {
-                    throw e;
+                    throw new EncoderException("Failed to encode procs from json", e);
                 }
             }
 
@@ -66,9 +72,9 @@ namespace GcxEditor
 
         public static Dictionary<Procedure, byte[]> EncodeProcsFromRawGcx(List<Procedure> parsedProcedures)
         {
-            Dictionary<Procedure, byte[]> reEncodedProcs = new Dictionary<Procedure, byte[]>();
-            List<EncodingComparer> misEncodedProcs = new List<EncodingComparer>();
-            List<EncodingComparer> correctEncoding = new List<EncodingComparer>();
+            Dictionary<Procedure, byte[]> reEncodedProcs = new();
+            List<EncodingComparer> misEncodedProcs = new();
+            List<EncodingComparer> correctEncoding = new();
             foreach (Procedure procedure in parsedProcedures)
             {
                 try
@@ -88,6 +94,7 @@ namespace GcxEditor
                 }
                 catch (Exception ex)
                 {
+                    throw new EncoderException("Failed to encode procs from raw gcx", ex);
                 }
             }
 
@@ -99,7 +106,7 @@ namespace GcxEditor
             try
             {
                 cursor = 0;
-                FileInfo gcxFile = new FileInfo(path);
+                FileInfo gcxFile = new(path);
                 if (gcxFile.Exists)
                 {
                     byte[] fileContents = File.ReadAllBytes(gcxFile.FullName);
@@ -113,7 +120,7 @@ namespace GcxEditor
                     byte[] procedureData = GetProcedureData(fileContents);
                     byte[] mainProcedureData = GetMainData(procedureData);
 
-                    List<Procedure> parsedProcedures = new List<Procedure>();
+                    List<Procedure> parsedProcedures = new();
                     foreach (KeyValuePair<byte[],byte[]> procedureOffset in procedureTable)
                     {
                         int startingIndex = (BitConverter.ToInt32(procedureOffset.Value) & 0xFFFFFF ) + sizeof(uint);
@@ -132,24 +139,32 @@ namespace GcxEditor
                     byte[] mainBody = TakeRangeFromArray(mainProcedureData, mainStartOffset + sizeOffset, mainSize + mainStartOffset + sizeOffset);
                     Procedure mainProcedure = ParseProcedure(mainBody, null, mainSize);
 
-                    FileTable fileTable = new FileTable();
-                    fileTable.ScriptTableOffset = FileTable["scriptOffset"];
-                    fileTable.ResourceTableOffset = FileTable["resourceOffset"];
-                    fileTable.StringTableOffset = FileTable["stringsOffset"];
-                    fileTable.FontDataOffset = FileTable["fontOffset"];
-                    fileTable.Key = FileTable["key"];
-                    ProcedureBlock procedureBlock = new ProcedureBlock();
-                    procedureBlock.Procedures = parsedProcedures;
-                    GcxClasses.Gcx gcx = new GcxClasses.Gcx(fileTable, procedureBlock);
-                    gcx.FileContents = fileContents;
-                    gcx.FileTable = fileTable;
+                    FileTable fileTable = new()
+                    {
+                        ScriptTableOffset = FileTable["scriptOffset"],
+                        ResourceTableOffset = FileTable["resourceOffset"],
+                        StringTableOffset = FileTable["stringsOffset"],
+                        FontDataOffset = FileTable["fontOffset"],
+                        Key = FileTable["key"]
+                    };
+                    ProcedureBlock procedureBlock = new()
+                    {
+                        Procedures = parsedProcedures
+                    };
+                    Gcx gcx = new(fileTable, procedureBlock)
+                    {
+                        FileContents = fileContents,
+                        FileTable = fileTable
+                    };
 
                     DecodeProcsFromRawGcx(procedureBlock.Procedures);
 
                     Procedure decodedMain = ProcDecoder.DecodeProc(mainProcedure.RawContents);
-                    Main main = new Main();
-                    main.EncodedContents = mainProcedure.RawContents;
-                    main.DecodedContents = decodedMain.DecodedContents;
+                    Main main = new()
+                    {
+                        EncodedContents = mainProcedure.RawContents,
+                        DecodedContents = decodedMain.DecodedContents
+                    };
                     gcx.Main = main;
                     
                     return gcx;
@@ -159,11 +174,11 @@ namespace GcxEditor
             }
             catch (Exception ex)
             {
-                throw new NotImplementedException("Failed to import gcx file, no error handling for this case");
+                throw new NotImplementedException("Failed to import gcx file, no error handling for this case", ex);
             }
         }
 
-        public static void AssembleReencodedFile(GcxClasses.Gcx gcx, Dictionary<Procedure, byte[]> reEncodedProcs, string outputFile = "lastModifiedGcx.gcx")
+        public static void AssembleReencodedFile(Gcx gcx, Dictionary<Procedure, byte[]> reEncodedProcs, string outputFile = "lastModifiedGcx.gcx")
         {
             KeyValuePair<Procedure, byte[]> mainProc = reEncodedProcs.Last();
             byte[] customMain = mainProc.Value;
@@ -231,7 +246,7 @@ namespace GcxEditor
 
         private static Dictionary<byte[], byte[]> GetProcedureTable(byte[] gcxContents)
         {
-            Dictionary<byte[], byte[]> procedureTable = new Dictionary<byte[], byte[]>();
+            Dictionary<byte[], byte[]> procedureTable = new();
             while (!gcxContents.Take(new Range(new Index(cursor), new Index(cursor + 8))).ToArray().SequenceEqual(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 }))
             {
                 procedureTable.Add(TakeAndAdvance4Bytes(gcxContents),
@@ -245,7 +260,7 @@ namespace GcxEditor
 
         private static Dictionary<string, uint> GetFileTable(byte[] gcxContents)
         {
-            Dictionary<string, uint> fileTable = new Dictionary<string, uint>
+            Dictionary<string, uint> fileTable = new()
             {
                 { "scriptOffset", BitConverter.ToUInt32(TakeAndAdvance4Bytes(gcxContents)) },
                 { "resourceOffset", BitConverter.ToUInt32(TakeAndAdvance4Bytes(gcxContents)) },

@@ -1,0 +1,10 @@
+﻿[*.{cs,vb}]
+
+# IDE0028: Simplify collection initialization
+dotnet_style_collection_initializer = false
+
+# IDE0028: Simplify collection initialization
+dotnet_diagnostic.IDE0028.severity = none
+
+# IDE0305: Simplify collection initialization
+dotnet_style_prefer_collection_expression = never

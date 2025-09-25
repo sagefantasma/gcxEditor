@@ -4,7 +4,7 @@ namespace GcxEditor
 {
     public static class Builder
     {
-        private static int sizeOfU24 = 3;
+        private static readonly int SizeOfU24 = 3;
 
         public static byte[] BuildContainerElement(byte declarationNibble, byte[] contents)
         {
@@ -34,8 +34,8 @@ namespace GcxEditor
             {
                 containerBytes = new byte[sizeOfContentsPadded + 4];
                 containerBytes[0] = (byte)(declarationNibble + 0xF);
-                Array.Copy(BitConverter.GetBytes(sizeOfContentsPadded), 1, containerBytes, position, sizeOfU24);
-                position += sizeOfU24;
+                Array.Copy(BitConverter.GetBytes(sizeOfContentsPadded), 1, containerBytes, position, SizeOfU24);
+                position += SizeOfU24;
             }
 
             Array.Copy(contents, 0, containerBytes, position, contents.Length);
@@ -43,12 +43,12 @@ namespace GcxEditor
             return containerBytes;
         }
 
-        public static byte[] EncodeCommandWithArgsAndParams(List<Term> args, List<Parameter> parameters, byte[] commandDeclarationBytes)
+        public static byte[] EncodeCommandWithArgsAndParams(List<ITerm> args, List<Parameter> parameters, byte[] commandDeclarationBytes)
         {
             byte[] argsBytes = EncodeCommandWithOnlyArgs(args, commandDeclarationBytes);
             uint parametersBytesLength = 0;
 
-            List<byte[]> encodedParams = new List<byte[]>();
+            List<byte[]> encodedParams = new();
             foreach (Parameter parameter in parameters)
             {
                 byte[] encodedParam = parameter.Encode();
@@ -70,12 +70,12 @@ namespace GcxEditor
             return encodedBytes;
         }
 
-        public static byte[] EncodeCommandWithOnlyArgs(List<Term> args, byte[] commandDeclarationBytes) 
+        public static byte[] EncodeCommandWithOnlyArgs(List<ITerm> args, byte[] commandDeclarationBytes) 
         {
             uint argsBytesLength = 0;
             uint declarationSize = 4;
 
-            foreach (Term argument in args)
+            foreach (ITerm argument in args)
             {
                 byte[] encodedArg = argument.Encode();
                 argsBytesLength += (uint)encodedArg.Length;
@@ -123,7 +123,7 @@ namespace GcxEditor
 
             Array.Copy(commandDeclarationBytes, encodedBytes, commandDeclarationBytes.Length);
 
-            foreach (Term arg in args)
+            foreach (ITerm arg in args)
             {
                 byte[] encodedArg = arg.Encode();
                 Array.Copy(encodedArg, 0, encodedBytes, position, encodedArg.Length);
@@ -161,7 +161,7 @@ namespace GcxEditor
             {
                 encodedBytes = new byte[size + 5];
                 encodedBytes[0] = (byte)(declaringHighNibble + 0xF);
-                Array.Copy(BitConverter.GetBytes(size + 1), 1, encodedBytes, 1, sizeOfU24);
+                Array.Copy(BitConverter.GetBytes(size + 1), 1, encodedBytes, 1, SizeOfU24);
                 position = 4;
             }
 
@@ -196,7 +196,7 @@ namespace GcxEditor
             {
                 encodedBytes = new byte[size + 5];
                 encodedBytes[0] = (byte)(declaringHighNibble + 0xF);
-                Array.Copy(BitConverter.GetBytes(size + 1), 1, encodedBytes, 1, sizeOfU24);
+                Array.Copy(BitConverter.GetBytes(size + 1), 1, encodedBytes, 1, SizeOfU24);
                 position = 4;
             }
 

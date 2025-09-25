@@ -78,7 +78,7 @@
             loadgcxToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.O;
             loadgcxToolStripMenuItem.Size = new Size(184, 22);
             loadgcxToolStripMenuItem.Text = "Load .gcx...";
-            loadgcxToolStripMenuItem.Click += loadgcxToolStripMenuItem_Click;
+            loadgcxToolStripMenuItem.Click += LoadGcxToolStripMenuItem_Click;
             // 
             // savejsonToolStripMenuItem
             // 
@@ -87,7 +87,7 @@
             savejsonToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.S;
             savejsonToolStripMenuItem.Size = new Size(184, 22);
             savejsonToolStripMenuItem.Text = "Save .json";
-            savejsonToolStripMenuItem.Click += savejsonToolStripMenuItem_Click;
+            savejsonToolStripMenuItem.Click += SaveJsonToolStripMenuItem_Click;
             // 
             // exportModifiedgcxToolStripMenuItem
             // 
@@ -104,7 +104,7 @@
             replaceOpenedFileOnExportToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.Shift | Keys.R;
             replaceOpenedFileOnExportToolStripMenuItem.Size = new Size(315, 22);
             replaceOpenedFileOnExportToolStripMenuItem.Text = "Replace Opened File On Export?";
-            replaceOpenedFileOnExportToolStripMenuItem.Click += replaceOpenedFileOnExportToolStripMenuItem_Click;
+            replaceOpenedFileOnExportToolStripMenuItem.Click += ReplaceOpenedFileOnExportToolStripMenuItem_Click;
             // 
             // chooseLocationToolStripMenuItem
             // 
@@ -112,7 +112,7 @@
             chooseLocationToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.Alt | Keys.Shift | Keys.E;
             chooseLocationToolStripMenuItem.Size = new Size(301, 22);
             chooseLocationToolStripMenuItem.Text = "Choose export location...";
-            chooseLocationToolStripMenuItem.Click += chooseLocationToolStripMenuItem_Click;
+            chooseLocationToolStripMenuItem.Click += ChooseLocationToolStripMenuItem_Click;
             // 
             // exportToolStripMenuItem
             // 
@@ -120,7 +120,7 @@
             exportToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.Shift | Keys.E;
             exportToolStripMenuItem.Size = new Size(301, 22);
             exportToolStripMenuItem.Text = "Export";
-            exportToolStripMenuItem.Click += exportToolStripMenuItem_Click;
+            exportToolStripMenuItem.Click += ExportToolStripMenuItem_Click;
             // 
             // exitToolStripMenuItem
             // 
@@ -128,7 +128,7 @@
             exitToolStripMenuItem.ShortcutKeys = Keys.Alt | Keys.F4;
             exitToolStripMenuItem.Size = new Size(184, 22);
             exitToolStripMenuItem.Text = "Exit";
-            exitToolStripMenuItem.Click += exitToolStripMenuItem_Click;
+            exitToolStripMenuItem.Click += ExitToolStripMenuItem_Click;
             // 
             // editToolStripMenuItem
             // 
@@ -201,7 +201,7 @@
             procedureListBox.Name = "procedureListBox";
             procedureListBox.Size = new Size(246, 629);
             procedureListBox.TabIndex = 0;
-            procedureListBox.SelectedIndexChanged += procedureListBox_SelectedIndexChanged;
+            procedureListBox.SelectedIndexChanged += ProcedureListBox_SelectedIndexChanged;
             // 
             // richTextBox
             // 
@@ -213,7 +213,7 @@
             richTextBox.Size = new Size(1006, 629);
             richTextBox.TabIndex = 1;
             richTextBox.Text = "";
-            richTextBox.SelectionChanged += richTextBox_SelectionChanged;
+            richTextBox.SelectionChanged += RichTextBox_SelectionChanged;
             // 
             // statusStrip
             // 

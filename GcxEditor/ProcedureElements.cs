@@ -18,7 +18,7 @@ namespace GcxEditor
         public byte[] Encode();
     }
 
-    public class Procedure : Term
+    public class Procedure : ITerm
     {
         public string Name
         {
@@ -33,7 +33,7 @@ namespace GcxEditor
             }
             set
             {
-                if (value.ToLower() != "main")
+                if (!string.Equals(value.ToLower(), "main"))
                 {
                     //take in each 2 charas as one byte, make order from that
                     byte[] bytes = new byte[4];
@@ -62,9 +62,9 @@ namespace GcxEditor
             Type = GetType().Name;
         }
 
-        public new byte[] Encode()
+        public byte[] Encode()
         {
-            List<byte[]> encodedContents = new List<byte[]>();
+            List<byte[]> encodedContents = new();
 
             int sizeOfEncodedContents = 0;
             foreach(dynamic decodedContent in DecodedContents)
@@ -127,7 +127,7 @@ namespace GcxEditor
             {
                 foreach (dynamic item in DecodedContents)
                 {
-                    printedString += @$"{Environment.NewLine}     {item.ToString()}";
+                    printedString += @$"{Environment.NewLine}     {item}";
                 }
             }
 
@@ -151,7 +151,7 @@ namespace GcxEditor
         public string Type { get; set; }
         public List<Parameter> Parameters { get; set; } = new List<Parameter>();
         [JsonConverter(typeof(TermConverter))]
-        public List<Term> Args = new List<Term>();
+        public List<ITerm> Args = new();
         [JsonIgnore]
         public byte[] EncodedContents { get; set; }
         public Command()
@@ -163,10 +163,10 @@ namespace GcxEditor
         {
             string printedString = $"Args: ";
 
-            foreach (Term arg in Args)
+            foreach (ITerm arg in Args)
             {
                 if (Args.Last() != arg)
-                    printedString += $"{arg.ToString()}, ";
+                    printedString += $"{arg}, ";
                 else
                     printedString += arg.ToString();
             }
@@ -177,7 +177,7 @@ namespace GcxEditor
             foreach (Parameter param in Parameters)
             {
                 if (Parameters.Last() != param)
-                    printedString += $"{param.ToString()}, ";
+                    printedString += $"{param}, ";
                 else
                     printedString += param.ToString();
             }
@@ -185,15 +185,15 @@ namespace GcxEditor
             return printedString;
         }
 
-        public new abstract byte[] Encode();
+        public abstract byte[] Encode();
     }
 
-    public class Expression : Term
+    public class Expression : ITerm
     {
         [JsonConverter(typeof(TermConverter))]
-        public Term? Term1 { get; set; }
+        public ITerm? Term1 { get; set; }
         [JsonConverter(typeof(TermConverter))]
-        public Term? Term2 { get; set; }
+        public ITerm? Term2 { get; set; }
         public ExpressionElements.Operation Operator { get; set; }
         [JsonIgnore]
         public uint Size { get; set; }
@@ -206,9 +206,9 @@ namespace GcxEditor
             Type = GetType().Name;
         }
 
-        public new byte[] Encode()
+        public byte[] Encode()
         {
-            List<byte[]> encodedContents = new List<byte[]>();
+            List<byte[]> encodedContents = new();
 
             int sizeOfEncodedContents = 0;
             bool skipOperator = false;
@@ -243,7 +243,7 @@ namespace GcxEditor
             {
                 skipOperator = true;
             }
-            byte[] term2Encoded = Term2.Encode();
+            byte[] term2Encoded = Term2!.Encode();
             if (Term2 is Expression)
             {
                 //remove declaration, size, and end of expression operator
@@ -299,9 +299,9 @@ namespace GcxEditor
                 Array.Copy(encodedContent, 0, encodedBytes, position, encodedContent.Length);
                 position += encodedContent.Length;
             }
-            encodedBytes[encodedBytes.Length - 1] = 0xA0;
+            encodedBytes[^1] = 0xA0;
             if(!skipOperator)
-                encodedBytes[encodedBytes.Length - 2] = (byte)Operator;
+                encodedBytes[^2] = (byte)Operator;
 
             return encodedBytes;
         }
@@ -367,7 +367,7 @@ namespace GcxEditor
     {
         public Procedure ProcedureInvoked { get; set; } = new Procedure();
         [JsonConverter(typeof(TermConverter))]
-        public List<Term> Args { get; set; } = new List<Term>();
+        public new List<ITerm> Args { get; set; } = new();
         public Invoke()
         {
             Type = GetType().Name;
@@ -378,8 +378,8 @@ namespace GcxEditor
             int procedureInvokedBytes = 4;
             uint argsBytesLength = 0;
 
-            List<byte[]> encodedArgs = new List<byte[]>();
-            foreach (Term argument in Args)
+            List<byte[]> encodedArgs = new();
+            foreach (ITerm argument in Args)
             {
                 byte[] encodedArg = argument.Encode();
                 argsBytesLength += (uint)encodedArg.Length;
@@ -437,10 +437,10 @@ namespace GcxEditor
                 @$" - Procedure Invoked: {ProcedureInvoked}" +
                 @$"      - Args on invoke: ";
 
-            foreach (Term arg in Args)
+            foreach (ITerm arg in Args)
             {
                 if (Args.Last() != arg)
-                    printedString += $"{arg.ToString()}, ";
+                    printedString += $"{arg}, ";
                 else
                     printedString += arg.ToString();
             }
@@ -449,8 +449,9 @@ namespace GcxEditor
         }
     }
 
-    public interface Term : IProcedureElement
+    public interface ITerm : IProcedureElement
     {
+        public new byte[] Encode();
     }
 
     public class Return : Statement
@@ -660,14 +661,14 @@ namespace GcxEditor
         [JsonIgnore]
         public byte[] EncodedContents { get; set; }
         [JsonConverter(typeof(TermConverter))]
-        public List<Term> Args { get; set; }
+        public List<ITerm> Args { get; set; } = new();
         public string Type { get; set; } = "Parameter";
 
-        public new byte[] Encode()
+        public byte[] Encode()
         {
-            List<byte[]> encodedArgs = new List<byte[]>();
+            List<byte[]> encodedArgs = new();
             uint size = 0;
-            foreach (Term arg in Args)
+            foreach (ITerm arg in Args)
             {
                 byte[] encodedArg = arg.Encode();
                 size += (uint)encodedArg.Length;
@@ -689,10 +690,10 @@ namespace GcxEditor
         public override string ToString()
         {
             string printedString = $"parameter({ParamType}):";
-            foreach(Term arg in Args)
+            foreach(ITerm arg in Args)
             {
                 if (Args.Last() != arg)
-                    printedString += $"{arg.ToString()}, ";
+                    printedString += $"{arg}, ";
                 else
                     printedString += arg.ToString();
             }
@@ -701,7 +702,7 @@ namespace GcxEditor
         }
     }
 
-    public class Constant : Term
+    public class Constant : ITerm
     {
         [JsonIgnore]
         public uint Size { get; set; }
@@ -714,7 +715,7 @@ namespace GcxEditor
             Type = GetType().Name;
         }
 
-        public new byte[] Encode()
+        public byte[] Encode()
         {
             return new[] { (byte)(0xC1 + Value) }; 
         }
@@ -725,22 +726,22 @@ namespace GcxEditor
         }
     }
 
-    public class Literal : Term
+    public class Literal : ITerm
     {
         [JsonIgnore]
         public uint Size { get; set; }
         public string Type { get; set; }
         [JsonIgnore]
         public byte[] EncodedContents { get; set; }
-        public dynamic Value { get; set; }
-        public byte DataTypeByte { get; set; }
-        public ExpressionElements.DataType DataType { get; set; }
+        public required dynamic Value { get; set; }
+        public required byte DataTypeByte { get; set; }
+        public required ExpressionElements.DataType DataType { get; set; }
         public Literal()
         {
             Type = GetType().Name;
         }
 
-        public new byte[] Encode()
+        public byte[] Encode()
         {
             byte[] encodedBytes;
             if(DataType.DataTypeName == ExpressionElements.DataType.String.DataTypeName)
@@ -781,7 +782,7 @@ namespace GcxEditor
         }
     }
 
-    public class PassedArg : Term
+    public class PassedArg : ITerm
     {
         [JsonIgnore]
         public uint Size { get; set; }
@@ -794,7 +795,7 @@ namespace GcxEditor
             Type = GetType().Name;
         }
 
-        public new byte[] Encode()
+        public byte[] Encode()
         {
             if(ArgNum < 0xF)
             {
@@ -812,18 +813,18 @@ namespace GcxEditor
         }
     }
 
-    public interface Variable : Term
+    public interface IVariable : ITerm
     {
         public ushort Id { get; set; }
         public byte LowNibble { get; set; }
         [JsonIgnore]
-        public byte[] EncodedContents { get; set; }
+        public new byte[] EncodedContents { get; set; }
     }
 
-    public class VariableArray : Term
+    public class VariableArray : ITerm
     {
         [JsonConverter(typeof(TermConverter))]
-        public List<Term> SizeAndIndex { get; set; }
+        public List<ITerm> SizeAndIndex { get; set; } = new();
         public ushort Id { get; set; }
         public byte LowNibble { get; set; }
         public byte ArrayType { get; set; }
@@ -837,7 +838,7 @@ namespace GcxEditor
             Type = GetType().Name;
         }
 
-        public VariableArray(ushort id, byte lowNibble, byte arrayType, List<Term> sizeAndIndex)
+        public VariableArray(ushort id, byte lowNibble, byte arrayType, List<ITerm> sizeAndIndex)
         {
             Type = GetType().Name;
             Id = id;
@@ -846,12 +847,12 @@ namespace GcxEditor
             SizeAndIndex = sizeAndIndex;
         }
 
-        public new byte[] Encode()
+        public byte[] Encode()
         {
             int idAndTypeDeclarationSize = 4;
             int sizeOfArgs = 0;
-            List<byte[]> encodedArguments = new List<byte[]>();
-            foreach (Term argument in SizeAndIndex) 
+            List<byte[]> encodedArguments = new();
+            foreach (ITerm argument in SizeAndIndex) 
             {
                 byte[] encodedArg = argument.Encode();
                 encodedArguments.Add(encodedArg);
@@ -877,15 +878,15 @@ namespace GcxEditor
         }
     }
 
-    public class Linkvarbuf : Variable
+    public class Linkvarbuf : IVariable
     {
         [JsonIgnore]
         public uint Size { get; set; }
         public string Type { get; set; }
         [JsonIgnore]
-        public new byte[] EncodedContents { get; set; }
-        public new ushort Id { get; set; }
-        public new byte LowNibble { get; set; }
+        public byte[] EncodedContents { get; set; }
+        public ushort Id { get; set; }
+        public byte LowNibble { get; set; }
         public Linkvarbuf()
         {
             Type = GetType().Name;
@@ -897,7 +898,7 @@ namespace GcxEditor
             Id = id;
         }
 
-        public new byte[] Encode()
+        public byte[] Encode()
         {
             byte[] encodedVarbuf = new byte[4];
             encodedVarbuf[0] = (byte)(0x10 + LowNibble);
@@ -913,16 +914,16 @@ namespace GcxEditor
         }
     }
 
-    public class Varbuf : Variable
+    public class Varbuf : IVariable
     {
         [JsonIgnore]
         public uint Size { get; set; }
         public string Type { get; set; }
         [JsonIgnore]
-        public new byte[] EncodedContents { get; set; }
-        public new ushort Id { get; set; }
+        public byte[] EncodedContents { get; set; }
+        public ushort Id { get; set; }
         public byte ByteType { get; set; }
-        public new byte LowNibble { get; set; }
+        public byte LowNibble { get; set; }
 
         public Varbuf()
         {
@@ -935,7 +936,7 @@ namespace GcxEditor
             Id = id;
         }
 
-        public new byte[] Encode()
+        public byte[] Encode()
         {
             byte[] encodedVarbuf = new byte[4];
             encodedVarbuf[0] = (byte)(0x10 + LowNibble);
@@ -951,15 +952,15 @@ namespace GcxEditor
         }
     }
 
-    public class Localvarbuf : Variable
+    public class Localvarbuf : IVariable
     {
         [JsonIgnore]
         public uint Size { get; set; }
         public string Type { get; set; }
         [JsonIgnore]
-        public new byte[] EncodedContents { get; set; }
-        public new ushort Id { get; set; }
-        public new byte LowNibble { get; set; }
+        public byte[] EncodedContents { get; set; }
+        public ushort Id { get; set; }
+        public byte LowNibble { get; set; }
 
         public Localvarbuf()
         {
@@ -972,7 +973,7 @@ namespace GcxEditor
             Id = id;
         }
 
-        public new byte[] Encode()
+        public byte[] Encode()
         {
             byte[] encodedVarbuf = new byte[4];
             encodedVarbuf[0] = (byte)(0x10 + LowNibble);
@@ -988,15 +989,15 @@ namespace GcxEditor
         }
     }
 
-    public class LocalVar : Variable
+    public class LocalVar : IVariable
     {
         [JsonIgnore]
         public uint Size { get; set; }
         public string Type { get; set; }
         [JsonIgnore]
-        public new byte[] EncodedContents { get; set; }
-        public new ushort Id { get; set; }
-        public new byte LowNibble { get; set; } //not used
+        public byte[] EncodedContents { get; set; }
+        public ushort Id { get; set; }
+        public byte LowNibble { get; set; } //not used
 
         public LocalVar()
         {
@@ -1009,7 +1010,7 @@ namespace GcxEditor
             Id = input;
         }
 
-        public new byte[] Encode()
+        public byte[] Encode()
         {
             byte[] idBytes = BitConverter.GetBytes(Id);
             byte highNibble = 0x90;
