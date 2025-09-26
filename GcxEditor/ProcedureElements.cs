@@ -733,7 +733,7 @@ namespace GcxEditor
         public string Type { get; set; }
         [JsonIgnore]
         public byte[] EncodedContents { get; set; }
-        public required dynamic Value { get; set; }
+        public required string Value { get; set; }
         public required byte DataTypeByte { get; set; }
         public required ExpressionElements.DataType DataType { get; set; }
         public Literal()
@@ -746,30 +746,20 @@ namespace GcxEditor
             byte[] encodedBytes;
             if(DataType.DataTypeName == ExpressionElements.DataType.String.DataTypeName)
             {
-                if (Value is byte[])
-                {
-                    encodedBytes = new byte[Value.Length + 2];
-                    encodedBytes[0] = 0x07;
-                    encodedBytes[1] = (byte)Value.Length;
-                    Array.Copy(Value, 0, encodedBytes, 2, Value.Length);
-                    //Value = Encoding.UTF8.GetString(encodedBytes);
-                }
-                else
-                {
-                    //byte[] bytes = Encoding.Default.GetBytes(Value);
-                    byte[] bytes = Convert.FromBase64String(Value);
-                    //byte[] bytes = Value as byte[];
-                    encodedBytes = new byte[bytes.Length + 2];
-                    encodedBytes[0] = 0x07;
-                    encodedBytes[1] = (byte)bytes.Length;
-                    Array.Copy(bytes, 0, encodedBytes, 2, bytes.Length);
-                }
+                //byte[] bytes = Encoding.Default.GetBytes(Value);
+                byte[] bytes = Convert.FromBase64String(Value).Reverse().ToArray();
+                //byte[] bytes = Value as byte[];
+                encodedBytes = new byte[bytes.Length + 2];
+                encodedBytes[0] = 0x07;
+                encodedBytes[1] = (byte)bytes.Length;
+                Array.Copy(bytes, 0, encodedBytes, 2, bytes.Length);
             }
             else
             {
                 encodedBytes = new byte[DataType.Length + 1];
                 encodedBytes[0] = DataTypeByte; //TODO: can we reverse engineer what determines this so we can make a "fresh" file?
-                byte[] dataBytes = BitConverter.GetBytes(Value);
+                //byte[] dataBytes = BitConverter.GetBytes(Value);
+                byte[] dataBytes = Convert.FromHexString(Value).Reverse().ToArray();
                 Array.Copy(dataBytes, 0, encodedBytes, 1, DataType.Length);
             }
 

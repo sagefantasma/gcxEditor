@@ -8,10 +8,10 @@ namespace GcxEditorGUI
 {
     internal class DictionaryEntry
     {
-        public int StrCode;
+        public string StrCode;
         public string Name;
 
-        public DictionaryEntry(int strCode, string name)
+        public DictionaryEntry(string strCode, string name)
         {
             StrCode = strCode;
             Name = name;

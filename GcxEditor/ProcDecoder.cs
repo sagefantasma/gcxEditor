@@ -643,12 +643,12 @@ namespace GcxEditor
                                         dataType.Length = bytes[position + 1];
                                         dataValue = new byte[dataType.Length];
                                         Array.Copy(bytes, position + 2, dataValue, 0, dataType.Length);
-                                        args.Add(new Literal { Value = dataValue, DataTypeByte = currentByte, EncodedContents = TakeRange(bytes, position, (uint)(position + 2 + dataType.Length)), DataType = dataType, Size = (ushort)(dataType.Length +1)}); //+1 for dataType declaration
+                                        args.Add(new Literal { Value = Convert.ToBase64String(dataValue.Reverse().ToArray()), DataTypeByte = currentByte, EncodedContents = TakeRange(bytes, position, (uint)(position + 2 + dataType.Length)), DataType = dataType, Size = (ushort)(dataType.Length +1)}); //+1 for dataType declaration
                                     }
                                     else
                                     {
                                         Array.Copy(bytes, position + 1, dataValue, 0, dataType.Length);
-                                        args.Add(new Literal { Value = BitConverter.ToUInt32(dataValue), DataTypeByte = currentByte, EncodedContents = TakeRange(bytes, position, (uint)(position + 1 + dataType.Length)), DataType = dataType, Size = (ushort)(dataType.Length + 1) }); //+1 for dataType declaration
+                                        args.Add(new Literal { Value = Convert.ToHexString(dataValue.Take(dataType.Length).ToArray().Reverse().ToArray()), DataTypeByte = currentByte, EncodedContents = TakeRange(bytes, position, (uint)(position + 1 + dataType.Length)), DataType = dataType, Size = (ushort)(dataType.Length + 1) }); //+1 for dataType declaration
                                     }
                                     position += (uint)(dataType.Length + 1);
                                 }
