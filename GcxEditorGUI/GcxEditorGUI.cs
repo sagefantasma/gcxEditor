@@ -1,5 +1,6 @@
 using GcxEditor;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace GcxEditorGUI
 {
@@ -49,6 +50,34 @@ namespace GcxEditorGUI
             }
         }
 
+        private string ReplaceDecimalsWithHex(string inputJson)
+        {
+            //Okay, so this kinda worked, but not very well and just slows EVERYTHING down.
+            //to be honest, i think it makes the most sense to instead just change 
+            //how we store the data in json. Instead of storing them as numeric values,
+            //they should be stored as strings or bytearrays.
+            toolStripProgressBar.Value = 0;
+            toolStripStatusLabel.Text = "Replacing decimals with hex...";
+            List<string> lines = inputJson.Split("\n").ToList();
+
+            List<string> valueDeclarations = lines.FindAll(x=>x.Contains("\"Value\": ")).ToList();
+            toolStripProgressBar.Maximum = valueDeclarations.Count;
+
+            foreach(string trimmedDeclaration in valueDeclarations)
+            {
+                bool isInt = uint.TryParse(trimmedDeclaration.Split(": ")[1].Replace(",",""), out uint decimalValue);
+                if (isInt)
+                {
+                    string opening = trimmedDeclaration.Split(": ")[0];
+                    string adjustedDeclaration = $"{opening}: \"{Convert.ToHexString(BitConverter.GetBytes(decimalValue))}\"";
+                    inputJson = inputJson.Replace(trimmedDeclaration, adjustedDeclaration);
+                }
+                toolStripProgressBar.Value++;
+            }
+            toolStripStatusLabel.Text = "Finished replacing decimals with hex";
+            return inputJson;
+        }
+
         private void LoadGcxToolStripMenuItem_Click(object sender, EventArgs e)
         {
             OpenFileDialog openFileDialog = new()
@@ -89,6 +118,7 @@ namespace GcxEditorGUI
                 toolStripStatusLabel.Text = "Loading dictionary...";
                 Application.DoEvents();
                 richTextBox.Text = ReplaceDictionaryValues(true, richTextBox.Text);
+                //richTextBox.Text = ReplaceDecimalsWithHex(richTextBox.Text);
                 toolStripStatusLabel.Text = ".gcx loaded!";
             }
         }
