@@ -25,9 +25,14 @@ namespace GcxEditorGUI
             if (LoadedGcx != null)
             {
                 int location;
-                if (string.Equals((procedureListBox.SelectedItem as string)!.ToLower(), "main"))
+                string name = (procedureListBox.SelectedItem as string)!;
+                if (!string.Equals(name!.ToLower(), "main"))
                 {
-                    DisplayedProcedure = LoadedGcx.ProcBlock.Procedures.FirstOrDefault(proc => (procedureListBox.SelectedItem as string)!.Contains(proc.Name))!;
+                    if (name.Contains("("))
+                    {
+                        name = name.Split("(")[1].Split(")")[0];
+                    }
+                    DisplayedProcedure = LoadedGcx.ProcBlock.Procedures.FirstOrDefault(proc => name.Contains(proc.Name))!;
                     location = richTextBox.Find($"\"Name\": \"{DisplayedProcedure.Name}\"", richTextBox.SelectionStart + 1, -1, richTextBoxFinds);
                 }
                 else
@@ -151,7 +156,7 @@ namespace GcxEditorGUI
                 foreach (DictionaryEntry dictionaryEntry in dictionaryEntries)
                 {
                     if (textToModify.Contains(dictionaryEntry.StrCode.ToString()))
-                        textToModify = textToModify.Replace(dictionaryEntry.StrCode.ToString(), $"({dictionaryEntry.Name})");
+                        textToModify = textToModify.Replace(dictionaryEntry.StrCode.ToString(), $"\"{dictionaryEntry.Name}\"");
                     toolStripProgressBar.Value++;
                 }
             }
@@ -162,7 +167,7 @@ namespace GcxEditorGUI
                 foreach (DictionaryEntry dictionaryEntry in dictionaryEntries!)
                 {
                     if (textToModify.Contains(dictionaryEntry.Name))
-                        textToModify = textToModify.Replace($"({dictionaryEntry.Name})", dictionaryEntry.StrCode.ToString());
+                        textToModify = textToModify.Replace($"\"{dictionaryEntry.Name}\"", dictionaryEntry.StrCode.ToString());
                     toolStripProgressBar.Value++;
                 }
             }
