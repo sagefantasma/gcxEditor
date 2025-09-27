@@ -8,10 +8,10 @@ namespace LibraryTester
     {
         internal class DictionaryEntry
         {
-            public int StrCode;
+            public string StrCode;
             public string Name;
 
-            public DictionaryEntry(int strCode, string name)
+            public DictionaryEntry(string strCode, string name)
             {
                 StrCode = strCode;
                 Name = name;
@@ -25,7 +25,7 @@ namespace LibraryTester
             foreach (string line in fileContents)
             {
                 string[] parts = line.Split(' ');
-                DictionaryEntry entry = new(int.Parse(parts[0].Split('x')[1], System.Globalization.NumberStyles.HexNumber), parts[1]);
+                DictionaryEntry entry = new(parts[0].Split("0x")[1], parts[1]);
                 dictionaryEntries.Add(entry);
             }
 
@@ -34,7 +34,24 @@ namespace LibraryTester
 
         static void Main(string[] args)
         {
-            DirectoryInfo directoryInfo = new("C:\\Users\\Andy\\repos\\gcx_decompiler\\dictionaries");
+            List<DictionaryEntry> parsedDict = JsonConvert.DeserializeObject<List<DictionaryEntry>>(File.ReadAllText("masterDictionary.json"));
+            int count = 0;
+            Dictionary<DictionaryEntry, DictionaryEntry> turboDict = new();
+            foreach(DictionaryEntry entry in parsedDict)
+            {
+                List<DictionaryEntry> sampleDict = parsedDict.ToList();
+                sampleDict.Remove(entry);
+                if (sampleDict.Any(x => x.StrCode.Contains(entry.StrCode)))
+                {
+                    if (!sampleDict.Any(x => x.StrCode == entry.StrCode))
+                    {
+                        Console.WriteLine($"FUCK#{count++}");
+                    }
+                    turboDict.Add(entry, sampleDict.First(x => x.StrCode.Contains(entry.StrCode)));
+                }
+            }
+            //DirectoryInfo directoryInfo = new("C:\\Users\\Andy\\repos\\gcx_decompiler\\dictionaries");
+            DirectoryInfo directoryInfo = new("C:\\Users\\yonan\\Source\\Repos\\MGS2-Cheat-Trainer\\gcx\\dictionaries");
             List<DictionaryEntry> allDictionaryEntries = new();
             foreach(var file in directoryInfo.GetFiles())
             {

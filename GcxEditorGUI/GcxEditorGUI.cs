@@ -1,6 +1,5 @@
 using GcxEditor;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace GcxEditorGUI
 {
@@ -21,12 +20,38 @@ namespace GcxEditorGUI
             dictionaryEntries = JsonConvert.DeserializeObject<List<DictionaryEntry>>(File.ReadAllText("dictionary.json"));
         }
 
+        private void UpdateStatusStrip(string inputString, bool resetAfter = false)
+        {
+            Task.Factory.StartNew(() =>
+            {
+                Invoke((MethodInvoker)delegate
+                {
+                    toolStripStatusLabel.Text = inputString;
+                    Application.DoEvents();
+                });
+                if (resetAfter)
+                {
+                    Thread.Sleep(5000);
+                }
+                Invoke((MethodInvoker)delegate
+                {
+                    toolStripStatusLabel.Text = "";
+                    if (resetAfter)
+                    {
+                        toolStripProgressBar.Value = 0;
+                    }
+                });
+            });
+            Application.DoEvents();
+        }
+
         private void ProcedureListBox_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (LoadedGcx != null)
             {
                 int location;
                 string name = (procedureListBox.SelectedItem as string)!;
+                DictionaryEntry? dictionaryEntry = null;
                 if (!string.Equals(name!.ToLower(), "main"))
                 {
                     if (name.Contains("("))
@@ -34,7 +59,7 @@ namespace GcxEditorGUI
                         name = name.Split("(")[1].Split(")")[0];
                     }
                     DisplayedProcedure = LoadedGcx.ProcBlock.Procedures.FirstOrDefault(proc => name.Contains(proc.Name))!;
-                    DictionaryEntry dictionaryEntry = dictionaryEntries.FirstOrDefault(x => x.StrCode == DisplayedProcedure.Name);
+                    dictionaryEntry = dictionaryEntries!.FirstOrDefault(x => string.Equals(x.StrCode.ToLower(), DisplayedProcedure.Name.ToLower()));
                     if (dictionaryEntry != default)
                     {
                         location = richTextBox.Find($"\"Name\": \"{dictionaryEntry.Name}\"", richTextBox.SelectionStart + 1, -1, richTextBoxFinds);
@@ -52,7 +77,14 @@ namespace GcxEditorGUI
 
                 if (location == -1)
                 {
-                    richTextBox.Find($"\"Name\": \"{DisplayedProcedure!.Name}\"", richTextBoxFinds);
+                    if(dictionaryEntry != default)
+                    {
+                        location = richTextBox.Find($"\"Name\": \"{dictionaryEntry.Name}\"", richTextBoxFinds);
+                    }
+                    else
+                    {
+                        richTextBox.Find($"\"Name\": \"{DisplayedProcedure!.Name}\"", richTextBoxFinds);
+                    }
                 }
                 richTextBox.ScrollToCaret();
             }
@@ -60,13 +92,14 @@ namespace GcxEditorGUI
 
         private void LoadGcxToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            CloseFileToolStripMenuItem_Click(sender, e);
             OpenFileDialog openFileDialog = new()
             {
                 Multiselect = false,
                 DefaultExt = "gcx",
                 Title = "Select a GCX file to edit"
             };
-            toolStripStatusLabel.Text = "Waiting for a .gcx to be selected...";
+
             DialogResult dialogResult = openFileDialog.ShowDialog();
             if (dialogResult == DialogResult.OK)
             {
@@ -95,15 +128,16 @@ namespace GcxEditorGUI
 
                 savejsonToolStripMenuItem.Enabled = true;
                 exportModifiedgcxToolStripMenuItem.Enabled = true;
-                toolStripStatusLabel.Text = "Loading dictionary...";
-                Application.DoEvents();
+                closeFileToolStripMenuItem.Enabled = true;
+                UpdateStatusStrip("Loading dictionary...");
                 richTextBox.Text = ReplaceDictionaryValues(true, richTextBox.Text);
-                toolStripStatusLabel.Text = ".gcx loaded!";
+                UpdateStatusStrip(".gcx loaded!", true);
             }
         }
 
         private void LoadProcedureList(GcxClasses.Gcx gcxFile)
         {
+            UpdateStatusStrip("Loading procedure list...");
             foreach (Procedure procedure in gcxFile.ProcBlock.Procedures)
             {
                 DictionaryEntry? dictEntry = dictionaryEntries?.FirstOrDefault(x => x.StrCode == procedure.Name);
@@ -127,10 +161,12 @@ namespace GcxEditorGUI
 
         private void ExportNewGcx(string fileLocation)
         {
+            UpdateStatusStrip("Exporting new .gcx with json edits...");
             ExportLocation = fileLocation;
             SaveActiveJsonFile();
             Dictionary<Procedure, byte[]> reEncodedProcs = Importer.ImportJsonFile(LoadedJson!);
             Importer.AssembleReencodedFile(LoadedGcx!, reEncodedProcs, fileLocation);
+            UpdateStatusStrip(".gcx successfully exported!", true);
         }
 
         private void SaveJsonToolStripMenuItem_Click(object sender, EventArgs e)
@@ -158,7 +194,6 @@ namespace GcxEditorGUI
 
         private string ReplaceDictionaryValues(bool replaceWithValue, string textToModify)
         {
-            //return textToModify;
             if (replaceWithValue)
             {
                 toolStripProgressBar.Value = 0;
@@ -194,7 +229,7 @@ namespace GcxEditorGUI
 
         private void RichTextBox_SelectionChanged(object sender, EventArgs e)
         {
-            
+
         }
 
         private void ReplaceOpenedFileOnExportToolStripMenuItem_Click(object sender, EventArgs e)
@@ -213,8 +248,10 @@ namespace GcxEditorGUI
         {
             SaveFileDialog saveFileDialog = new()
             {
+                AddExtension = true,
                 DefaultExt = ".gcx",
-                OverwritePrompt = true
+                Filter = "GCX File (*.gcx)|*.gcx",
+                OverwritePrompt = true,
             };
             DialogResult dialogResult = saveFileDialog.ShowDialog();
             if (dialogResult == DialogResult.OK)
@@ -225,8 +262,6 @@ namespace GcxEditorGUI
 
         private void ExportToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            toolStripStatusLabel.Text = "Exporting new .gcx with json edits...";
-            Application.DoEvents();
             if (!_overwriteLoadedGcx)
             {
                 if (string.IsNullOrEmpty(ExportLocation))
@@ -236,7 +271,20 @@ namespace GcxEditorGUI
             }
             else
                 ExportNewGcx(LoadedGcxLocation!);
-            toolStripStatusLabel.Text = ".gcx successfully exported!";
+        }
+
+        private void CloseFileToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            procedureListBox.Items.Clear();
+            richTextBox.Text = string.Empty;
+            LoadedGcx = null;
+            LoadedGcxLocation = null;
+            LoadedJson = null;
+            ExportLocation = null;
+            DisplayedProcedure = null;
+            savejsonToolStripMenuItem.Enabled = false;
+            exportModifiedgcxToolStripMenuItem.Enabled = false;
+            closeFileToolStripMenuItem.Enabled = false;
         }
     }
 }
