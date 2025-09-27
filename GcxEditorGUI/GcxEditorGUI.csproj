@@ -9,6 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="oldDictionary.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\GcxEditor\GcxEditor.csproj" />
   </ItemGroup>
 
@@ -20,9 +24,6 @@
 
   <ItemGroup>
     <None Update="dictionary.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="oldDictionary.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
