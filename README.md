@@ -16,6 +16,11 @@ A tool designed to allow users to edit .gcx files from MGS2 Master Collection Ve
 - Game script modding
 - Memes
 
+## Tutorials!
+- [Basic Reverse Engineering](https://youtu.be/zo1hXALpmJM)
+- [Basic Object Movement](https://youtu.be/4RraMLQ4hio)
+- [Advanced Behavior Modding](https://youtu.be/UgAFV9LMOSs)
+
 ## Future Plans
 - Addition of a visual-programming editing option as an alternative to JSON editing
 - Script resource editing(see the MGS MC Mod Manager @ANTIBigBoss owns and maintains [here](https://github.com/ANTIBigBoss/MGS-MC-Mod-Manager-and-Tool) for stage resource editing)
