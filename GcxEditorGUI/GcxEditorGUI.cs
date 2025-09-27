@@ -1,5 +1,6 @@
 using GcxEditor;
 using Newtonsoft.Json;
+using System.Diagnostics;
 
 namespace GcxEditorGUI
 {
@@ -18,6 +19,23 @@ namespace GcxEditorGUI
         {
             InitializeComponent();
             dictionaryEntries = JsonConvert.DeserializeObject<List<DictionaryEntry>>(File.ReadAllText("dictionary.json"));
+            CheckForUpdates();
+        }
+
+        private void CheckForUpdates()
+        {
+            FileVersionInfo appInfo = FileVersionInfo.GetVersionInfo(Application.ExecutablePath);
+            string appVersion = appInfo.FileVersion!;
+            
+            bool newUpdateExists = VersionSupport.CheckIfNewUpdateExists(appVersion);
+            if (newUpdateExists)
+            {
+                DialogResult dialogResult = MessageBox.Show("Your version of the GCX Editor is out-of-date. Would you like to go to the releases page to get the latest version?", "Out-of-date warning", MessageBoxButtons.YesNo);
+                if(dialogResult == DialogResult.Yes)
+                {
+                    Process.Start("https://github.com/sagefantasma/gcxEditor/releases");
+                }
+            }
         }
 
         private void UpdateStatusStrip(string inputString, bool resetAfter = false)
