@@ -30,3 +30,7 @@ A tool designed to allow users to edit .gcx files from MGS2 Master Collection Ve
 
 ## Please consider supporting this project on [Ko-Fi](https://ko-fi.com/sagefantasma)!
 Donations are not expected or required, however I would be truly honored to earn your support!
+
+# Credits
+- Huge thanks to ANTIBigBoss, snakeswiss, trilon, zeke, and grave for their help over the past few years of working towards this project!
+- Special thank you to oct0xor for his python gcx decompiler - his tool was invaluable in learning what I needed of the .gcx file format in order to bring this project to life. Admittedly, I still prefer his decompiler's output over mine 😅
