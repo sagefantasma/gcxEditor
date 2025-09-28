@@ -1,11 +1,13 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Buffers.Text;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using static GcxEditor.ExpressionElements;
 
 namespace GcxEditor
 {
@@ -194,6 +196,7 @@ namespace GcxEditor
         public ITerm? Term1 { get; set; }
         [JsonConverter(typeof(TermConverter))]
         public ITerm? Term2 { get; set; }
+        [JsonConverter(typeof(StringEnumConverter))]
         public ExpressionElements.Operation Operator { get; set; }
         [JsonIgnore]
         public uint Size { get; set; }
@@ -734,8 +737,8 @@ namespace GcxEditor
         [JsonIgnore]
         public byte[] EncodedContents { get; set; }
         public required string Value { get; set; }
-        public required byte DataTypeByte { get; set; }
-        public required ExpressionElements.DataType DataType { get; set; }
+        [JsonConverter(typeof(StringEnumConverter))]
+        public required DataTypeEnum DataType { get; set; }
         public Literal()
         {
             Type = GetType().Name;
@@ -744,7 +747,7 @@ namespace GcxEditor
         public byte[] Encode()
         {
             byte[] encodedBytes;
-            if(DataType.DataTypeName == ExpressionElements.DataType.String.DataTypeName)
+            if(DataType == DataTypeEnum.String)
             {
                 //byte[] bytes = Encoding.Default.GetBytes(Value);
                 byte[] bytes = Convert.FromBase64String(Value).Reverse().ToArray();
@@ -756,11 +759,12 @@ namespace GcxEditor
             }
             else
             {
-                encodedBytes = new byte[DataType.Length + 1];
-                encodedBytes[0] = DataTypeByte; //TODO: can we reverse engineer what determines this so we can make a "fresh" file?
+                int length = DataTypeLength(DataType);
+                encodedBytes = new byte[length + 1];
+                encodedBytes[0] = (byte)DataType;
                 //byte[] dataBytes = BitConverter.GetBytes(Value);
                 byte[] dataBytes = Convert.FromHexString(Value).Reverse().ToArray();
-                Array.Copy(dataBytes, 0, encodedBytes, 1, DataType.Length);
+                Array.Copy(dataBytes, 0, encodedBytes, 1, length);
             }
 
             return encodedBytes;
@@ -806,7 +810,8 @@ namespace GcxEditor
     public interface IVariable : ITerm
     {
         public ushort Id { get; set; }
-        public byte LowNibble { get; set; }
+        [JsonConverter(typeof(StringEnumConverter))]
+        public DataTypeEnum DataTypeNibble { get; set; }
         [JsonIgnore]
         public new byte[] EncodedContents { get; set; }
     }
@@ -816,7 +821,8 @@ namespace GcxEditor
         [JsonConverter(typeof(TermConverter))]
         public List<ITerm> SizeAndIndex { get; set; } = new();
         public ushort Id { get; set; }
-        public byte LowNibble { get; set; }
+        [JsonConverter(typeof(StringEnumConverter))]
+        public DataTypeEnum DataTypeNibble { get; set; }
         public byte ArrayType { get; set; }
         [JsonIgnore]
         public uint Size { get; set; }
@@ -828,11 +834,11 @@ namespace GcxEditor
             Type = GetType().Name;
         }
 
-        public VariableArray(ushort id, byte lowNibble, byte arrayType, List<ITerm> sizeAndIndex)
+        public VariableArray(ushort id, DataTypeEnum lowNibble, byte arrayType, List<ITerm> sizeAndIndex)
         {
             Type = GetType().Name;
             Id = id;
-            LowNibble = lowNibble;
+            DataTypeNibble = lowNibble;
             ArrayType = arrayType;
             SizeAndIndex = sizeAndIndex;
         }
@@ -849,7 +855,7 @@ namespace GcxEditor
                 sizeOfArgs += encodedArg.Length;
             }
             byte[] encodedBytes = new byte[idAndTypeDeclarationSize + sizeOfArgs];
-            encodedBytes[0] = (byte)(0x20 + LowNibble);
+            encodedBytes[0] = (byte)(0x20 + DataTypeNibble);
             encodedBytes[1] = ArrayType;
             Array.Copy(BitConverter.GetBytes(Id).Reverse().ToArray(), 0, encodedBytes, 2, sizeof(ushort));
             int position = 4;
@@ -876,7 +882,8 @@ namespace GcxEditor
         [JsonIgnore]
         public byte[] EncodedContents { get; set; }
         public ushort Id { get; set; }
-        public byte LowNibble { get; set; }
+        [JsonConverter(typeof(StringEnumConverter))]
+        public DataTypeEnum DataTypeNibble { get; set; }
         public Linkvarbuf()
         {
             Type = GetType().Name;
@@ -891,7 +898,7 @@ namespace GcxEditor
         public byte[] Encode()
         {
             byte[] encodedVarbuf = new byte[4];
-            encodedVarbuf[0] = (byte)(0x10 + LowNibble);
+            encodedVarbuf[0] = (byte)(0x10 + DataTypeNibble);
             encodedVarbuf[1] = 0x80; //is this always correct?
             Array.Copy(BitConverter.GetBytes(Id).Reverse().ToArray(), 0, encodedVarbuf, 2, 2);
 
@@ -912,8 +919,9 @@ namespace GcxEditor
         [JsonIgnore]
         public byte[] EncodedContents { get; set; }
         public ushort Id { get; set; }
-        public byte ByteType { get; set; }
-        public byte LowNibble { get; set; }
+        public byte SpecifiedBit { get; set; }
+        [JsonConverter(typeof(StringEnumConverter))]
+        public DataTypeEnum DataTypeNibble { get; set; }
 
         public Varbuf()
         {
@@ -929,8 +937,8 @@ namespace GcxEditor
         public byte[] Encode()
         {
             byte[] encodedVarbuf = new byte[4];
-            encodedVarbuf[0] = (byte)(0x10 + LowNibble);
-            encodedVarbuf[1] = ByteType; 
+            encodedVarbuf[0] = (byte)(0x10 + DataTypeNibble);
+            encodedVarbuf[1] = SpecifiedBit;
             Array.Copy(BitConverter.GetBytes(Id).Reverse().ToArray(), 0, encodedVarbuf, 2, 2);
 
             return encodedVarbuf;
@@ -950,7 +958,8 @@ namespace GcxEditor
         [JsonIgnore]
         public byte[] EncodedContents { get; set; }
         public ushort Id { get; set; }
-        public byte LowNibble { get; set; }
+        [JsonConverter(typeof(StringEnumConverter))]
+        public DataTypeEnum DataTypeNibble { get; set; }
 
         public Localvarbuf()
         {
@@ -966,7 +975,7 @@ namespace GcxEditor
         public byte[] Encode()
         {
             byte[] encodedVarbuf = new byte[4];
-            encodedVarbuf[0] = (byte)(0x10 + LowNibble);
+            encodedVarbuf[0] = (byte)(0x10 + DataTypeNibble);
             encodedVarbuf[1] = 0x10; //is this always correct?
             Array.Copy(BitConverter.GetBytes(Id).Reverse().ToArray(), 0, encodedVarbuf, 2, 2);
 
@@ -987,7 +996,8 @@ namespace GcxEditor
         [JsonIgnore]
         public byte[] EncodedContents { get; set; }
         public ushort Id { get; set; }
-        public byte LowNibble { get; set; } //not used
+        [JsonConverter(typeof(StringEnumConverter))]
+        public DataTypeEnum DataTypeNibble { get; set; } //not used
 
         public LocalVar()
         {

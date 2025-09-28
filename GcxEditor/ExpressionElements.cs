@@ -85,59 +85,46 @@ namespace GcxEditor
             Value2
         }
 
-        public sealed class DataType
+        public enum DataTypeEnum
         {
-            public int Length;
-            private readonly byte[] _values;
-            public string DataTypeName { get; set; }
+            Null = 0,
+            Short = 1,
+            Byte = 2,
+            Nibble = 3,
+            ByteAsBits = 4,
+            StrCode = 6,
+            String = 7,
+            ProcedureId = 8,
+            Float = 9,
+            Integer = 10,
+            Long = 13,
+            StringResource = 14
+        }
 
-            [JsonConstructor]
-            private DataType(string name, byte[] values, int length)
+        public static int DataTypeLength(DataTypeEnum dataType) 
+        {
+            switch (dataType)
             {
-                DataTypeName = name;
-                _values = values;
-                Length = length;
-            }
-
-            public static DataType End = new("End", [0x00], 0); //TODO: confirm
-            public static DataType Short = new("Short", [0x01], 2); 
-            public static DataType Byte = new("Byte", [0x02, 0x03, 0x04], 1); 
-            public static DataType StrCode = new("StrCode", [0x06, 0x08], 3); //TODO: confirm 8 also results in 3 bytes
-            public static DataType String = new("String", [0x07], 0); //determined by byte following string designation
-            public static DataType Long = new("Long", [0x09, 0x0A, 0x0D], 4);
-            public static DataType StringResource = new("StringResource", [0x0E], 2); //TODO: confirm
-
-            public static DataType FromCode(byte code)
-            {
-                switch (code)
-                {
-                    case 0x0:
-                        return End;
-                    case 0x1:
-                        return Short;
-                    case 0x2:
-                    case 0x3:
-                    case 0x4:
-                        return Byte;
-                    case 0x6:
-                    case 0x8:
-                        return StrCode;
-                    case 0x7:
-                        return String;
-                    case 0x9:
-                    case 0xA:
-                    case 0xD:
-                        return Long;
-                    case 0xE:
-                        return StringResource;
-                    default:
-                        throw new InvalidDataException($"Byte: \"{code}\" is an invalid Datatype!");
-                }
-            }
-
-            public override string ToString()
-            {
-                return DataTypeName;
+                case DataTypeEnum.Null:
+                    return 0;
+                case DataTypeEnum.Short:
+                case DataTypeEnum.StringResource:
+                    return 2;
+                case DataTypeEnum.Byte:
+                case DataTypeEnum.Nibble:
+                case DataTypeEnum.ByteAsBits:
+                    return 1;
+                case DataTypeEnum.StrCode:
+                case DataTypeEnum.ProcedureId:
+                    return 3;
+                case DataTypeEnum.Float:
+                case DataTypeEnum.Integer:
+                case DataTypeEnum.Long:
+                    return 4;
+                case DataTypeEnum.String:
+                    throw new InvalidOperationException("Cannot determine string length by itself, look at next byte for length");
+                default:
+                    throw new NotImplementedException("Unknown data type, cannot determine length");
             }
         }
     }

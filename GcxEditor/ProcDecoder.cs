@@ -551,10 +551,10 @@ namespace GcxEditor
                         case 0x20:
                             try
                             {
-                                //var array, probably still needs work
+                                //var array
                                 VariableArray variableArray = new()
                                 {
-                                    LowNibble = (byte)(bytes[position++] & 0x0F),
+                                    DataTypeNibble = (ExpressionElements.DataTypeEnum)(byte)(bytes[position++] & 0x0F),
                                     ArrayType = bytes[position++]
                                 };
                                 byte[] id = TakeRange(bytes, position, position += 2);
@@ -563,16 +563,9 @@ namespace GcxEditor
                                 variableArray.SizeAndIndex = DecodeVarArrayArgs(TakeRange(bytes, position, (uint)bytes.Length), out uint varArraySize);
                                 variableArray.Size = varArraySize + 4;
                                 variableArray.EncodedContents = TakeRange(bytes, position - 4, position + varArraySize);
-                                //21 80 03 3C F1 DE C1 AB
-
 
                                 //22 00 04 B4 C9 32 41 A0 == $var:varbuf_0x4B4[$arg1,8]
                                 //my thinking: 22 is array, 00 is varbuf, 04 B4 is ID, C9 is 8, 32 is ??, 41 is arg1, A0 is ??
-                                //i have no idea what the significance is of the lower nibble in 22. i tried messing with different values
-                                //and got nothing changed on oct's decompiler, nor did the game crash or have any kind of hindered performance from what
-                                //i could see. *surely* it isnt a totally random value, right? why is 0x4B4 always 22, but 0x494 is 29?
-                                //why does the game not crash when i change them?
-                                //
                                 //after a little more poking around, setting 22 to anything greater(23->2F) results in no changed behavior.
                                 //however, setting 22 to 21 or 20 results in the locker states getting reset entirely on load. (w01a behavior)
                                 //i'm thinking then that the lower nibble might determine how many bits to track or something for each index of the array?
@@ -580,12 +573,12 @@ namespace GcxEditor
 
                                 //22 00 04 8B CA C2 00 == $var:varbuf_0x48B[2,9]
                                 //22 is array, 00 is varbuf, 04 8B is ID, CA is 9, C2 is 1.
-                                //does 32 indicate the previous number was a real and A0 indicated the previous number was an arg?
+                                //does 32 indicate the previous number was a real and A0 indicated the previous number was an arg? 
                                 //and if neither are present, then both are reals? not sure. need to study oct's decomp more to have a better understanding i think.
-
-                                //args.Add(new Argument { Value = variableArray });
+                                //it was an expression. thats all there is to it. :facepalm:
+                                
                                 args.Add(variableArray);
-                                position += varArraySize; //TODO: confirm it is always this
+                                position += varArraySize; 
                             }
                             catch (Exception e)
                             {
@@ -608,10 +601,10 @@ namespace GcxEditor
                                         break;
                                     default:
                                         variable = new Varbuf();
-                                        (variable as Varbuf)!.ByteType = bytes[position + 1];
+                                        (variable as Varbuf)!.SpecifiedBit = bytes[position + 1];
                                         break;
                                 }
-                                variable.LowNibble = (byte)(bytes[position] & 0x0F);
+                                variable.DataTypeNibble = (ExpressionElements.DataTypeEnum)(byte)(bytes[position] & 0x0F);
                                 byte[] id = TakeRange(bytes, position + 2, position + 4);
                                 variable.Id = BitConverter.ToUInt16(id.Reverse().ToArray());
                                 variable.EncodedContents = TakeRange(bytes, position, position + 4);
@@ -636,21 +629,23 @@ namespace GcxEditor
                             {
                                 try
                                 {
-                                    ExpressionElements.DataType dataType = ExpressionElements.DataType.FromCode(currentByte);
+                                    ExpressionElements.DataTypeEnum dataType = (ExpressionElements.DataTypeEnum)currentByte;
                                     byte[] dataValue = new byte[4];
-                                    if (dataType == ExpressionElements.DataType.String)
+                                    int length = 0;
+                                    if (dataType == ExpressionElements.DataTypeEnum.String)
                                     {
-                                        dataType.Length = bytes[position + 1];
-                                        dataValue = new byte[dataType.Length];
-                                        Array.Copy(bytes, position + 2, dataValue, 0, dataType.Length);
-                                        args.Add(new Literal { Value = Convert.ToBase64String(dataValue.Reverse().ToArray()), DataTypeByte = currentByte, EncodedContents = TakeRange(bytes, position, (uint)(position + 2 + dataType.Length)), DataType = dataType, Size = (ushort)(dataType.Length +1)}); //+1 for dataType declaration
+                                        length = bytes[position + 1];
+                                        dataValue = new byte[length];
+                                        Array.Copy(bytes, position + 2, dataValue, 0, length);
+                                        args.Add(new Literal { Value = Convert.ToBase64String(dataValue.Reverse().ToArray()), EncodedContents = TakeRange(bytes, position, (uint)(position + 2 + length)), DataType = dataType, Size = (ushort)(length +1)}); //+1 for dataType declaration
                                     }
                                     else
                                     {
-                                        Array.Copy(bytes, position + 1, dataValue, 0, dataType.Length);
-                                        args.Add(new Literal { Value = Convert.ToHexString(dataValue.Take(dataType.Length).ToArray().Reverse().ToArray()), DataTypeByte = currentByte, EncodedContents = TakeRange(bytes, position, (uint)(position + 1 + dataType.Length)), DataType = dataType, Size = (ushort)(dataType.Length + 1) }); //+1 for dataType declaration
+                                        length = ExpressionElements.DataTypeLength(dataType);
+                                        Array.Copy(bytes, position + 1, dataValue, 0, length);
+                                        args.Add(new Literal { Value = Convert.ToHexString(dataValue.Take(length).ToArray().Reverse().ToArray()), EncodedContents = TakeRange(bytes, position, (uint)(position + 1 + length)), DataType = dataType, Size = (ushort)(length + 1) }); //+1 for dataType declaration
                                     }
-                                    position += (uint)(dataType.Length + 1);
+                                    position += (uint)(length + 1);
                                 }
                                 catch (Exception e)
                                 {
