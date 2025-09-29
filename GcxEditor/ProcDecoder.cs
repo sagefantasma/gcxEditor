@@ -643,7 +643,7 @@ namespace GcxEditor
                                     {
                                         length = ExpressionElements.DataTypeLength(dataType);
                                         Array.Copy(bytes, position + 1, dataValue, 0, length);
-                                        args.Add(new Literal { Value = Convert.ToHexString(dataValue.Take(length).ToArray().Reverse().ToArray()), EncodedContents = TakeRange(bytes, position, (uint)(position + 1 + length)), DataType = dataType, Size = (ushort)(length + 1) }); //+1 for dataType declaration
+                                        args.Add(new Literal { Value = $"0x{Convert.ToHexString(dataValue.Take(length).ToArray().Reverse().ToArray())}", EncodedContents = TakeRange(bytes, position, (uint)(position + 1 + length)), DataType = dataType, Size = (ushort)(length + 1) }); //+1 for dataType declaration
                                     }
                                     position += (uint)(length + 1);
                                 }

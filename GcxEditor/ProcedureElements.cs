@@ -31,7 +31,7 @@ namespace GcxEditor
                 {
                     orderString = orderString.TakeLast(3).ToArray();
                 }
-                return BitConverter.ToString(orderString).Replace("-", "");
+                return $"0x{BitConverter.ToString(orderString).Replace("-", "")}";
             }
             set
             {
@@ -39,7 +39,7 @@ namespace GcxEditor
                 {
                     //take in each 2 charas as one byte, make order from that
                     byte[] bytes = new byte[4];
-                    byte[] convertedBytes = Convert.FromHexString(value);
+                    byte[] convertedBytes = Convert.FromHexString(value.Replace("0x",""));
                     Array.Copy(convertedBytes.Reverse().ToArray(), bytes, 3);
                     Order = BitConverter.ToUInt32(bytes);
                 }
@@ -763,7 +763,7 @@ namespace GcxEditor
                 encodedBytes = new byte[length + 1];
                 encodedBytes[0] = (byte)DataType;
                 //byte[] dataBytes = BitConverter.GetBytes(Value);
-                byte[] dataBytes = Convert.FromHexString(Value).Reverse().ToArray();
+                byte[] dataBytes = Convert.FromHexString(Value.Replace("0x","")).Reverse().ToArray();
                 Array.Copy(dataBytes, 0, encodedBytes, 1, length);
             }
 

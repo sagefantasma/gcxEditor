@@ -77,7 +77,7 @@ namespace GcxEditorGUI
                         name = name.Split("(")[1].Split(")")[0];
                     }
                     DisplayedProcedure = LoadedGcx.ProcBlock.Procedures.FirstOrDefault(proc => name.Contains(proc.Name))!;
-                    dictionaryEntry = dictionaryEntries!.FirstOrDefault(x => string.Equals(x.StrCode.ToLower(), DisplayedProcedure.Name.ToLower()));
+                    dictionaryEntry = dictionaryEntries!.FirstOrDefault(x => string.Equals($"0x{x.StrCode.ToLower()}", DisplayedProcedure.Name.ToLower()));
                     if (dictionaryEntry != default)
                     {
                         location = richTextBox.Find($"\"Name\": \"{dictionaryEntry.Name}\"", richTextBox.SelectionStart + 1, -1, richTextBoxFinds);
@@ -158,7 +158,7 @@ namespace GcxEditorGUI
             UpdateStatusStrip("Loading procedure list...");
             foreach (Procedure procedure in gcxFile.ProcBlock.Procedures)
             {
-                DictionaryEntry? dictEntry = dictionaryEntries?.FirstOrDefault(x => x.StrCode == procedure.Name);
+                DictionaryEntry? dictEntry = dictionaryEntries?.FirstOrDefault(x => $"0x{x.StrCode}" == procedure.Name);
                 if (dictEntry != null)
                 {
                     procedureListBox.Items.Add($"{dictEntry.Name} ({procedure.Name})");
@@ -218,8 +218,8 @@ namespace GcxEditorGUI
                 toolStripProgressBar.Maximum = dictionaryEntries!.Count;
                 foreach (DictionaryEntry dictionaryEntry in dictionaryEntries)
                 {
-                    if (textToModify.Contains(dictionaryEntry.StrCode))
-                        textToModify = textToModify.Replace($"\"{dictionaryEntry.StrCode}\"", $"\"{dictionaryEntry.Name}\"");
+                    if (textToModify.Contains($"0x{dictionaryEntry.StrCode}", StringComparison.OrdinalIgnoreCase))
+                        textToModify = textToModify.Replace($"\"0x{dictionaryEntry.StrCode}\"", $"\"{dictionaryEntry.Name}\"", StringComparison.OrdinalIgnoreCase);
                     toolStripProgressBar.Value++;
                 }
             }
@@ -229,8 +229,8 @@ namespace GcxEditorGUI
                 toolStripProgressBar.Maximum = dictionaryEntries!.Count;
                 foreach (DictionaryEntry dictionaryEntry in dictionaryEntries!)
                 {
-                    if (textToModify.Contains(dictionaryEntry.Name))
-                        textToModify = textToModify.Replace($"\"{dictionaryEntry.Name}\"", $"\"{dictionaryEntry.StrCode}\"");
+                    if (textToModify.Contains(dictionaryEntry.Name, StringComparison.OrdinalIgnoreCase))
+                        textToModify = textToModify.Replace($"\"{dictionaryEntry.Name}\"", $"\"0x{dictionaryEntry.StrCode.ToUpper()}\"", StringComparison.OrdinalIgnoreCase);
                     toolStripProgressBar.Value++;
                 }
             }
