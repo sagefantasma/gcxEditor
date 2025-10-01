@@ -79,8 +79,8 @@ namespace GcxEditorGUI
                     {
                         name = name.Split("(")[1].Split(")")[0];
                     }
-                    DisplayedProcedure = LoadedGcx.ProcBlock.Procedures.FirstOrDefault(proc => name.Contains(proc.Name))!;
-                    dictionaryEntry = dictionaryEntries!.FirstOrDefault(x => string.Equals($"0x{x.StrCode.ToLower()}", DisplayedProcedure.Name.ToLower()));
+                    DisplayedProcedure = LoadedGcx.ProcBlock.Procedures.FirstOrDefault(proc => name.Contains(proc.Name, StringComparison.OrdinalIgnoreCase))!;
+                    dictionaryEntry = dictionaryEntries!.FirstOrDefault(x => DisplayedProcedure.Name.ToLower().Contains(x.StrCode.ToLower()));
                     if (dictionaryEntry != default)
                     {
                         location = richTextBox.Find($"\"Name\": \"{dictionaryEntry.Name}\"", richTextBox.SelectionStart + 1, -1, richTextBoxFinds);
@@ -226,8 +226,8 @@ namespace GcxEditorGUI
                 toolStripProgressBar.Maximum = dictionaryEntries!.Count;
                 foreach (DictionaryEntry dictionaryEntry in dictionaryEntries)
                 {
-                    if (textToModify.Contains($"0x{dictionaryEntry.StrCode}", StringComparison.OrdinalIgnoreCase))
-                        textToModify = textToModify.Replace($"\"0x{dictionaryEntry.StrCode}\"", $"\"{dictionaryEntry.Name}\"", StringComparison.OrdinalIgnoreCase);
+                    if (textToModify.Contains($"0x{dictionaryEntry.StrCode.ToUpper()}"))
+                        textToModify = textToModify.Replace($"\"0x{dictionaryEntry.StrCode}\"", $"\"{dictionaryEntry.Name}\"");
                     toolStripProgressBar.Value++;
                 }
             }
@@ -237,8 +237,8 @@ namespace GcxEditorGUI
                 toolStripProgressBar.Maximum = dictionaryEntries!.Count;
                 foreach (DictionaryEntry dictionaryEntry in dictionaryEntries!)
                 {
-                    if (textToModify.Contains(dictionaryEntry.Name, StringComparison.OrdinalIgnoreCase))
-                        textToModify = textToModify.Replace($"\"{dictionaryEntry.Name}\"", $"\"0x{dictionaryEntry.StrCode.ToUpper()}\"", StringComparison.OrdinalIgnoreCase);
+                    if (textToModify.Contains(dictionaryEntry.Name))
+                        textToModify = textToModify.Replace($"\"{dictionaryEntry.Name}\"", $"\"0x{dictionaryEntry.StrCode.ToUpper()}\"");
                     toolStripProgressBar.Value++;
                 }
             }
