@@ -637,7 +637,7 @@ namespace GcxEditor
                                         length = bytes[position + 1];
                                         dataValue = new byte[length];
                                         Array.Copy(bytes, position + 2, dataValue, 0, length);
-                                        args.Add(new Literal { Value = Convert.ToBase64String(dataValue.Reverse().ToArray()), EncodedContents = TakeRange(bytes, position, (uint)(position + 2 + length)), DataType = dataType, Size = (ushort)(length +1)}); //+1 for dataType declaration
+                                        args.Add(new Literal { Value = Convert.ToBase64String(dataValue.ToArray()), EncodedContents = TakeRange(bytes, position, (uint)(position + 2 + length)), DataType = dataType, Size = (ushort)(length +1)}); //+1 for dataType declaration
                                     }
                                     else
                                     {

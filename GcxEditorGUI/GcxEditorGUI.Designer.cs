@@ -46,13 +46,20 @@
             mainPanel = new Panel();
             tableLayoutPanel = new TableLayoutPanel();
             procedureListBox = new ListBox();
+            tabControl1 = new TabControl();
+            JsonViewTabPage = new TabPage();
             richTextBox = new RichTextBox();
+            ObjectViewTabPage = new TabPage();
+            flowLayoutPanel = new FlowLayoutPanel();
             statusStrip = new StatusStrip();
             toolStripProgressBar = new ToolStripProgressBar();
             toolStripStatusLabel = new ToolStripStatusLabel();
             menuStrip.SuspendLayout();
             mainPanel.SuspendLayout();
             tableLayoutPanel.SuspendLayout();
+            tabControl1.SuspendLayout();
+            JsonViewTabPage.SuspendLayout();
+            ObjectViewTabPage.SuspendLayout();
             statusStrip.SuspendLayout();
             SuspendLayout();
             // 
@@ -193,7 +200,7 @@
             tableLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20F));
             tableLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 80F));
             tableLayoutPanel.Controls.Add(procedureListBox, 0, 0);
-            tableLayoutPanel.Controls.Add(richTextBox, 1, 0);
+            tableLayoutPanel.Controls.Add(tabControl1, 1, 0);
             tableLayoutPanel.Dock = DockStyle.Fill;
             tableLayoutPanel.Location = new Point(0, 0);
             tableLayoutPanel.Name = "tableLayoutPanel";
@@ -213,17 +220,58 @@
             procedureListBox.TabIndex = 0;
             procedureListBox.SelectedIndexChanged += ProcedureListBox_SelectedIndexChanged;
             // 
+            // tabControl1
+            // 
+            tabControl1.Controls.Add(JsonViewTabPage);
+            tabControl1.Controls.Add(ObjectViewTabPage);
+            tabControl1.Dock = DockStyle.Fill;
+            tabControl1.Location = new Point(255, 3);
+            tabControl1.Name = "tabControl1";
+            tabControl1.SelectedIndex = 0;
+            tabControl1.Size = new Size(1006, 629);
+            tabControl1.TabIndex = 1;
+            tabControl1.SelectedIndexChanged += tabControl1_TabIndexChanged;
+            // 
+            // JsonViewTabPage
+            // 
+            JsonViewTabPage.Controls.Add(richTextBox);
+            JsonViewTabPage.Location = new Point(4, 24);
+            JsonViewTabPage.Name = "JsonViewTabPage";
+            JsonViewTabPage.Padding = new Padding(3);
+            JsonViewTabPage.Size = new Size(998, 601);
+            JsonViewTabPage.TabIndex = 0;
+            JsonViewTabPage.Text = "JSON View";
+            JsonViewTabPage.UseVisualStyleBackColor = true;
+            // 
             // richTextBox
             // 
             richTextBox.DetectUrls = false;
             richTextBox.Dock = DockStyle.Fill;
             richTextBox.Enabled = false;
-            richTextBox.Location = new Point(255, 3);
+            richTextBox.Location = new Point(3, 3);
             richTextBox.Name = "richTextBox";
-            richTextBox.Size = new Size(1006, 629);
-            richTextBox.TabIndex = 1;
+            richTextBox.Size = new Size(992, 595);
+            richTextBox.TabIndex = 2;
             richTextBox.Text = "";
-            richTextBox.SelectionChanged += RichTextBox_SelectionChanged;
+            // 
+            // ObjectViewTabPage
+            // 
+            ObjectViewTabPage.Controls.Add(flowLayoutPanel);
+            ObjectViewTabPage.Location = new Point(4, 24);
+            ObjectViewTabPage.Name = "ObjectViewTabPage";
+            ObjectViewTabPage.Padding = new Padding(3);
+            ObjectViewTabPage.Size = new Size(998, 601);
+            ObjectViewTabPage.TabIndex = 1;
+            ObjectViewTabPage.Text = "Object View";
+            ObjectViewTabPage.UseVisualStyleBackColor = true;
+            // 
+            // flowLayoutPanel
+            // 
+            flowLayoutPanel.Dock = DockStyle.Fill;
+            flowLayoutPanel.Location = new Point(3, 3);
+            flowLayoutPanel.Name = "flowLayoutPanel";
+            flowLayoutPanel.Size = new Size(992, 595);
+            flowLayoutPanel.TabIndex = 0;
             // 
             // statusStrip
             // 
@@ -259,6 +307,9 @@
             mainPanel.ResumeLayout(false);
             mainPanel.PerformLayout();
             tableLayoutPanel.ResumeLayout(false);
+            tabControl1.ResumeLayout(false);
+            JsonViewTabPage.ResumeLayout(false);
+            ObjectViewTabPage.ResumeLayout(false);
             statusStrip.ResumeLayout(false);
             statusStrip.PerformLayout();
             ResumeLayout(false);
@@ -281,7 +332,6 @@
         private Panel mainPanel;
         private TableLayoutPanel tableLayoutPanel;
         private ListBox procedureListBox;
-        private RichTextBox richTextBox;
         private StatusStrip statusStrip;
         private ToolStripStatusLabel toolStripStatusLabel;
         private ToolStripMenuItem replaceOpenedFileOnExportToolStripMenuItem;
@@ -289,5 +339,10 @@
         private ToolStripProgressBar toolStripProgressBar;
         private ToolStripMenuItem exportToolStripMenuItem;
         private ToolStripMenuItem closeFileToolStripMenuItem;
+        private TabControl tabControl1;
+        private TabPage JsonViewTabPage;
+        private RichTextBox richTextBox;
+        private TabPage ObjectViewTabPage;
+        private FlowLayoutPanel flowLayoutPanel;
     }
 }

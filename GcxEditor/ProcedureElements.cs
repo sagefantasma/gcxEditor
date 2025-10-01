@@ -749,9 +749,7 @@ namespace GcxEditor
             byte[] encodedBytes;
             if(DataType == DataTypeEnum.String)
             {
-                //byte[] bytes = Encoding.Default.GetBytes(Value);
-                byte[] bytes = Convert.FromBase64String(Value).Reverse().ToArray();
-                //byte[] bytes = Value as byte[];
+                byte[] bytes = Convert.FromBase64String(Value).ToArray(); //do not reverse strings
                 encodedBytes = new byte[bytes.Length + 2];
                 encodedBytes[0] = 0x07;
                 encodedBytes[1] = (byte)bytes.Length;
