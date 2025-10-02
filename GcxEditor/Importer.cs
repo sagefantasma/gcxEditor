@@ -115,7 +115,9 @@ namespace GcxEditor
                     Dictionary<byte[], byte[]> procedureTable = GetProcedureTable(fileContents);
                     FileTable = GetFileTable(fileContents);
                     byte[] resourceData = GetResourceData(fileContents);
+                    List<int> resourceDataTable = ParseResourceDataTable(resourceData);
                     byte[] stringData = GetStringData(fileContents);
+                    ParseStringData(stringData, resourceDataTable);
                     byte[] fontData = GetFontData(fileContents);
                     byte[] procedureData = GetProcedureData(fileContents);
                     byte[] mainProcedureData = GetMainData(procedureData);
@@ -278,9 +280,185 @@ namespace GcxEditor
             return gcxContents.Take(new Range(new Index((int)FileTable["resourceOffset"] + cursor), new Index((int)FileTable["stringsOffset"] + cursor))).ToArray();
         }
 
+        private static dynamic ParseResourceDataTable(byte[] resourceData)
+        {
+            int position = 0;
+            List<int> stringResourceStartingPositions = new();
+            while (position < resourceData.Length)
+            {
+                stringResourceStartingPositions.Add(BitConverter.ToInt32(TakeRangeFromArray(resourceData, position, position+=4)) & 0xFFFFFF);
+            }
+            return stringResourceStartingPositions;
+        }
+
         private static byte[] GetStringData(byte[] gcxContents)
         {
             return gcxContents.Take(new Range(new Index((int)FileTable["stringsOffset"] + cursor), new Index((int)FileTable["fontOffset"] + cursor))).ToArray();
+        }
+
+        class GcxString
+        {
+            public int StartingPosition { get; set; }
+            public string Name { get; set; }
+            public string Region { get; set; }
+            public Literal ID { get; set; }
+        }
+
+        class DogTagDesignation
+        {
+            public int StartingPosition { get; set; }
+            public byte Id { get; set; }
+            public List<GcxString> Strings { get; set; } = new();
+        }
+
+        private static GcxString ParseGcxString(byte[] stringData, ref int position)
+        {
+            GcxString gcxString = new GcxString();
+            gcxString.StartingPosition = position;
+            position++;
+            int gcxStringLength = stringData[position];
+            position++;
+            gcxString.Name = Encoding.ASCII.GetString(TakeRangeFromArray(stringData, position, position + gcxStringLength - 1));
+            position += gcxStringLength;
+            if (stringData[position] == 0x07)
+            {
+                position++;
+                gcxStringLength = stringData[position];
+                position++;
+                gcxString.Region = Encoding.ASCII.GetString(TakeRangeFromArray(stringData, position, position + gcxStringLength - 1));
+                position += gcxStringLength;
+            }
+            else
+            {
+                //unexpected, doesnt happen at all in w12c - yippee
+            }
+            ExpressionElements.DataTypeEnum dataType = (ExpressionElements.DataTypeEnum)stringData[position];
+            position++;
+            int idLength = ExpressionElements.DataTypeLength(dataType);
+            byte[] idArray = TakeRangeFromArray(stringData, position, position + idLength).Reverse().ToArray();
+            Literal literal = new Literal { DataType = dataType, Value = Convert.ToHexString(idArray) };
+            gcxString.ID = literal;
+            position += idLength;
+
+            return gcxString;
+        }
+
+        private static dynamic ParseStringData(byte[] stringData, List<int> stringDataTable)
+        {
+            int dataPosition = 0;
+            List<byte[]> stringResources = new();
+            for (int i = 0; i < stringDataTable.Count; i++)
+            {
+                if (i + 1 < stringDataTable.Count)
+                    stringResources.Add(TakeRangeFromArray(stringData, stringDataTable[i], stringDataTable[i + 1]));
+                else
+                    stringResources.Add(TakeRangeFromArray(stringData, stringDataTable[i], stringData.Length - 1));
+            }
+
+            List<DogTagDesignation> dogTagDesignations = new();
+            foreach (byte[] stringResource in stringResources)
+            {
+                int resourcePosition = 0;
+                if (stringResource[resourcePosition] == 0x02)
+                {
+                    DogTagDesignation dog = new DogTagDesignation();
+                    dog.StartingPosition = resourcePosition;
+                    resourcePosition++;
+                    dog.Id = stringResource[resourcePosition++];
+                    if(stringResource[resourcePosition] == 0x07)
+                    {
+                        GcxString tag1 = ParseGcxString(stringResource, ref resourcePosition);
+                        dog.Strings.Add(tag1);
+                        GcxString tag2 = ParseGcxString(stringResource, ref resourcePosition);
+                        dog.Strings.Add(tag2);
+                        dogTagDesignations.Add(dog);
+                    }
+                    else
+                    {
+                        //this shouldnt ever occur, theoretically?
+                        byte currentByte = stringResource[resourcePosition];
+                    }
+                }
+                else
+                {
+                    byte currentByte = stringResource[resourcePosition];
+                    //58 on the first string resource in w12c
+                    //C0 on the dummy array in w12c
+                    //3rd to last in w12c seems like some kind of dictionary? (starts on 61 27 00 20 86 03)
+                    //C9 9E 00 20 03 9F 00 20 FF FF FF FF is the second to last one
+                    //44 9F 00 20 86 9F 00 20 FE FF FF FF C9 9F 00 20 FF FF FF is the last one
+                }
+            }
+
+
+            return dogTagDesignations;
+            //Leaving the below in for reference for now
+            //currently using w12c for testing and figuring this shit out
+            //one full block of a string?:
+            /*
+             * 02 80 
+             * 07 13 4D 65 67 75 6D 69 20 4E 61 6B 61 6E 69 69 68 61 72 61 00 
+             * 07 04 4A 50 4E 00 
+             * 09 16 07 77 19 
+             * 07 14 4A 61 63 71 75 65 6C 69 6E 65 20 44 20 42 65 6E 7A 6F 6E 00 
+             * 07 04 4A 50 4E 00 
+             * 09 03 10 81 19 00
+             */
+            byte stringMarker = 0x07;
+            int position = 0;
+            List<DogTagDesignation> dogtags = new();
+            List<DogTagDesignation> badtags = new();
+            List<string> strings = new();
+            List<int> floats = new();
+
+            while (position < stringData.Length)
+            {
+                byte currentByte = stringData[position];
+                if (stringData[position] == 0x02)
+                {
+                    //Start of Dogtag designation?
+                    DogTagDesignation dog = new DogTagDesignation();
+                    dog.StartingPosition = position;
+                    position++;
+                    dog.Id = stringData[position++];
+                    if (stringData[position] == 0x07)
+                    {
+                        GcxString string1 = ParseGcxString(stringData, ref position);
+                        dog.Strings.Add(string1);
+                        GcxString string2 = ParseGcxString(stringData, ref position);
+                        dog.Strings.Add(string2);
+                        dogtags.Add(dog);
+                        //As far as I can tell, these are parsing out correctly, but the rest of the block needs work
+                    }
+                    else
+                    {
+                        badtags.Add(dog);
+                    }
+                    
+                }
+                else if(stringData[position] == 0x07)
+                {
+                    //start of string
+                    position++;
+                    int stringLength = stringData[position];
+                    position++;
+                    string embeddedString = Encoding.ASCII.GetString(TakeRangeFromArray(stringData, position, position + stringLength - 1));
+                    strings.Add(embeddedString);
+                    position += stringLength;
+                }
+                else if (stringData[position] == 0x09)
+                {
+                    //start of float designation
+                    position++;
+                    floats.Add(BitConverter.ToInt32(stringData, position));
+                    position += 4;
+                }
+                else
+                {
+                    position++;
+                }
+            }
+            return stringData;
         }
 
         private static byte[] GetFontData(byte[] gcxContents)
