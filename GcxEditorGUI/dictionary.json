@@ -77102,5 +77102,21 @@
   {
     "StrCode": "B35703",
     "Name": "BoxJumpCommandBehavior"
+  },
+  {
+    "StrCode": "1600288",
+    "Name": "face/mobile"
+  },
+  {
+    "StrCode": "16400001",
+    "Name": "face/node"
+  },
+  {
+    "StrCode": "0fd00165",
+    "Name": "face/photo"
+  },
+  {
+    "StrCode": "02600262",
+    "Name": "face/capture"
   }
 ]
