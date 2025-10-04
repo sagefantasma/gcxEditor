@@ -783,7 +783,14 @@ namespace GcxEditor
                         load.Size = DecodeArgsLength(bytes, ref position); //TODO: fix these size declarations: this is depicting the size of the args, not the whole command
                         byte[] loadArgs = TakeRange(bytes, position, position + load.Size);
                         load.Args = DecodeArgs(loadArgs);
-
+                        //can, in fact, have params
+                        position += (uint)loadArgs.Length;
+                        byte currentPosition = bytes[position];
+                        if (bytes[position] != 0x00)
+                        {
+                            byte[] loadParams = TakeRange(bytes, position, (uint)bytes.Length);
+                            load.Parameters = DecodeParams(loadParams);
+                        }
                         return load;
                     case "01C090":
                         Map map = new();

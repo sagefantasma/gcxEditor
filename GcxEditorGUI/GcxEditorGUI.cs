@@ -394,7 +394,7 @@ namespace GcxEditorGUI
                 }
                 else if(item is Trap)
                 {
-                    //TODO: need to nest
+                    //TODO: need to nest and flesh out
                     InteractiveLoadProc((item as Trap).Parameters.First(x => x.ParamType == 'e').Args[0] as Procedure);
                 }
                 else if(item is IfBlock)
@@ -402,14 +402,20 @@ namespace GcxEditorGUI
                     //TODO: more to do here? need to nest
                     InteractiveLoadProc((item as IfBlock).Args[1] as Procedure);
                 }
-                //TODO: add subprocedure handling
-                //TODO: add chara handling
-                //TODO: add trap handling
+                else if(item is Chara)
+                {
+                    //TODO: need to nest and flesh out
+                    InteractiveLoadProc((item as Chara).Parameters.First(x => x.ParamType == 'e').Args[0] as Procedure);
+                }
+                else if(item is GameCommand)
+                {
+                    //TODO: need to nest and flesh out
+                    InteractiveLoadProc((item as GameCommand).Parameters.First(x => x.ParamType == 's').Args[0] as Procedure);
+                }
+
                 //TODO: add invoke handling
                 //TODO: add expression handling
-                //TODO: add if handling
                 //TODO: add switch handling
-                //TODO: add gameCommand handling
             }
         }
 

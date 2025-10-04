@@ -580,7 +580,7 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            byte[] contents = Builder.EncodeCommandWithOnlyArgs(Args, new byte[] { 0x84, 0xC8, 0x37 });
+            byte[] contents = Builder.EncodeCommandWithArgsAndParams(Args, Parameters, new byte[] { 0x84, 0xC8, 0x37 });
             return Builder.BuildContainerElement(0x60, contents);
         }
 
