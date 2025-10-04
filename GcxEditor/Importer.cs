@@ -119,6 +119,8 @@ namespace GcxEditor
                     byte[] stringData = GetStringData(fileContents);
                     ParseStringData(stringData, resourceDataTable);
                     byte[] fontData = GetFontData(fileContents);
+                    //Key is actually an offset(always 14?, which starts with an int. that int says how many ints come after? sometimes containing data?
+                    //File.WriteAllText($"{gcxFile.Name}_fontData.json", JsonConvert.SerializeObject(fontData));
                     byte[] procedureData = GetProcedureData(fileContents);
                     byte[] mainProcedureData = GetMainData(procedureData);
 
@@ -347,6 +349,7 @@ namespace GcxEditor
         {
             int dataPosition = 0;
             List<byte[]> stringResources = new();
+            
             for (int i = 0; i < stringDataTable.Count; i++)
             {
                 if (i + 1 < stringDataTable.Count)
@@ -354,6 +357,8 @@ namespace GcxEditor
                 else
                     stringResources.Add(TakeRangeFromArray(stringData, stringDataTable[i], stringData.Length - 1));
             }
+
+            //File.WriteAllText("stringData.json", JsonConvert.SerializeObject(stringResources, Formatting.Indented));
 
             List<DogTagDesignation> dogTagDesignations = new();
             foreach (byte[] stringResource in stringResources)

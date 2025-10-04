@@ -112,7 +112,7 @@ namespace GcxEditorGUI
 
             if(tabControl1.SelectedIndex == 1)
             {
-                InteractiveLoadProc();
+                InteractiveLoadActiveProc();
             }
         }
 
@@ -323,16 +323,11 @@ namespace GcxEditorGUI
             //whenever we do a change to the JSON tab, we should update the interactive tab?
         }
 
-        private void InteractiveLoadProc()
+        private void InteractiveLoadProc(Procedure procedure)
         {
-            flowLayoutPanel.Controls.Clear();
-            if (DisplayedProcedure == null)
+            foreach (IProcedureElement item in procedure.DecodedContents)
             {
-                return;
-            }
-            foreach(IProcedureElement item in DisplayedProcedure!.DecodedContents)
-            {
-                if(item is Print)
+                if (item is Print)
                 {
                     GenericStatementUC printUC = new GenericStatementUC();
                     printUC.nameLabel.Text = "Print Statement";
@@ -342,7 +337,7 @@ namespace GcxEditorGUI
                     printUC.argContentsTextBox.Text = Encoding.GetEncoding("euc-jp").GetString(byteString.ToArray());
                     flowLayoutPanel.Controls.Add(printUC);
                 }
-                else if(item is Return)
+                else if (item is Return)
                 {
                     GenericStatementUC returnUC = new GenericStatementUC();
                     returnUC.nameLabel.Text = "Return Statement";
@@ -351,23 +346,23 @@ namespace GcxEditorGUI
                     returnUC.argContentsTextBox.Text = returnItem.Args.FirstOrDefault().ToString();
                     flowLayoutPanel.Controls.Add(returnUC);
                 }
-                else if(item is Msg)
+                else if (item is Msg)
                 {
                     GenericStatementUC msgUC = new GenericStatementUC(); //TODO: break this down further? Is it really just a generic statement?
                     msgUC.nameLabel.Text = "Message Statement";
                     msgUC.argLabel.Text = "Message to send:";
                     Msg msgItem = item as Msg;
                     string messageString = "";
-                    foreach(ITerm arg in msgItem.Args) 
+                    foreach (ITerm arg in msgItem.Args)
                     {
                         messageString += arg.ToString();
-                        if(arg != msgItem.Args[^1])
+                        if (arg != msgItem.Args[^1])
                             messageString += ", ";
                     }
                     msgUC.argContentsTextBox.Text = messageString;
                     flowLayoutPanel.Controls.Add(msgUC);
                 }
-                else if(item is Load)
+                else if (item is Load)
                 {
                     GenericStatementUC loadUC = new GenericStatementUC();
                     loadUC.nameLabel.Text = "Load Statement";
@@ -376,7 +371,7 @@ namespace GcxEditorGUI
                     loadUC.argContentsTextBox.Text = loadItem.Args.FirstOrDefault().ToString(); //TODO: stored as base64 string, need to convert
                     flowLayoutPanel.Controls.Add(loadUC);
                 }
-                else if(item is Restart)
+                else if (item is Restart)
                 {
                     GenericStatementUC restartUC = new GenericStatementUC(); //TODO: change this to a different type of UC?
                     restartUC.nameLabel.Text = "Restart Statement";
@@ -384,13 +379,28 @@ namespace GcxEditorGUI
                     restartUC.argContentsTextBox = null;
                     flowLayoutPanel.Controls.Add(restartUC);
                 }
-                else if(item is UnknownCommand)
+                else if (item is UnknownCommand)
                 {
                     GenericStatementUC unknownUC = new GenericStatementUC();
                     unknownUC.nameLabel.Text = "Load2 Statement";
                     unknownUC.argLabel.Text = "Stage to load:";
                     unknownUC.argContentsTextBox.Text = (item as Load).Args.FirstOrDefault().ToString();
                     flowLayoutPanel.Controls.Add(unknownUC);
+                }
+                else if (item is Procedure)
+                {
+                    //TODO: figure out making nested objects
+                    InteractiveLoadProc(item as Procedure);
+                }
+                else if(item is Trap)
+                {
+                    //TODO: need to nest
+                    InteractiveLoadProc((item as Trap).Parameters.First(x => x.ParamType == 'e').Args[0] as Procedure);
+                }
+                else if(item is IfBlock)
+                {
+                    //TODO: more to do here? need to nest
+                    InteractiveLoadProc((item as IfBlock).Args[1] as Procedure);
                 }
                 //TODO: add subprocedure handling
                 //TODO: add chara handling
@@ -403,6 +413,16 @@ namespace GcxEditorGUI
             }
         }
 
+        private void InteractiveLoadActiveProc()
+        {
+            flowLayoutPanel.Controls.Clear();
+            if (DisplayedProcedure == null)
+            {
+                return;
+            }
+            InteractiveLoadProc(DisplayedProcedure!);
+        }
+
         private void tabControl1_TabIndexChanged(object sender, EventArgs e)
         {
             //Save json file?
@@ -413,7 +433,7 @@ namespace GcxEditorGUI
             else
             {
                 //going to interactive tab
-                InteractiveLoadProc();
+                InteractiveLoadActiveProc();
             }
         }
     }

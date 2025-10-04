@@ -77118,5 +77118,9 @@
   {
     "StrCode": "02600262",
     "Name": "face/capture"
+  },
+  {
+    "StrCode": "719612",
+    "Name":  "DropM9Ammo2"
   }
 ]
