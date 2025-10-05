@@ -116,6 +116,18 @@ namespace GcxEditorGUI
             }
         }
 
+        private void CreateNewJsonFile(string fileName)
+        {
+            JsonSerializerSettings jsonSerializerSettings = new()
+            {
+                Formatting = Formatting.Indented
+            };
+
+            string jsonText = JsonConvert.SerializeObject(LoadedGcx, jsonSerializerSettings);
+            richTextBox.Text = jsonText;
+            File.WriteAllText(fileName, jsonText);
+        }
+
         private void LoadGcxToolStripMenuItem_Click(object sender, EventArgs e)
         {
             CloseFileToolStripMenuItem_Click(sender, e);
@@ -134,21 +146,29 @@ namespace GcxEditorGUI
                 LoadedGcx = Importer.ImportGcxFile(LoadedGcxLocation);
                 richTextBox.Enabled = true;
 
-                JsonSerializerSettings jsonSerializerSettings = new()
-                {
-                    Formatting = Formatting.Indented
-                };
+                
                 LoadedJson = $"{fileInfo.Name}.json";
                 if (File.Exists(LoadedJson))
                 {
-                    string jsonText = File.ReadAllText(LoadedJson);
-                    richTextBox.Text = jsonText;
+                    dialogResult = MessageBox.Show("A json file was found for the selected file; would you like to load it instead of starting fresh? (No will overwrite existing file)", "Existing JSON detected!", MessageBoxButtons.YesNoCancel);
+                    if (dialogResult == DialogResult.Yes)
+                    {
+                        string jsonText = File.ReadAllText(LoadedJson);
+                        richTextBox.Text = jsonText;
+                    }
+                    else if(dialogResult == DialogResult.No)
+                    {
+                        CreateNewJsonFile(LoadedJson);
+                    }
+                    else
+                    {
+                        CloseFileToolStripMenuItem_Click(null, null);
+                        return;
+                    }
                 }
                 else
                 {
-                    string jsonText = JsonConvert.SerializeObject(LoadedGcx, jsonSerializerSettings);
-                    richTextBox.Text = jsonText;
-                    File.WriteAllText(LoadedJson, jsonText);
+                    CreateNewJsonFile(LoadedJson);
                 }
                 LoadProcedureList(LoadedGcx);
 
@@ -364,7 +384,7 @@ namespace GcxEditorGUI
                 }
                 else if (item is Load)
                 {
-                    GenericStatementUC loadUC = new GenericStatementUC();
+                    GenericStatementUC loadUC = new GenericStatementUC(); //TODO: fix this, is not generic statement - can have params
                     loadUC.nameLabel.Text = "Load Statement";
                     loadUC.argLabel.Text = "Stage to load:";
                     Load loadItem = item as Load;
