@@ -785,7 +785,6 @@ namespace GcxEditor
                         load.Args = DecodeArgs(loadArgs);
                         //can, in fact, have params
                         position += (uint)loadArgs.Length;
-                        byte currentPosition = bytes[position];
                         if (bytes[position] != 0x00)
                         {
                             byte[] loadParams = TakeRange(bytes, position, (uint)bytes.Length);
@@ -803,6 +802,13 @@ namespace GcxEditor
                         restart.Size = DecodeArgsLength(bytes, ref position);
                         byte[] restartArgs = TakeRange(bytes, position, position + restart.Size);
                         restart.Args = DecodeArgs(restartArgs);
+                        //can, in fact, have params
+                        position += (uint)restartArgs.Length;
+                        if (bytes[position] != 0x00)
+                        {
+                            byte[] restartParams = TakeRange(bytes, position, (uint)bytes.Length);
+                            restart.Parameters = DecodeParams(restartParams);
+                        }
                         return restart;
                     case "8B3DF5": 
                         UnknownCommand unknownCommand = new();

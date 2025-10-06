@@ -639,7 +639,7 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            byte[] contents = Builder.EncodeCommandWithOnlyArgs(Args, new byte[] { 0x05, 0xB0, 0x6B });
+            byte[] contents = Builder.EncodeCommandWithArgsAndParams(Args, Parameters, new byte[] { 0x05, 0xB0, 0x6B });
             return Builder.BuildContainerElement(0x60, contents);
         }
 

@@ -425,12 +425,14 @@ namespace GcxEditorGUI
                 else if(item is Chara)
                 {
                     //TODO: need to nest and flesh out
-                    InteractiveLoadProc((item as Chara).Parameters.First(x => x.ParamType == 'e').Args[0] as Procedure);
+                    if((item as Chara).Parameters.Any(x=>x.ParamType == 'e'))
+                        InteractiveLoadProc((item as Chara).Parameters.First(x => x.ParamType == 'e').Args[0] as Procedure);
                 }
                 else if(item is GameCommand)
                 {
                     //TODO: need to nest and flesh out
-                    InteractiveLoadProc((item as GameCommand).Parameters.First(x => x.ParamType == 's').Args[0] as Procedure);
+                    if((item as GameCommand).Parameters.Any(x=>x.ParamType =='s'))
+                        InteractiveLoadProc((item as GameCommand).Parameters.First(x => x.ParamType == 's').Args[0] as Procedure);
                 }
 
                 //TODO: add invoke handling
