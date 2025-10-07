@@ -466,7 +466,7 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            byte[] contents = Builder.EncodeCommandWithOnlyArgs(Args, new byte[] { 0x98, 0xE3, 0x8B });
+            byte[] contents = Builder.EncodeCommandWithArgsAndParams(Args, Parameters, new byte[] { 0x98, 0xE3, 0x8B });
             return Builder.BuildContainerElement(0x60, contents);
         }
 
@@ -485,7 +485,7 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            byte[] contents = Builder.EncodeCommandWithOnlyArgs(Args, new byte[] { 0x3B, 0xB2, 0x3A });
+            byte[] contents = Builder.EncodeCommandWithArgsAndParams(Args, Parameters, new byte[] { 0x3B, 0xB2, 0x3A });
             return Builder.BuildContainerElement(0x60, contents);
         }
 
@@ -504,7 +504,7 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            byte[] contents = Builder.EncodeCommandWithOnlyArgs(Args, new byte[] { 0xC7, 0x22, 0x38 });
+            byte[] contents = Builder.EncodeCommandWithArgsAndParams(Args, Parameters, new byte[] { 0xC7, 0x22, 0x38 });
             return Builder.BuildContainerElement(0x60, contents);
         }
 
@@ -600,7 +600,7 @@ namespace GcxEditor
 
         public override byte[] Encode()
         {
-            byte[] contents = Builder.EncodeCommandWithOnlyArgs(Args, new byte[] { 0xF5, 0x3D, 0x8B });
+            byte[] contents = Builder.EncodeCommandWithArgsAndParams(Args, Parameters, new byte[] { 0xF5, 0x3D, 0x8B });
             return Builder.BuildContainerElement(0x60, contents);
         }
 

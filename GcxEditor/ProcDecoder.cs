@@ -746,6 +746,13 @@ namespace GcxEditor
                         byte[] mesgArgs = TakeRange(bytes, position, position + messageArgsLength);
                         msg.Args = DecodeArgs(mesgArgs);
 
+                        position += (uint)mesgArgs.Length;
+                        if (bytes[position] != 0x00)
+                        {
+                            byte[] mesgParams = TakeRange(bytes, position, (uint)bytes.Length);
+                            msg.Parameters = DecodeParams(mesgParams);
+                        }
+
                         return msg;
                     case "3BD490":
                         Trap trap = new()
@@ -817,6 +824,13 @@ namespace GcxEditor
                         unknownCommand.Size = DecodeArgsLength(bytes, ref position);
                         byte[] unknownCommandArgs = TakeRange(bytes, position, position + unknownCommand.Size);
                         unknownCommand.Args = DecodeArgs(unknownCommandArgs);
+
+                        position += (uint)unknownCommandArgs.Length;
+                        if (bytes[position] != 0x00)
+                        {
+                            byte[] unknownParams = TakeRange(bytes, position, (uint)bytes.Length);
+                            unknownCommand.Parameters = DecodeParams(unknownParams);
+                        }
                         return unknownCommand;
                     case "000D86":
                         IfBlock ifblock = new();
@@ -858,6 +872,13 @@ namespace GcxEditor
                         byte[] returnArgs = TakeRange(bytes, position, position + returnStatement.Size);
                         returnStatement.Args = DecodeArgs(returnArgs);
 
+                        position += (uint)returnArgs.Length;
+                        if (bytes[position] != 0x00)
+                        {
+                            byte[] returnParams = TakeRange(bytes, position, (uint)bytes.Length);
+                            returnStatement.Parameters = DecodeParams(returnParams);
+                        }
+
                         return returnStatement;
                     case "3AB23B": 
                         Print printStatement = new();
@@ -866,6 +887,13 @@ namespace GcxEditor
                         printStatement.Size = DecodeArgsLength(bytes, ref position);
                         byte[] printArgs = TakeRange(bytes, position, position + printStatement.Size);
                         printStatement.Args = DecodeArgs(printArgs);
+
+                        position += (uint)printArgs.Length;
+                        if (bytes[position] != 0x00)
+                        {
+                            byte[] printParams = TakeRange(bytes, position, (uint)bytes.Length);
+                            printStatement.Parameters = DecodeParams(printParams);
+                        }
 
                         return printStatement;
                     default:
