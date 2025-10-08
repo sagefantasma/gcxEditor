@@ -420,7 +420,12 @@ namespace GcxEditorGUI
                 else if(item is IfBlock)
                 {
                     //TODO: more to do here? need to nest
-                    InteractiveLoadProc((item as IfBlock).Args[1] as Procedure);
+                    IfBlock ifBlock = item as IfBlock;
+                    InteractiveLoadProc(ifBlock.Args[1] as Procedure);
+                    foreach(Parameter param in ifBlock.Parameters)
+                    {
+                        InteractiveLoadProc(param.Args[1] as Procedure);
+                    }
                 }
                 else if(item is Chara)
                 {
@@ -431,8 +436,17 @@ namespace GcxEditorGUI
                 else if(item is GameCommand)
                 {
                     //TODO: need to nest and flesh out
-                    if((item as GameCommand).Parameters.Any(x=>x.ParamType =='s'))
-                        InteractiveLoadProc((item as GameCommand).Parameters.First(x => x.ParamType == 's').Args[0] as Procedure);
+                    if ((item as GameCommand).Parameters.Any(x => x.ParamType == 's'))
+                    {
+                        try
+                        {
+                            InteractiveLoadProc((item as GameCommand).Parameters.First(x => x.ParamType == 's').Args[0] as Procedure);
+                        }
+                        catch (Exception ex)
+                        {
+                            //just not a script
+                        }
+                    }
                 }
 
                 //TODO: add invoke handling
