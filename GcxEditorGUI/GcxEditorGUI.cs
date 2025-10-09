@@ -347,31 +347,28 @@ namespace GcxEditorGUI
         {
             foreach (IProcedureElement item in procedure.DecodedContents)
             {
-                if (item is Print)
+                if (item is Print printItem)
                 {
                     GenericStatementUC printUC = new GenericStatementUC();
                     printUC.nameLabel.Text = "Print Statement";
                     printUC.argLabel.Text = "Text to print:";
-                    Print printItem = item as Print;
                     byte[] byteString = Convert.FromBase64String(printItem.Args.FirstOrDefault().ToString());
                     printUC.argContentsTextBox.Text = Encoding.GetEncoding("euc-jp").GetString(byteString.ToArray());
                     flowLayoutPanel.Controls.Add(printUC);
                 }
-                else if (item is Return)
+                else if (item is Return returnItem)
                 {
                     GenericStatementUC returnUC = new GenericStatementUC();
                     returnUC.nameLabel.Text = "Return Statement";
                     returnUC.argLabel.Text = "Value to return:";
-                    Return returnItem = item as Return;
                     returnUC.argContentsTextBox.Text = returnItem.Args.FirstOrDefault().ToString();
                     flowLayoutPanel.Controls.Add(returnUC);
                 }
-                else if (item is Msg)
+                else if (item is Msg msgItem)
                 {
                     GenericStatementUC msgUC = new GenericStatementUC(); //TODO: break this down further? Is it really just a generic statement?
                     msgUC.nameLabel.Text = "Message Statement";
                     msgUC.argLabel.Text = "Message to send:";
-                    Msg msgItem = item as Msg;
                     string messageString = "";
                     foreach (ITerm arg in msgItem.Args)
                     {
@@ -382,65 +379,72 @@ namespace GcxEditorGUI
                     msgUC.argContentsTextBox.Text = messageString;
                     flowLayoutPanel.Controls.Add(msgUC);
                 }
-                else if (item is Load)
+                else if (item is Load loadItem)
                 {
                     GenericStatementUC loadUC = new GenericStatementUC(); //TODO: fix this, is not generic statement - can have params
                     loadUC.nameLabel.Text = "Load Statement";
                     loadUC.argLabel.Text = "Stage to load:";
-                    Load loadItem = item as Load;
                     loadUC.argContentsTextBox.Text = loadItem.Args.FirstOrDefault().ToString(); //TODO: stored as base64 string, need to convert
                     flowLayoutPanel.Controls.Add(loadUC);
                 }
-                else if (item is Restart)
+                else if (item is Restart restart)
                 {
                     GenericStatementUC restartUC = new GenericStatementUC(); //TODO: change this to a different type of UC?
                     restartUC.nameLabel.Text = "Restart Statement";
-                    restartUC.argLabel.Text = "";
-                    restartUC.argContentsTextBox = null;
-                    flowLayoutPanel.Controls.Add(restartUC);
+                    if (restart.Parameters.Count == 0)
+                    {
+                        restartUC.argLabel.Text = "";
+                        restartUC.argContentsTextBox = null;
+                    }
+                    else
+                    {
+                        restartUC.argLabel.Text = "Parameters";
+                        restartUC.argContentsTextBox.Text = restart.Parameters.ToString();
+                    }
+                        flowLayoutPanel.Controls.Add(restartUC);
                 }
-                else if (item is UnknownCommand)
+                else if (item is UnknownCommand load2)
                 {
                     GenericStatementUC unknownUC = new GenericStatementUC();
                     unknownUC.nameLabel.Text = "Load2 Statement";
                     unknownUC.argLabel.Text = "Stage to load:";
-                    unknownUC.argContentsTextBox.Text = (item as Load).Args.FirstOrDefault().ToString();
+                    unknownUC.argContentsTextBox.Text = load2.Args.FirstOrDefault().ToString();
                     flowLayoutPanel.Controls.Add(unknownUC);
                 }
-                else if (item is Procedure)
+                else if (item is Procedure subProc)
                 {
                     //TODO: figure out making nested objects
-                    InteractiveLoadProc(item as Procedure);
+                    InteractiveLoadProc(subProc);
                 }
-                else if(item is Trap)
+                else if(item is Trap trap)
                 {
                     //TODO: need to nest and flesh out
-                    InteractiveLoadProc((item as Trap).Parameters.First(x => x.ParamType == 'e').Args[0] as Procedure);
+                    InteractiveLoadProc(trap.Parameters.First(x => x.ParamType == 'e').Args[0] as Procedure);
                 }
-                else if(item is IfBlock)
+                else if(item is IfBlock ifBlock)
                 {
                     //TODO: more to do here? need to nest
-                    IfBlock ifBlock = item as IfBlock;
                     InteractiveLoadProc(ifBlock.Args[1] as Procedure);
                     foreach(Parameter param in ifBlock.Parameters)
                     {
                         InteractiveLoadProc(param.Args[1] as Procedure);
                     }
                 }
-                else if(item is Chara)
+                else if(item is Chara chara)
                 {
                     //TODO: need to nest and flesh out
-                    if((item as Chara).Parameters.Any(x=>x.ParamType == 'e'))
-                        InteractiveLoadProc((item as Chara).Parameters.First(x => x.ParamType == 'e').Args[0] as Procedure);
+                    if(chara.Parameters.Any(x=>x.ParamType == 'e'))
+                        InteractiveLoadProc(chara.Parameters.First(x => x.ParamType == 'e').Args[0] as Procedure);
                 }
-                else if(item is GameCommand)
+                else if(item is GameCommand gameCommand)
                 {
                     //TODO: need to nest and flesh out
-                    if ((item as GameCommand).Parameters.Any(x => x.ParamType == 's'))
+                    if (gameCommand.Parameters.Any(x => x.ParamType == 's'))
                     {
                         try
                         {
-                            InteractiveLoadProc((item as GameCommand).Parameters.First(x => x.ParamType == 's').Args[0] as Procedure);
+                            if(gameCommand.Parameters.First(x => x.ParamType == 's').Args[0] is Procedure scriptProc)
+                                InteractiveLoadProc(scriptProc);
                         }
                         catch (Exception ex)
                         {
