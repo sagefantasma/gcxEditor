@@ -427,12 +427,25 @@ namespace GcxEditorGUI
                     InteractiveLoadProc(ifBlock.Args[1] as Procedure);
                     foreach(Parameter param in ifBlock.Parameters)
                     {
-                        InteractiveLoadProc(param.Args[1] as Procedure);
+                        if (param.ParamType != 'e')
+                            InteractiveLoadProc(param.Args[1] as Procedure);
+                        else
+                            InteractiveLoadProc(param.Args[0] as Procedure);
                     }
                 }
                 else if(item is Chara chara)
                 {
                     //TODO: need to nest and flesh out
+                    CharaUC charaUC = new CharaUC();
+                    charaUC.typeTextBox.Text = chara.Args[0].ToString();
+                    charaUC.idTextBox.Text = chara.Args[1].ToString();
+                    string paramsString = "";
+                    foreach(Parameter parameter in chara.Parameters)
+                    {
+                        paramsString += parameter.ToString() + Environment.NewLine;
+                    }
+                    charaUC.paramTextBox.Text = paramsString;
+                    flowLayoutPanel.Controls.Add(charaUC);
                     if(chara.Parameters.Any(x=>x.ParamType == 'e'))
                         InteractiveLoadProc(chara.Parameters.First(x => x.ParamType == 'e').Args[0] as Procedure);
                 }
