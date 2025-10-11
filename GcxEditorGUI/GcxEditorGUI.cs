@@ -414,49 +414,40 @@ namespace GcxEditorGUI
                 }
                 else if (item is Procedure subProc)
                 {
-                    //TODO: figure out making nested objects
-                    FlowLayoutPanel subProcPanel = new FlowLayoutPanel();
-                    subProcPanel.BorderStyle = BorderStyle.FixedSingle;
-                    subProcPanel.AutoSize = true;
-                    InteractiveLoadProc(subProc, subProcPanel);
+                    //TODO: should be fine
+                    NestableUC subProcPanel = new();
+                    subProcPanel.nameLabel.Text = "Subproc";
+                    InteractiveLoadProc(subProc, subProcPanel.contentFlowPanel);
                     masterPanel.Controls.Add(subProcPanel);
                 }
                 else if(item is Trap trap)
                 {
-                    //Red
-                    //TODO: need to nest and flesh out
-                    FlowLayoutPanel trapPanel = new FlowLayoutPanel();
-                    trapPanel.BorderStyle = BorderStyle.FixedSingle;
-                    trapPanel.AutoSize = true;
-                    InteractiveLoadProc(trap.Parameters.First(x => x.ParamType == 'e').Args[0] as Procedure, trapPanel);
+                    //TODO: flesh out
+                    NestableUC trapPanel = new();
+                    trapPanel.nameLabel.Text = "Trap";
+                    InteractiveLoadProc(trap.Parameters.First(x => x.ParamType == 'e').Args[0] as Procedure, trapPanel.contentFlowPanel);
                     masterPanel.Controls.Add(trapPanel);
                 }
                 else if(item is IfBlock ifBlock)
                 {
-                    //Green
-                    //TODO: more to do here? need to nest
-                    FlowLayoutPanel ifBlockPanel = new FlowLayoutPanel();
-                    ifBlockPanel.BorderStyle = BorderStyle.FixedSingle;
-                    ifBlockPanel.AutoSize = true;
-                    InteractiveLoadProc(ifBlock.Args[1] as Procedure, ifBlockPanel);
+                    //TODO: need to finish
+                    NestableUC ifBlockPanel = new();
+                    ifBlockPanel.nameLabel.Text = "If Block";
+                    InteractiveLoadProc(ifBlock.Args[1] as Procedure, ifBlockPanel.contentFlowPanel);
                     foreach(Parameter param in ifBlock.Parameters)
                     {
                         if (param.ParamType != 'e')
-                            InteractiveLoadProc(param.Args[1] as Procedure, ifBlockPanel);
+                            InteractiveLoadProc(param.Args[1] as Procedure, ifBlockPanel.contentFlowPanel);
                         else
-                            InteractiveLoadProc(param.Args[0] as Procedure, ifBlockPanel);
+                            InteractiveLoadProc(param.Args[0] as Procedure, ifBlockPanel.contentFlowPanel);
                     }
                     masterPanel.Controls.Add(ifBlockPanel);
                 }
                 else if(item is Chara chara)
                 {
-                    //Blue
-                    //TODO: need to nest and flesh out
-                    FlowLayoutPanel charaPanel = new()
-                    {
-                        BorderStyle = BorderStyle.FixedSingle,
-                        AutoSize = true
-                    };
+                    //TODO: need to clean this up
+                    NestableUC charaPanel = new();
+                    charaPanel.nameLabel.Text = "";
                     CharaUC charaUC = new CharaUC();
                     charaUC.typeTextBox.Text = chara.Args[0].ToString();
                     charaUC.idTextBox.Text = chara.Args[1].ToString();
@@ -466,27 +457,24 @@ namespace GcxEditorGUI
                         paramsString += parameter.ToString() + Environment.NewLine;
                     }
                     charaUC.paramTextBox.Text = paramsString;
-                    charaPanel.Controls.Add(charaUC);
+                    charaPanel.contentFlowPanel.Controls.Add(charaUC);
                     if(chara.Parameters.Any(x=>x.ParamType == 'e'))
-                        InteractiveLoadProc(chara.Parameters.First(x => x.ParamType == 'e').Args[0] as Procedure, charaPanel);
+                        InteractiveLoadProc(chara.Parameters.First(x => x.ParamType == 'e').Args[0] as Procedure, charaPanel.contentFlowPanel);
                     if (chara.Parameters.Any(x => x.ParamType == 'x'))
-                        InteractiveLoadProc(chara.Parameters.First(x => x.ParamType == 'x').Args[0] as Procedure, charaPanel);
+                        InteractiveLoadProc(chara.Parameters.First(x => x.ParamType == 'x').Args[0] as Procedure, charaPanel.contentFlowPanel);
                     masterPanel.Controls.Add(charaPanel);
                 }
                 else if(item is GameCommand gameCommand)
                 {
-                    //TODO: need to nest and flesh out
-                    FlowLayoutPanel gameCommandPanel = new()
-                    {
-                        BorderStyle = BorderStyle.FixedSingle,
-                        AutoSize = true
-                    };
+                    //TODO: flesh out
+                    NestableUC gameCommandPanel = new();
+                    gameCommandPanel.nameLabel.Text = "GameCommand";
                     if (gameCommand.Parameters.Any(x => x.ParamType == 's'))
                     {
                         try
                         {
                             if(gameCommand.Parameters.First(x => x.ParamType == 's').Args[0] is Procedure scriptProc)
-                                InteractiveLoadProc(scriptProc, gameCommandPanel);
+                                InteractiveLoadProc(scriptProc, gameCommandPanel.contentFlowPanel);
                         }
                         catch (Exception ex)
                         {
@@ -517,11 +505,8 @@ namespace GcxEditorGUI
                 else if(item is SwitchBlock switchBlock)
                 {
                     //TODO: finish
-                    FlowLayoutPanel switchBlockPanel = new()
-                    {
-                        AutoSize = true,
-                        BorderStyle = BorderStyle.FixedSingle
-                    };
+                    NestableUC switchBlockPanel = new();
+                    switchBlockPanel.nameLabel.Text = "Switch Block";
                     masterPanel.Controls.Add(switchBlockPanel);
                 }
             }
