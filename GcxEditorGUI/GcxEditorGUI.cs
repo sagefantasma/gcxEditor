@@ -343,8 +343,9 @@ namespace GcxEditorGUI
             //whenever we do a change to the JSON tab, we should update the interactive tab?
         }
 
-        private void InteractiveLoadProc(Procedure procedure)
+        private void InteractiveLoadProc(Procedure procedure, FlowLayoutPanel masterPanel)
         {
+            //TODO: create new custom flowpanel that has a text label for better signaling of each nested object
             foreach (IProcedureElement item in procedure.DecodedContents)
             {
                 if (item is Print printItem)
@@ -354,7 +355,7 @@ namespace GcxEditorGUI
                     printUC.argLabel.Text = "Text to print:";
                     byte[] byteString = Convert.FromBase64String(printItem.Args.FirstOrDefault().ToString());
                     printUC.argContentsTextBox.Text = Encoding.GetEncoding("euc-jp").GetString(byteString.ToArray());
-                    flowLayoutPanel.Controls.Add(printUC);
+                    masterPanel.Controls.Add(printUC);
                 }
                 else if (item is Return returnItem)
                 {
@@ -362,7 +363,7 @@ namespace GcxEditorGUI
                     returnUC.nameLabel.Text = "Return Statement";
                     returnUC.argLabel.Text = "Value to return:";
                     returnUC.argContentsTextBox.Text = returnItem.Args.FirstOrDefault().ToString();
-                    flowLayoutPanel.Controls.Add(returnUC);
+                    masterPanel.Controls.Add(returnUC);
                 }
                 else if (item is Msg msgItem)
                 {
@@ -377,7 +378,7 @@ namespace GcxEditorGUI
                             messageString += ", ";
                     }
                     msgUC.argContentsTextBox.Text = messageString;
-                    flowLayoutPanel.Controls.Add(msgUC);
+                    masterPanel.Controls.Add(msgUC);
                 }
                 else if (item is Load loadItem)
                 {
@@ -385,7 +386,7 @@ namespace GcxEditorGUI
                     loadUC.nameLabel.Text = "Load Statement";
                     loadUC.argLabel.Text = "Stage to load:";
                     loadUC.argContentsTextBox.Text = loadItem.Args.FirstOrDefault().ToString(); //TODO: stored as base64 string, need to convert
-                    flowLayoutPanel.Controls.Add(loadUC);
+                    masterPanel.Controls.Add(loadUC);
                 }
                 else if (item is Restart restart)
                 {
@@ -401,7 +402,7 @@ namespace GcxEditorGUI
                         restartUC.argLabel.Text = "Parameters";
                         restartUC.argContentsTextBox.Text = restart.Parameters.ToString();
                     }
-                        flowLayoutPanel.Controls.Add(restartUC);
+                    masterPanel.Controls.Add(restartUC);
                 }
                 else if (item is UnknownCommand load2)
                 {
@@ -409,33 +410,53 @@ namespace GcxEditorGUI
                     unknownUC.nameLabel.Text = "Load2 Statement";
                     unknownUC.argLabel.Text = "Stage to load:";
                     unknownUC.argContentsTextBox.Text = load2.Args.FirstOrDefault().ToString();
-                    flowLayoutPanel.Controls.Add(unknownUC);
+                    masterPanel.Controls.Add(unknownUC);
                 }
                 else if (item is Procedure subProc)
                 {
                     //TODO: figure out making nested objects
-                    InteractiveLoadProc(subProc);
+                    FlowLayoutPanel subProcPanel = new FlowLayoutPanel();
+                    subProcPanel.BorderStyle = BorderStyle.FixedSingle;
+                    subProcPanel.AutoSize = true;
+                    InteractiveLoadProc(subProc, subProcPanel);
+                    masterPanel.Controls.Add(subProcPanel);
                 }
                 else if(item is Trap trap)
                 {
+                    //Red
                     //TODO: need to nest and flesh out
-                    InteractiveLoadProc(trap.Parameters.First(x => x.ParamType == 'e').Args[0] as Procedure);
+                    FlowLayoutPanel trapPanel = new FlowLayoutPanel();
+                    trapPanel.BorderStyle = BorderStyle.FixedSingle;
+                    trapPanel.AutoSize = true;
+                    InteractiveLoadProc(trap.Parameters.First(x => x.ParamType == 'e').Args[0] as Procedure, trapPanel);
+                    masterPanel.Controls.Add(trapPanel);
                 }
                 else if(item is IfBlock ifBlock)
                 {
+                    //Green
                     //TODO: more to do here? need to nest
-                    InteractiveLoadProc(ifBlock.Args[1] as Procedure);
+                    FlowLayoutPanel ifBlockPanel = new FlowLayoutPanel();
+                    ifBlockPanel.BorderStyle = BorderStyle.FixedSingle;
+                    ifBlockPanel.AutoSize = true;
+                    InteractiveLoadProc(ifBlock.Args[1] as Procedure, ifBlockPanel);
                     foreach(Parameter param in ifBlock.Parameters)
                     {
                         if (param.ParamType != 'e')
-                            InteractiveLoadProc(param.Args[1] as Procedure);
+                            InteractiveLoadProc(param.Args[1] as Procedure, ifBlockPanel);
                         else
-                            InteractiveLoadProc(param.Args[0] as Procedure);
+                            InteractiveLoadProc(param.Args[0] as Procedure, ifBlockPanel);
                     }
+                    masterPanel.Controls.Add(ifBlockPanel);
                 }
                 else if(item is Chara chara)
                 {
+                    //Blue
                     //TODO: need to nest and flesh out
+                    FlowLayoutPanel charaPanel = new()
+                    {
+                        BorderStyle = BorderStyle.FixedSingle,
+                        AutoSize = true
+                    };
                     CharaUC charaUC = new CharaUC();
                     charaUC.typeTextBox.Text = chara.Args[0].ToString();
                     charaUC.idTextBox.Text = chara.Args[1].ToString();
@@ -445,30 +466,64 @@ namespace GcxEditorGUI
                         paramsString += parameter.ToString() + Environment.NewLine;
                     }
                     charaUC.paramTextBox.Text = paramsString;
-                    flowLayoutPanel.Controls.Add(charaUC);
+                    charaPanel.Controls.Add(charaUC);
                     if(chara.Parameters.Any(x=>x.ParamType == 'e'))
-                        InteractiveLoadProc(chara.Parameters.First(x => x.ParamType == 'e').Args[0] as Procedure);
+                        InteractiveLoadProc(chara.Parameters.First(x => x.ParamType == 'e').Args[0] as Procedure, charaPanel);
+                    if (chara.Parameters.Any(x => x.ParamType == 'x'))
+                        InteractiveLoadProc(chara.Parameters.First(x => x.ParamType == 'x').Args[0] as Procedure, charaPanel);
+                    masterPanel.Controls.Add(charaPanel);
                 }
                 else if(item is GameCommand gameCommand)
                 {
                     //TODO: need to nest and flesh out
+                    FlowLayoutPanel gameCommandPanel = new()
+                    {
+                        BorderStyle = BorderStyle.FixedSingle,
+                        AutoSize = true
+                    };
                     if (gameCommand.Parameters.Any(x => x.ParamType == 's'))
                     {
                         try
                         {
                             if(gameCommand.Parameters.First(x => x.ParamType == 's').Args[0] is Procedure scriptProc)
-                                InteractiveLoadProc(scriptProc);
+                                InteractiveLoadProc(scriptProc, gameCommandPanel);
                         }
                         catch (Exception ex)
                         {
                             //just not a script
                         }
                     }
+                    masterPanel.Controls.Add(gameCommandPanel);
                 }
-
-                //TODO: add invoke handling
-                //TODO: add expression handling
-                //TODO: add switch handling
+                else if(item is GcxEditor.Invoke invokeCommand)
+                {
+                    //TODO: finish
+                    GenericStatementUC invokeUC = new();
+                    invokeUC.nameLabel.Text = "Invoke Statement";
+                    invokeUC.argLabel.Text = "Procedure Invoked:";
+                    invokeUC.argContentsTextBox.Text = invokeCommand.ProcedureInvoked.Name;
+                    //TODO: add args passed to invoke
+                    masterPanel.Controls.Add(invokeUC);
+                }
+                else if(item is Expression expression)
+                {
+                    //TODO: finish
+                    GenericStatementUC expressionUC = new();
+                    expressionUC.nameLabel.Text = "Expression Statement";
+                    expressionUC.argLabel.Text = "Expression:";
+                    expressionUC.argContentsTextBox.Text = expression.ToString();
+                    masterPanel.Controls.Add(expressionUC);
+                }
+                else if(item is SwitchBlock switchBlock)
+                {
+                    //TODO: finish
+                    FlowLayoutPanel switchBlockPanel = new()
+                    {
+                        AutoSize = true,
+                        BorderStyle = BorderStyle.FixedSingle
+                    };
+                    masterPanel.Controls.Add(switchBlockPanel);
+                }
             }
         }
 
@@ -479,7 +534,7 @@ namespace GcxEditorGUI
             {
                 return;
             }
-            InteractiveLoadProc(DisplayedProcedure!);
+            InteractiveLoadProc(DisplayedProcedure!, flowLayoutPanel);
         }
 
         private void tabControl1_TabIndexChanged(object sender, EventArgs e)
