@@ -31,46 +31,61 @@
             nameLabel = new Label();
             argLabel = new Label();
             argContentsTextBox = new TextBox();
+            positionLabel = new Label();
             SuspendLayout();
             // 
             // nameLabel
             // 
             nameLabel.AutoSize = true;
             nameLabel.Font = new Font("Segoe UI", 9F, FontStyle.Bold | FontStyle.Underline);
-            nameLabel.Location = new Point(104, 0);
+            nameLabel.Location = new Point(149, 0);
+            nameLabel.Margin = new Padding(4, 0, 4, 0);
             nameLabel.Name = "nameLabel";
-            nameLabel.Size = new Size(114, 15);
+            nameLabel.Size = new Size(170, 25);
             nameLabel.TabIndex = 0;
             nameLabel.Text = "Generic Statement";
             // 
             // argLabel
             // 
             argLabel.AutoSize = true;
-            argLabel.Location = new Point(6, 30);
+            argLabel.Location = new Point(9, 50);
+            argLabel.Margin = new Padding(4, 0, 4, 0);
             argLabel.Name = "argLabel";
-            argLabel.Size = new Size(134, 15);
+            argLabel.Size = new Size(202, 25);
             argLabel.TabIndex = 1;
             argLabel.Text = "Restart Statement Value:";
             argLabel.TextAlign = ContentAlignment.MiddleRight;
             // 
             // argContentsTextBox
             // 
-            argContentsTextBox.Location = new Point(140, 18);
+            argContentsTextBox.Location = new Point(200, 30);
+            argContentsTextBox.Margin = new Padding(4, 5, 4, 5);
             argContentsTextBox.Multiline = true;
             argContentsTextBox.Name = "argContentsTextBox";
-            argContentsTextBox.Size = new Size(169, 42);
+            argContentsTextBox.Size = new Size(240, 67);
             argContentsTextBox.TabIndex = 2;
+            // 
+            // positionLabel
+            // 
+            positionLabel.AutoSize = true;
+            positionLabel.Location = new Point(3, 0);
+            positionLabel.Name = "positionLabel";
+            positionLabel.Size = new Size(22, 25);
+            positionLabel.TabIndex = 8;
+            positionLabel.Text = "0";
             // 
             // GenericStatementUC
             // 
-            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleDimensions = new SizeF(10F, 25F);
             AutoScaleMode = AutoScaleMode.Font;
             BorderStyle = BorderStyle.FixedSingle;
+            Controls.Add(positionLabel);
             Controls.Add(argContentsTextBox);
             Controls.Add(argLabel);
             Controls.Add(nameLabel);
+            Margin = new Padding(4, 5, 4, 5);
             Name = "GenericStatementUC";
-            Size = new Size(316, 65);
+            Size = new Size(451, 108);
             ResumeLayout(false);
             PerformLayout();
         }
@@ -80,5 +95,6 @@
         public Label nameLabel;
         public Label argLabel;
         public TextBox argContentsTextBox;
+        public Label positionLabel;
     }
 }

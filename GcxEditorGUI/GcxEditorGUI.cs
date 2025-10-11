@@ -343,6 +343,11 @@ namespace GcxEditorGUI
             //whenever we do a change to the JSON tab, we should update the interactive tab?
         }
 
+        private void UpdatePositionLabel(dynamic? sender, EventArgs e)
+        {
+            sender.positionLabel.Text = sender.Parent.Controls.IndexOf(sender).ToString();
+        }
+
         private void InteractiveLoadProc(Procedure procedure, FlowLayoutPanel masterPanel)
         {
             //TODO: create new custom flowpanel that has a text label for better signaling of each nested object
@@ -355,6 +360,8 @@ namespace GcxEditorGUI
                     printUC.argLabel.Text = "Text to print:";
                     byte[] byteString = Convert.FromBase64String(printItem.Args.FirstOrDefault().ToString());
                     printUC.argContentsTextBox.Text = Encoding.GetEncoding("euc-jp").GetString(byteString.ToArray());
+                    printUC.positionLabel.Text = masterPanel.Controls.Count.ToString();
+                    printUC.LocationChanged += UpdatePositionLabel;
                     masterPanel.Controls.Add(printUC);
                 }
                 else if (item is Return returnItem)
@@ -363,6 +370,8 @@ namespace GcxEditorGUI
                     returnUC.nameLabel.Text = "Return Statement";
                     returnUC.argLabel.Text = "Value to return:";
                     returnUC.argContentsTextBox.Text = returnItem.Args.FirstOrDefault().ToString();
+                    returnUC.positionLabel.Text = masterPanel.Controls.Count.ToString();
+                    returnUC.LocationChanged += UpdatePositionLabel;
                     masterPanel.Controls.Add(returnUC);
                 }
                 else if (item is Msg msgItem)
@@ -378,6 +387,8 @@ namespace GcxEditorGUI
                             messageString += ", ";
                     }
                     msgUC.argContentsTextBox.Text = messageString;
+                    msgUC.positionLabel.Text = masterPanel.Controls.Count.ToString();
+                    msgUC.LocationChanged += UpdatePositionLabel;
                     masterPanel.Controls.Add(msgUC);
                 }
                 else if (item is Load loadItem)
@@ -386,6 +397,8 @@ namespace GcxEditorGUI
                     loadUC.nameLabel.Text = "Load Statement";
                     loadUC.argLabel.Text = "Stage to load:";
                     loadUC.argContentsTextBox.Text = loadItem.Args.FirstOrDefault().ToString(); //TODO: stored as base64 string, need to convert
+                    loadUC.positionLabel.Text = masterPanel.Controls.Count.ToString();
+                    loadUC.LocationChanged += UpdatePositionLabel;
                     masterPanel.Controls.Add(loadUC);
                 }
                 else if (item is Restart restart)
@@ -402,6 +415,8 @@ namespace GcxEditorGUI
                         restartUC.argLabel.Text = "Parameters";
                         restartUC.argContentsTextBox.Text = restart.Parameters.ToString();
                     }
+                    restartUC.positionLabel.Text = masterPanel.Controls.Count.ToString();
+                    restartUC.LocationChanged += UpdatePositionLabel;
                     masterPanel.Controls.Add(restartUC);
                 }
                 else if (item is UnknownCommand load2)
@@ -410,6 +425,8 @@ namespace GcxEditorGUI
                     unknownUC.nameLabel.Text = "Load2 Statement";
                     unknownUC.argLabel.Text = "Stage to load:";
                     unknownUC.argContentsTextBox.Text = load2.Args.FirstOrDefault().ToString();
+                    unknownUC.positionLabel.Text = masterPanel.Controls.Count.ToString();
+                    unknownUC.LocationChanged += UpdatePositionLabel;
                     masterPanel.Controls.Add(unknownUC);
                 }
                 else if (item is Procedure subProc)
@@ -417,6 +434,7 @@ namespace GcxEditorGUI
                     //TODO: should be fine
                     NestableUC subProcPanel = new();
                     subProcPanel.nameLabel.Text = "Subproc";
+                    subProcPanel.LocationChanged += UpdatePositionLabel;
                     InteractiveLoadProc(subProc, subProcPanel.contentFlowPanel);
                     masterPanel.Controls.Add(subProcPanel);
                 }
@@ -425,6 +443,7 @@ namespace GcxEditorGUI
                     //TODO: flesh out
                     NestableUC trapPanel = new();
                     trapPanel.nameLabel.Text = "Trap";
+                    trapPanel.LocationChanged += UpdatePositionLabel;
                     InteractiveLoadProc(trap.Parameters.First(x => x.ParamType == 'e').Args[0] as Procedure, trapPanel.contentFlowPanel);
                     masterPanel.Controls.Add(trapPanel);
                 }
@@ -433,6 +452,7 @@ namespace GcxEditorGUI
                     //TODO: need to finish
                     NestableUC ifBlockPanel = new();
                     ifBlockPanel.nameLabel.Text = "If Block";
+                    ifBlockPanel.LocationChanged += UpdatePositionLabel;
                     InteractiveLoadProc(ifBlock.Args[1] as Procedure, ifBlockPanel.contentFlowPanel);
                     foreach(Parameter param in ifBlock.Parameters)
                     {
@@ -448,6 +468,7 @@ namespace GcxEditorGUI
                     //TODO: need to clean this up
                     NestableUC charaPanel = new();
                     charaPanel.nameLabel.Text = "";
+                    charaPanel.LocationChanged += UpdatePositionLabel;
                     CharaUC charaUC = new CharaUC();
                     charaUC.typeTextBox.Text = chara.Args[0].ToString();
                     charaUC.idTextBox.Text = chara.Args[1].ToString();
@@ -458,7 +479,7 @@ namespace GcxEditorGUI
                     }
                     charaUC.paramTextBox.Text = paramsString;
                     charaPanel.contentFlowPanel.Controls.Add(charaUC);
-                    if(chara.Parameters.Any(x=>x.ParamType == 'e'))
+                    if(chara.Parameters.Any(x=>x.ParamType == 'e')) //TODO: can break when e is empty
                         InteractiveLoadProc(chara.Parameters.First(x => x.ParamType == 'e').Args[0] as Procedure, charaPanel.contentFlowPanel);
                     if (chara.Parameters.Any(x => x.ParamType == 'x'))
                         InteractiveLoadProc(chara.Parameters.First(x => x.ParamType == 'x').Args[0] as Procedure, charaPanel.contentFlowPanel);
@@ -469,6 +490,7 @@ namespace GcxEditorGUI
                     //TODO: flesh out
                     NestableUC gameCommandPanel = new();
                     gameCommandPanel.nameLabel.Text = "GameCommand";
+                    gameCommandPanel.LocationChanged += UpdatePositionLabel;
                     if (gameCommand.Parameters.Any(x => x.ParamType == 's'))
                     {
                         try
@@ -490,6 +512,7 @@ namespace GcxEditorGUI
                     invokeUC.nameLabel.Text = "Invoke Statement";
                     invokeUC.argLabel.Text = "Procedure Invoked:";
                     invokeUC.argContentsTextBox.Text = invokeCommand.ProcedureInvoked.Name;
+                    invokeUC.LocationChanged += UpdatePositionLabel;
                     //TODO: add args passed to invoke
                     masterPanel.Controls.Add(invokeUC);
                 }
@@ -500,6 +523,7 @@ namespace GcxEditorGUI
                     expressionUC.nameLabel.Text = "Expression Statement";
                     expressionUC.argLabel.Text = "Expression:";
                     expressionUC.argContentsTextBox.Text = expression.ToString();
+                    expressionUC.LocationChanged += UpdatePositionLabel;
                     masterPanel.Controls.Add(expressionUC);
                 }
                 else if(item is SwitchBlock switchBlock)
@@ -507,6 +531,7 @@ namespace GcxEditorGUI
                     //TODO: finish
                     NestableUC switchBlockPanel = new();
                     switchBlockPanel.nameLabel.Text = "Switch Block";
+                    switchBlockPanel.LocationChanged += UpdatePositionLabel;
                     masterPanel.Controls.Add(switchBlockPanel);
                 }
             }
