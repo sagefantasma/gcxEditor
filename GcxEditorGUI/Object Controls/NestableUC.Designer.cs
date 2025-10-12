@@ -77,6 +77,7 @@
             contentFlowPanel.Dock = DockStyle.Fill;
             contentFlowPanel.Location = new Point(0, 28);
             contentFlowPanel.Margin = new Padding(4, 5, 4, 5);
+            contentFlowPanel.MaximumSize = new Size(1421, 0);
             contentFlowPanel.Name = "contentFlowPanel";
             contentFlowPanel.Size = new Size(350, 234);
             contentFlowPanel.TabIndex = 11;

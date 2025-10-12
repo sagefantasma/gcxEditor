@@ -351,6 +351,7 @@ namespace GcxEditorGUI
         private void InteractiveLoadProc(Procedure procedure, FlowLayoutPanel masterPanel)
         {
             //TODO: create new custom flowpanel that has a text label for better signaling of each nested object
+            string parameters = "";
             foreach (IProcedureElement item in procedure.DecodedContents)
             {
                 if (item is Print printItem)
@@ -362,6 +363,12 @@ namespace GcxEditorGUI
                     printUC.argContentsTextBox.Text = Encoding.GetEncoding("euc-jp").GetString(byteString.ToArray());
                     printUC.positionLabel.Text = masterPanel.Controls.Count.ToString();
                     printUC.LocationChanged += UpdatePositionLabel;
+                    printUC.paramsLabel.Text = "Parameters:";
+                    foreach (Parameter param in printItem.Parameters)
+                    {
+                        parameters += param + Environment.NewLine;
+                    }
+                    printUC.paramsContentsTextBox.Text = parameters;
                     masterPanel.Controls.Add(printUC);
                 }
                 else if (item is Return returnItem)
@@ -372,6 +379,12 @@ namespace GcxEditorGUI
                     returnUC.argContentsTextBox.Text = returnItem.Args.FirstOrDefault().ToString();
                     returnUC.positionLabel.Text = masterPanel.Controls.Count.ToString();
                     returnUC.LocationChanged += UpdatePositionLabel;
+                    returnUC.paramsLabel.Text = "Parameters:";
+                    foreach (Parameter param in returnItem.Parameters)
+                    {
+                        parameters += param + Environment.NewLine;
+                    }
+                    returnUC.paramsContentsTextBox.Text = parameters;
                     masterPanel.Controls.Add(returnUC);
                 }
                 else if (item is Msg msgItem)
@@ -389,6 +402,12 @@ namespace GcxEditorGUI
                     msgUC.argContentsTextBox.Text = messageString;
                     msgUC.positionLabel.Text = masterPanel.Controls.Count.ToString();
                     msgUC.LocationChanged += UpdatePositionLabel;
+                    msgUC.paramsLabel.Text = "Parameters:";
+                    foreach (Parameter param in msgItem.Parameters)
+                    {
+                        parameters += param + Environment.NewLine;
+                    }
+                    msgUC.paramsContentsTextBox.Text = parameters;
                     masterPanel.Controls.Add(msgUC);
                 }
                 else if (item is Load loadItem)
@@ -399,6 +418,12 @@ namespace GcxEditorGUI
                     loadUC.argContentsTextBox.Text = loadItem.Args.FirstOrDefault().ToString(); //TODO: stored as base64 string, need to convert
                     loadUC.positionLabel.Text = masterPanel.Controls.Count.ToString();
                     loadUC.LocationChanged += UpdatePositionLabel;
+                    loadUC.paramsLabel.Text = "Parameters:";
+                    foreach (Parameter param in loadItem.Parameters)
+                    {
+                        parameters += param + Environment.NewLine;
+                    }
+                    loadUC.paramsContentsTextBox.Text = parameters;
                     masterPanel.Controls.Add(loadUC);
                 }
                 else if (item is Restart restart)
@@ -427,6 +452,12 @@ namespace GcxEditorGUI
                     unknownUC.argContentsTextBox.Text = load2.Args.FirstOrDefault().ToString();
                     unknownUC.positionLabel.Text = masterPanel.Controls.Count.ToString();
                     unknownUC.LocationChanged += UpdatePositionLabel;
+                    unknownUC.paramsLabel.Text = "Parameters:";
+                    foreach(Parameter param in load2.Parameters)
+                    {
+                        parameters += param + Environment.NewLine;
+                    }
+                    unknownUC.paramsContentsTextBox.Text = parameters;
                     masterPanel.Controls.Add(unknownUC);
                 }
                 else if (item is Procedure subProc)
@@ -453,6 +484,7 @@ namespace GcxEditorGUI
                     NestableUC ifBlockPanel = new();
                     ifBlockPanel.nameLabel.Text = "If Block";
                     ifBlockPanel.LocationChanged += UpdatePositionLabel;
+                    //TODO: add if conditions
                     InteractiveLoadProc(ifBlock.Args[1] as Procedure, ifBlockPanel.contentFlowPanel);
                     foreach(Parameter param in ifBlock.Parameters)
                     {
@@ -514,6 +546,12 @@ namespace GcxEditorGUI
                     invokeUC.argContentsTextBox.Text = invokeCommand.ProcedureInvoked.Name;
                     invokeUC.LocationChanged += UpdatePositionLabel;
                     //TODO: add args passed to invoke
+                    invokeUC.paramsLabel.Text = "Args:";
+                    foreach (ITerm term in invokeCommand.Args)
+                    {
+                        parameters += term + Environment.NewLine;
+                    }
+                    invokeUC.paramsContentsTextBox.Text = parameters;
                     masterPanel.Controls.Add(invokeUC);
                 }
                 else if(item is Expression expression)
@@ -524,6 +562,8 @@ namespace GcxEditorGUI
                     expressionUC.argLabel.Text = "Expression:";
                     expressionUC.argContentsTextBox.Text = expression.ToString();
                     expressionUC.LocationChanged += UpdatePositionLabel;
+                    expressionUC.Controls.Remove(expressionUC.paramsLabel);
+                    expressionUC.Controls.Remove(expressionUC.paramsContentsTextBox);
                     masterPanel.Controls.Add(expressionUC);
                 }
                 else if(item is SwitchBlock switchBlock)

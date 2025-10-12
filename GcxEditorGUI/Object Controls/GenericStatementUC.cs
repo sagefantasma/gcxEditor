@@ -16,5 +16,10 @@ namespace GcxEditorGUI.Object_Controls
         {
             InitializeComponent();
         }
+
+        private void GenericStatementUC_Load(object sender, EventArgs e)
+        {
+
+        }
     }
 }
