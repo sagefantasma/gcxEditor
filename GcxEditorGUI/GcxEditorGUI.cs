@@ -350,7 +350,7 @@ namespace GcxEditorGUI
 
         private void InteractiveLoadProc(Procedure procedure, FlowLayoutPanel masterPanel)
         {
-            //TODO: create new custom flowpanel that has a text label for better signaling of each nested object
+            //TODO: alternate backColor of main level items to help differentiate them
             string parameters = "";
             foreach (IProcedureElement item in procedure.DecodedContents)
             {
@@ -484,6 +484,10 @@ namespace GcxEditorGUI
                     NestableUC ifBlockPanel = new();
                     ifBlockPanel.nameLabel.Text = "If Block";
                     ifBlockPanel.LocationChanged += UpdatePositionLabel;
+                    GenericStatementUC ifConditions = CreateExpressionUC(ifBlock.Args[0] as Expression);
+                    ifConditions.nameLabel.Text = "If Conditions";
+                    ifConditions.BackColor = Color.LightSlateGray;
+                    ifBlockPanel.contentFlowPanel.Controls.Add(ifConditions);
                     //TODO: add if conditions
                     InteractiveLoadProc(ifBlock.Args[1] as Procedure, ifBlockPanel.contentFlowPanel);
                     foreach(Parameter param in ifBlock.Parameters)
@@ -557,13 +561,7 @@ namespace GcxEditorGUI
                 else if(item is Expression expression)
                 {
                     //TODO: finish
-                    GenericStatementUC expressionUC = new();
-                    expressionUC.nameLabel.Text = "Expression Statement";
-                    expressionUC.argLabel.Text = "Expression:";
-                    expressionUC.argContentsTextBox.Text = expression.ToString();
-                    expressionUC.LocationChanged += UpdatePositionLabel;
-                    expressionUC.Controls.Remove(expressionUC.paramsLabel);
-                    expressionUC.Controls.Remove(expressionUC.paramsContentsTextBox);
+                    GenericStatementUC expressionUC = CreateExpressionUC(expression);
                     masterPanel.Controls.Add(expressionUC);
                 }
                 else if(item is SwitchBlock switchBlock)
@@ -575,6 +573,20 @@ namespace GcxEditorGUI
                     masterPanel.Controls.Add(switchBlockPanel);
                 }
             }
+        }
+
+        private GenericStatementUC CreateExpressionUC(Expression expression)
+        {
+            //TODO: any more to add?
+            GenericStatementUC expressionUC = new();
+            expressionUC.nameLabel.Text = "Expression Statement";
+            expressionUC.argLabel.Text = "Expression:";
+            expressionUC.argContentsTextBox.Text = expression.ToString();
+            expressionUC.LocationChanged += UpdatePositionLabel;
+            expressionUC.Controls.Remove(expressionUC.paramsLabel);
+            expressionUC.Controls.Remove(expressionUC.paramsContentsTextBox);
+
+            return expressionUC;
         }
 
         private void InteractiveLoadActiveProc()
