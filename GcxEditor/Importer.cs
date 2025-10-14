@@ -145,9 +145,9 @@ namespace GcxEditor
 
                     FileTable fileTable = new()
                     {
-                        ScriptTableOffset = FileTable["scriptOffset"],
+                        ScriptOffset = FileTable["scriptOffset"],
                         ResourceTableOffset = FileTable["resourceOffset"],
-                        StringTableOffset = FileTable["stringsOffset"],
+                        ResourcesOffset = FileTable["stringsOffset"],
                         FontDataOffset = FileTable["fontOffset"],
                         Key = FileTable["key"]
                     };
@@ -194,7 +194,7 @@ namespace GcxEditor
             byte[] preamble = fileContents.Take(8).ToArray();
             //proc table
             int procTableSize = reEncodedProcs.Count * 4 * 2;
-            byte[] constantData = fileContents.Take(new Range(new Index(positionOfZeroPadding - 8), new Index(positionOfZeroPadding + (int)fileTable.ScriptTableOffset))).ToArray();
+            byte[] constantData = fileContents.Take(new Range(new Index(positionOfZeroPadding - 8), new Index(positionOfZeroPadding + (int)fileTable.ScriptOffset))).ToArray();
             int procCollectionSize = 0;
             foreach (KeyValuePair<Procedure, byte[]> reEncodedProc in reEncodedProcs)
             {

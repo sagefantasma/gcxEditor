@@ -16,5 +16,10 @@ namespace GcxEditorGUI.Object_Controls
         {
             InitializeComponent();
         }
+
+        private void NestableUC_MouseDown(object sender, MouseEventArgs e)
+        {
+            SharedUCBehaviors.UC_MouseDown(sender, e);
+        }
     }
 }

@@ -38,10 +38,9 @@
             // nameLabel
             // 
             nameLabel.AutoSize = true;
-            nameLabel.Location = new Point(37, 0);
-            nameLabel.Margin = new Padding(4, 0, 4, 0);
+            nameLabel.Location = new Point(26, 0);
             nameLabel.Name = "nameLabel";
-            nameLabel.Size = new Size(59, 25);
+            nameLabel.Size = new Size(38, 15);
             nameLabel.TabIndex = 0;
             nameLabel.Text = "label1";
             nameLabel.TextAlign = ContentAlignment.TopCenter;
@@ -49,9 +48,10 @@
             // positionLabel
             // 
             positionLabel.AutoSize = true;
-            positionLabel.Location = new Point(3, 0);
+            positionLabel.Location = new Point(2, 0);
+            positionLabel.Margin = new Padding(2, 0, 2, 0);
             positionLabel.Name = "positionLabel";
-            positionLabel.Size = new Size(22, 25);
+            positionLabel.Size = new Size(13, 15);
             positionLabel.TabIndex = 9;
             positionLabel.Text = "0";
             // 
@@ -64,35 +64,36 @@
             tableLayoutPanel1.Controls.Add(positionLabel, 0, 0);
             tableLayoutPanel1.Dock = DockStyle.Top;
             tableLayoutPanel1.Location = new Point(0, 0);
+            tableLayoutPanel1.Margin = new Padding(2);
             tableLayoutPanel1.Name = "tableLayoutPanel1";
             tableLayoutPanel1.RowCount = 1;
             tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
-            tableLayoutPanel1.Size = new Size(350, 28);
+            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Absolute, 17F));
+            tableLayoutPanel1.Size = new Size(245, 17);
             tableLayoutPanel1.TabIndex = 10;
+            tableLayoutPanel1.MouseDown += NestableUC_MouseDown;
             // 
             // contentFlowPanel
             // 
             contentFlowPanel.AutoSize = true;
             contentFlowPanel.Dock = DockStyle.Fill;
-            contentFlowPanel.Location = new Point(0, 28);
-            contentFlowPanel.Margin = new Padding(4, 5, 4, 5);
-            contentFlowPanel.MaximumSize = new Size(1421, 0);
+            contentFlowPanel.Location = new Point(0, 17);
+            contentFlowPanel.MaximumSize = new Size(995, 0);
             contentFlowPanel.Name = "contentFlowPanel";
-            contentFlowPanel.Size = new Size(350, 234);
+            contentFlowPanel.Size = new Size(245, 140);
             contentFlowPanel.TabIndex = 11;
             // 
             // NestableUC
             // 
-            AutoScaleDimensions = new SizeF(10F, 25F);
+            AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             AutoSize = true;
             BorderStyle = BorderStyle.FixedSingle;
             Controls.Add(contentFlowPanel);
             Controls.Add(tableLayoutPanel1);
-            Margin = new Padding(4, 5, 4, 5);
             Name = "NestableUC";
-            Size = new Size(350, 262);
+            Size = new Size(245, 157);
+            MouseDown += NestableUC_MouseDown;
             tableLayoutPanel1.ResumeLayout(false);
             tableLayoutPanel1.PerformLayout();
             ResumeLayout(false);

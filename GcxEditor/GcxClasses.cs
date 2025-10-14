@@ -43,9 +43,9 @@ namespace GcxEditor
 
         public class FileTable
         {
-            public uint ScriptTableOffset;
+            public uint ScriptOffset;
             public uint ResourceTableOffset;
-            public uint StringTableOffset;
+            public uint ResourcesOffset;
             public uint FontDataOffset;
             public uint Key;
         }

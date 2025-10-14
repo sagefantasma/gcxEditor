@@ -110,7 +110,7 @@ namespace GcxEditorGUI
                 richTextBox.ScrollToCaret();
             }
 
-            if(tabControl1.SelectedIndex == 1)
+            if (tabControl1.SelectedIndex == 1)
             {
                 InteractiveLoadActiveProc();
             }
@@ -146,7 +146,7 @@ namespace GcxEditorGUI
                 LoadedGcx = Importer.ImportGcxFile(LoadedGcxLocation);
                 richTextBox.Enabled = true;
 
-                
+
                 LoadedJson = $"{fileInfo.Name}.json";
                 if (File.Exists(LoadedJson))
                 {
@@ -156,7 +156,7 @@ namespace GcxEditorGUI
                         string jsonText = File.ReadAllText(LoadedJson);
                         richTextBox.Text = jsonText;
                     }
-                    else if(dialogResult == DialogResult.No)
+                    else if (dialogResult == DialogResult.No)
                     {
                         CreateNewJsonFile(LoadedJson);
                     }
@@ -453,7 +453,7 @@ namespace GcxEditorGUI
                     unknownUC.positionLabel.Text = masterPanel.Controls.Count.ToString();
                     unknownUC.LocationChanged += UpdatePositionLabel;
                     unknownUC.paramsLabel.Text = "Parameters:";
-                    foreach(Parameter param in load2.Parameters)
+                    foreach (Parameter param in load2.Parameters)
                     {
                         parameters += param + Environment.NewLine;
                     }
@@ -469,7 +469,7 @@ namespace GcxEditorGUI
                     InteractiveLoadProc(subProc, subProcPanel.contentFlowPanel);
                     masterPanel.Controls.Add(subProcPanel);
                 }
-                else if(item is Trap trap)
+                else if (item is Trap trap)
                 {
                     //TODO: flesh out
                     NestableUC trapPanel = new();
@@ -478,7 +478,7 @@ namespace GcxEditorGUI
                     InteractiveLoadProc(trap.Parameters.First(x => x.ParamType == 'e').Args[0] as Procedure, trapPanel.contentFlowPanel);
                     masterPanel.Controls.Add(trapPanel);
                 }
-                else if(item is IfBlock ifBlock)
+                else if (item is IfBlock ifBlock)
                 {
                     //TODO: need to finish
                     NestableUC ifBlockPanel = new();
@@ -490,7 +490,7 @@ namespace GcxEditorGUI
                     ifBlockPanel.contentFlowPanel.Controls.Add(ifConditions);
                     //TODO: add if conditions
                     InteractiveLoadProc(ifBlock.Args[1] as Procedure, ifBlockPanel.contentFlowPanel);
-                    foreach(Parameter param in ifBlock.Parameters)
+                    foreach (Parameter param in ifBlock.Parameters)
                     {
                         if (param.ParamType != 'e')
                             InteractiveLoadProc(param.Args[1] as Procedure, ifBlockPanel.contentFlowPanel);
@@ -499,7 +499,7 @@ namespace GcxEditorGUI
                     }
                     masterPanel.Controls.Add(ifBlockPanel);
                 }
-                else if(item is Chara chara)
+                else if (item is Chara chara)
                 {
                     //TODO: need to clean this up
                     NestableUC charaPanel = new();
@@ -509,19 +509,19 @@ namespace GcxEditorGUI
                     charaUC.typeTextBox.Text = chara.Args[0].ToString();
                     charaUC.idTextBox.Text = chara.Args[1].ToString();
                     string paramsString = "";
-                    foreach(Parameter parameter in chara.Parameters)
+                    foreach (Parameter parameter in chara.Parameters)
                     {
                         paramsString += parameter.ToString() + Environment.NewLine;
                     }
                     charaUC.paramTextBox.Text = paramsString;
                     charaPanel.contentFlowPanel.Controls.Add(charaUC);
-                    if(chara.Parameters.Any(x=>x.ParamType == 'e')) //TODO: can break when e is empty
+                    if (chara.Parameters.Any(x => x.ParamType == 'e')) //TODO: can break when e is empty
                         InteractiveLoadProc(chara.Parameters.First(x => x.ParamType == 'e').Args[0] as Procedure, charaPanel.contentFlowPanel);
                     if (chara.Parameters.Any(x => x.ParamType == 'x'))
                         InteractiveLoadProc(chara.Parameters.First(x => x.ParamType == 'x').Args[0] as Procedure, charaPanel.contentFlowPanel);
                     masterPanel.Controls.Add(charaPanel);
                 }
-                else if(item is GameCommand gameCommand)
+                else if (item is GameCommand gameCommand)
                 {
                     //TODO: flesh out
                     NestableUC gameCommandPanel = new();
@@ -531,7 +531,7 @@ namespace GcxEditorGUI
                     {
                         try
                         {
-                            if(gameCommand.Parameters.First(x => x.ParamType == 's').Args[0] is Procedure scriptProc)
+                            if (gameCommand.Parameters.First(x => x.ParamType == 's').Args[0] is Procedure scriptProc)
                                 InteractiveLoadProc(scriptProc, gameCommandPanel.contentFlowPanel);
                         }
                         catch (Exception ex)
@@ -541,7 +541,7 @@ namespace GcxEditorGUI
                     }
                     masterPanel.Controls.Add(gameCommandPanel);
                 }
-                else if(item is GcxEditor.Invoke invokeCommand)
+                else if (item is GcxEditor.Invoke invokeCommand)
                 {
                     //TODO: finish
                     GenericStatementUC invokeUC = new();
@@ -558,13 +558,13 @@ namespace GcxEditorGUI
                     invokeUC.paramsContentsTextBox.Text = parameters;
                     masterPanel.Controls.Add(invokeUC);
                 }
-                else if(item is Expression expression)
+                else if (item is Expression expression)
                 {
                     //TODO: finish
                     GenericStatementUC expressionUC = CreateExpressionUC(expression);
                     masterPanel.Controls.Add(expressionUC);
                 }
-                else if(item is SwitchBlock switchBlock)
+                else if (item is SwitchBlock switchBlock)
                 {
                     //TODO: finish
                     NestableUC switchBlockPanel = new();
@@ -602,7 +602,7 @@ namespace GcxEditorGUI
         private void tabControl1_TabIndexChanged(object sender, EventArgs e)
         {
             //Save json file?
-            if(tabControl1.SelectedIndex == 0)
+            if (tabControl1.SelectedIndex == 0)
             {
                 //going to json tab
             }
@@ -611,6 +611,11 @@ namespace GcxEditorGUI
                 //going to interactive tab
                 InteractiveLoadActiveProc();
             }
+        }
+
+        private void flowLayoutPanel_DragDrop(object sender, DragEventArgs e)
+        {
+            //TODO: implement
         }
     }
 }
